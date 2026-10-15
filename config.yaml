@@ -25,3 +25,100 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: ab
+      description: 情感脑机接口：EEG 情感识别、跨被试泛化、情感混叠
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: emotion decoding EEG
+          keyword_cn: ''
+          query: emotion decoding EEG
+        - keyword: affective brain-computer interface
+          keyword_cn: ''
+          query: affective brain-computer interface
+        - keyword: EEG emotion recognition
+          keyword_cn: ''
+          query: EEG emotion recognition
+      intent_queries:
+        - query: affective BCI with ambiguous or mixed emotion labels
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: EEG based emotion recognition methods, benchmarks and cross subject generalization
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-10-15T05:26:51.786Z'
+    - tag: ea
+      description: 情感混叠与标签不一致：模糊/混合情感、标签噪声、状态-标签不匹配
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: mixed emotions EEG
+          keyword_cn: ''
+          query: mixed emotions EEG
+        - keyword: emotion label inconsistency
+          keyword_cn: ''
+          query: emotion label inconsistency
+        - keyword: ambiguous emotion recognition
+          keyword_cn: ''
+          query: emotion-aliasing
+      intent_queries:
+        - query: noisy or unreliable emotion labels in affective computing and EEG
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: inconsistent or ambiguous emotion labels in affective computing
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-10-15T05:32:00.490Z'
+    - tag: csg
+      description: 跨被试泛化：跨被试/被试无关情感识别、域泛化、域适应
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: subject-independent emotion recognition
+          keyword_cn: ''
+          query: subject-independent emotion recognition
+        - keyword: domain generalization EEG
+          keyword_cn: ''
+          query: domain generalization EEG
+        - keyword: cross-subject emotion recognition
+          keyword_cn: ''
+          query: cross-subject emotion recognition
+      intent_queries:
+        - query: domain generalization and domain adaptation for EEG based affective computing
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: cross subject and subject independent emotion recognition from EEG
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-10-15T05:33:49.955Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq
