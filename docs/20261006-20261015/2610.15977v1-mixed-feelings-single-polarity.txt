@@ -1,0 +1,459 @@
+Title: Mixed Feelings, Single Polarity
+
+URL Source: https://arxiv.org/pdf/2610.15977v1
+
+Published Time: Wed, 14 Oct 2026 02:12:31 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+## Mixed Feelings, Single Polarity 
+
+Emily Öhman 
+
+Waseda University, Japan 
+
+ohman@waseda.jp 
+
+Saif Mohammad 
+
+National Research Council Canada 
+
+saif.mohammad@nrc-cnrc.gc.ca 
+
+Abstract 
+
+Emotion datasets are routinely mapped onto positive and negative valence, by assigning each emotion category one polarity. We test where this works and where it fails, using SemEval-2018 Affect in Tweets (English, Ara-bic, Spanish), Affective Text aligned with EmoBank, raw GoEmotions annotations, nat-uralistic hashtag corpora, and a controlled an-notation study. Fixed projection works well when a text carries labels of one valence. It fails on a subset that can be identified from the labels alone: tweets whose emotion labels point in opposite directions. These are 9.0% of polar SemEval test tweets but cause 54.8% of the polarity errors of a learned projection, are more than twice as likely to receive a neutral-or-mixed gold label, and are not rescued by modeling the full label set. Annotators produce such configurations routinely: 16.3% of multil-abel GoEmotions judgments combine emotions from the dataset’s own positive and negative parents. In a controlled study holding word and reader constant, context changes the coarse valence judgment in 56.8% of cases, against 19.9% for controls. We recommend project-ing label configurations rather than labels, ab-staining or keeping a mixed class where labels conflict, and reporting coverage alongside ac-curacy. 
+
+1 Introduction 
+
+Suppose an emotion classifier assigns a tweet both 
+
+joy and sadness , and a downstream system needs a single polarity. A category-to-valence lookup gives opposite signs to the two labels, leaving the tweet-level decision unresolved. In GoEmotions (Dem-szky et al., 2020), 16.28% of multilabel emotional judgments combine categories from the dataset’s positive and negative parents. SemEval-2018 Af-fect in Tweets (Mohammad et al., 2018) provides independently annotated text-level valence with which to assess what those labels predict. Fixed mappings can provide useful category-level priors without determining the polarity of every text. Mappings of this kind are widespread. Emo-tion datasets use small basic-emotion sets (Ekman, 1992; Plutchik, 1980), larger multilabel inventories such as GoEmotions (Demszky et al., 2020), or continuous dimensions such as valence, arousal, and dominance (VAD) (Russell, 1980; Buechel and Hahn, 2017). Combining or comparing them requires a mapping between schemes, often onto coarse valence. Corpora are harmonized through such mappings (Bostan and Klinger, 2018; Ko-ufakou et al., 2024; El-Haj and Takanami, 2023), and inventories are coarsened through them (Gong et al., 2024). The relevant claim is that an emotion category can be assigned a fixed valence across the items to which it is applied. This assumption is often implemented during preprocessing with-out being separately validated against item-level valence judgments. When it fails, distinct labels merge, predictions that were wrong become correct after projection, and information about intensity, context, and multilabel composition disappears. A classifier that predicts anger for a text annotated 
+
+disgust , for instance, is wrong at the fine-grained level but correct once both are scored as negative. Let x denote the text unit being annotated (e.g., a word, sentence, or tweet), and let E(x) = e be an emotion label assigned to it by a human or model. A fixed collapse makes a simple claim: knowing e
+
+is sufficient to assign x a fixed valence, 
+
+E(x) = e =⇒ V (x) = f (e). (1) An uncertainty-aware alternative instead estimates 
+
+P (V (x) | E(x) = e), allowing units with the same emotion label to differ in valence. We test the ade-quacy of the fixed projection, not whether emotions have characteristic valence. For example, I’m furi-ous about the delay, but thrilled we made it home 
+
+may carry anger while being positive overall. This 1arXiv:2610.15977v1 [cs.CL] 11 Oct 2026 is a failure of label-to-text projection, not evidence that anger itself is positive. Study 1 examines the information emotion la-bels provide about valence, how that information changes with co-occurring labels, and how the pat-terns extend to naturalistic emotion signals. We analyze SemEval-2018 (Mohammad et al., 2018), Affective Text headlines (Strapparava and Mihal-cea, 2007) aligned with EmoBank (Buechel and Hahn, 2017), raw GoEmotions annotations (Dem-szky et al., 2020), and two naturalistic hashtag cor-pora (Mohammad and Kiritchenko, 2015; Vishnub-hotla and Mohammad, 2022). A fixed lexical pro-jection assumes that an affective prior associated with a word or sense remains informative when that item occurs in context. Study 2 tests this assump-tion by comparing affective judgments of words in isolation with judgments of the same words in sen-tence contexts. Together they address three ques-tions: 
+
+RQ1: How well does an assigned emotion label predict the valence of the same annotated text unit, and is this relation stable across lan-guages, datasets, and annotation designs? 
+
+RQ2: How does text-level valence vary with co-occurring emotion labels, where does label-only polarity projection fail, and how much information is retained under the GoEmotions sentiment hierarchy? 
+
+RQ3: With lexical item and reader held constant, how much does context change coarse va-lence, dominant emotion, and position in af-fective space? Across studies, category prototypes are informa-tive but do not reliably determine text-level valence, while context alters judgments of the same word. Table 6 summarizes our projection recommenda-tions. 1
+
+2 Related Work 
+
+Categorical and dimensional representations cap-ture related but non-identical affective structure (Ekman, 1992; Plutchik, 1980; Russell, 1980), and each can be recovered from the other with high accuracy: Buechel and Hahn (2018) map between VAD and basic-emotion ratings with near-human reliability, including cross-lingually, and Park et al.  
+
+> 1Code: https://anonymous.4open.science/r/VAD_ collapse-BE76/
+
+(2021) predict VAD scores from corpora annotated only with categories. Recovering one representa-tion from another on average does not mean that a single category fixes the valence of every text carrying it. Harmonization nonetheless makes this step routinely: El-Haj and Takanami (2023) av-erage the VAD vectors of a sentence’s emotions into one target and threshold predicted valence into three classes, and Gong et al. (2024) map fine-grained inventories down to sentiment classes. Re-views caution that unified data must be read in light of differing emotion definitions and annota-tion procedures (Koufakou and Nieves, 2025), and that lexicon-derived affect scores are easily over-interpreted (Mohammad, 2016). Psychology gives reasons to expect variation within categories. Positive and negative affect can co-occur in experience, as in happiness and sad-ness, fear and enjoyment, or disgust and amuse-ment (Larsen and McGraw, 2014). This has led to bivariate measures that rate positive and nega-tive affect separately instead of asking for one net valence (Kreibig and Gross, 2017). If people can feel both at once, a coarse representation of a text may need to keep both as well. Emotion categories are connected by continuous gradients rather than separated by clean boundaries (Cowen and Keltner, 2017), appraisal approaches derive emotion from context-sensitive evaluations of events (Hofmann et al., 2020; Troiano et al., 2023), and distributed la-bel representations capture graded relations among categories (Wang and Zong, 2021). Lexical re-sources show the same: the NRC Emotion Lexicon pairs Plutchik categories with sentiment (Moham-mad and Turney, 2010, 2013), yet many entries de-pend on word sense and context (Zad et al., 2021), and classifiers degrade sharply once explicit lexical cues are removed (Sosea and Caragea, 2025). Annotation practice points the same way. Alm et al. (2005) split surprise into positive and neg-ative variants, multilabel resources such as XED let emotions co-occur within a text (Öhman et al., 2020), and category overlap is a recurring annota-tion problem (Öhman, 2020). GoEmotions makes the mapping explicit: its 27 categories come with a sentiment hierarchy based on Cowen and Kelt-ner (2017), and collapsing to sentiment or Ekman groupings improves classification (Demszky et al., 2020). That work does not claim that every judg-ment falls under a single parent, so we treat the hierarchy as a strong example of a useful coarse representation and ask how closely raw annotations 2respect it. Concurrent work asks whether same-named emotion labels are operationally equivalent across datasets (Öhman and Koufakou, 2026); we instead ask whether an emotion label determines the va-lence of the text it annotates. 
+
+3 Study 1: Corpus evidence 
+
+Study 1 evaluates emotion-to-valence inference us-ing independently annotated valence, co-occurring emotion labels, within-annotator judgments, and naturalistic hashtag signals. Bootstrap, null-model, and screening details are given in Appendix A. 
+
+3.1 How informative are emotion labels about text valence? 
+
+As part of SemEval-2018 Task 1, Mohammad et al. (2018) obtained separate annotations for cat-egorical emotion and continuous valence. The emotion-classification dataset (E-c) uses eleven la-bels (anger, anticipation, disgust, fear, joy, love, op-timism, pessimism, sadness, surprise, trust), while valence regression (V-reg) uses Best–Worst Scal-ing (Kiritchenko and Mohammad, 2017) to produce continuous scores on a 0–1 scale. Neither anno-tation is derived from the other. Matching items present in both datasets by identifier yields 6,563 tweets (2,355 English, 1,794 Arabic, 2,414 Span-ish), retaining the original train/dev/test splits. For the SemEval-2018 analysis, emotion infor-mation comes from E-c and valence from the inde-pendently annotated V-reg data. For each emotion 
+
+e, tweets annotated with e form one group and all remaining tweets the other; continuous valence is used to rank the two groups. We retain both the direction and strength of this association: 
+
+Se = 2(AUC e − 0.5) , De = |Se|. (2) Thus Se > 0 means tweets carrying e tend to re-ceive higher valence scores, whereas Se < 0 means they tend to receive lower scores; D = 0 indicates no ranking information and D = 1 perfect separa-tion. Both measures are threshold-free and insen-sitive to class prevalence. We estimate each emo-tion’s continuous prototype as its mean training-set V-reg score. For polarity analyses, we use the of-ficial SemEval ordinal valence labels (V-oc), de-rived from V-reg using language-specific bound-aries: classes −3 to −1 are negative, 0 is neutral or mixed, and +1 to +3 are positive. The value 0.5
+
+in the AUC transformation denotes chance-level                   
+
+> Emotion D[95% CI] Joy .879 [.859,.898] Love .713 [.667,.754] Sadness .679 [.639,.716] Anger .646 [.611,.681] Optimism .644 [.599,.687] Disgust .591 [.551,.631] Pessimism .514 [.465,.560] Fear .445 [.383,.505] Trust .345 [.269,.426] Anticipation .107 [.057,.172] Surprise .076 [.029,.171]
+> Table 1: Threshold-free valence diagnosticity in SemEval-2018, averaged across English, Arabic, and Spanish test sets, with 95% bootstrap intervals. Per-language estimates appear in Appendix Table 8.
+
+discrimination, not a neutral boundary on the V-reg scale. Because E-c is multilabel, the primary diagnos-ticity and prototype analyses treat a tweet as carry-ing emotion e whether or not other emotion labels are also present. We use single-label tweets for a separate projection test, where each observed valence score can be compared with exactly one train-estimated emotion mean. On these held-out tweets, the emotion mean predicts valence far better than a global mean ( R2 = .734 [95% CI 
+
+.664 , . 779 ] English, .583 [.418 , . 696 ] Arabic, .628 
+
+[.554 , . 685 ] Spanish). Emotion-level mean valence is also similarly ranked across languages (test-set 
+
+ρ = .873 English–Arabic, .991 English–Spanish, 
+
+.882 Arabic–Spanish), supporting stable category-level valence prototypes. Joy is almost perfectly valence-diagnostic ( D =
+
+.879 ), and love, sadness, anger, and optimism are strong on average (Table 1). Anticipation (D = .107 ) and surprise ( D = .076 ) are weak. Anticipation’s signed association with continuous valence differs between Arabic and Spanish, but under the official V-oc classes, negative judgments outnumber positive ones in all three languages. Thus differences in continuous association do not establish opposite categorical polarity. Prototype strength varies considerably by emotion category. 
+
+Affective Text × EmoBank. To check that the pattern is not specific to SemEval or to tweets, we align SemEval-2007 Affective Text headlines (Strapparava and Mihalcea, 2007), which carry continuous intensity scores for six emotions, with EmoBank valence (Buechel and Hahn, 2017), giv-ing 1,192 headlines. Following the original Affec-tive Text criterion, an emotion counts as present at 3Emotion n D [95% CI] Mean V ρ [95% CI] Joy 144 .843 [.808,.875] 3.376 +.773 [.749,.795] Sadness 139 .832 [.787,.873] 2.260 -.709 [-.737,-.679] Disgust 19 .661 [.539,.769] 2.383 -.407 [-.454,-.357] Fear 114 .609 [.535,.678] 2.463 -.562 [-.602,-.521] Anger 38 .603 [.493,.706] 2.421 -.558 [-.596,-.518] Surprise 49 .220 [.065,.370] 3.015 +.143 [.086,.197] 
+
+Table 2: Affective Text × EmoBank, combined valence. 
+
+D uses the ≥ 50 presence threshold; ρ uses continu-ous intensity. At ≥ 25 the ordering is unchanged (joy .820, sadness .735, surprise .182; surprise mean valence 2.958). 
+
+intensity ≥ 50 .The ordering replicates (Table 2). Joy ( D =
+
+.843 ) and sadness ( D = .832 ) are highly diagnos-tic; disgust ( .661 ), fear ( .609 ), and anger ( .603 )are intermediate; surprise is weak ( D = .220 
+
+[.065,.370]). Headlines with surprise average 3.015 on EmoBank’s 1–5 valence scale, essentially the midpoint. The ordering holds at a ≥ 25 threshold, with continuous intensity instead of a threshold, and for reader- and writer-perspective valence sep-arately (Appendix Table 12). 
+
+3.2 What happens when emotion labels co-occur? Co-occurrence (SemEval-2018). For each or-dered emotion pair (e, c ), we compute 
+
+∆Ve,c = V (e, c ) − V (e, ¬c),
+
+the difference between the mean valence of tweets carrying both e and c and tweets carrying e with-out c. Thus ∆V > 0 means that tweets carrying 
+
+e have higher valence when c is also present, and 
+
+∆V < 0 means lower valence. Of the 110 possible ordered pairs, 68 had at least five e + c tweets in each language in the training data; 62 had the same sign of ∆V in English, Arabic, and Spanish. We tested these directional effects on held-out data: 46 retained the same sign in all three languages, and 45 had pooled 95% intervals excluding zero (Ap-pendix Tables 9–11). For example, anger tweets have mean valence .202 higher when joy is also annotated, whereas joy tweets have mean valence 
+
+.199 lower when anger is also annotated. These are tweet-level associations and do not identify which span or emotion contributes the valence difference. 
+
+What polarity projection loses. We evaluate label-only polarity projection on 2,076 held-out Se-mEval tweets with at least one emotion label, using official V-oc polarity as the target. A conventional lookup assigning nine emotions fixed signs and leaving anticipation and surprise unsigned covers 92.1% of tweets, with 20.0% errors among predic-tions across the three gold classes. Restricting eval-uation to gold-positive and gold-negative tweets, its error rate falls to 3.5% at 94.3% coverage. Fixed projection is therefore highly effective when the target has a clear polarity. Errors are concentrated in particular label con-figurations. Tweets containing both convention-ally positive- and negative-associated labels con-stitute 11.8% of the labeled test set, but 38.2% have neutral-or-mixed V-oc labels, compared with 16.4% of other tweets. A model averaging label-specific polarity priors makes errors on 33.6% of these opposed-label tweets with polar gold labels, against 2.7% of other polar tweets; among tweets with polar gold labels, opposed configurations con-stitute 9.0% of cases but account for 54.8% of the model’s wrong-polarity predictions. Estimat-ing priors for exact label sets gives nearly identi-cal performance. These results identify where the tested label-only projections are unreliable, includ-ing cases whose gold polarity is unambiguously positive or negative (Table 3). 
+
+GoEmotions. GoEmotions assigns 12 of its 27 emotions to a positive parent, 11 to a negative parent, and four (realization, surprise, curiosity, confusion) to an ambiguous parent, with neutral kept separate (Demszky et al., 2020). We use the raw release, which preserves each annotator’s com-plete multilabel response: 211,225 rows, of which we drop 3,411 marked example_very_unclear 
+
+(none has a selected label), leaving 207,814 judg-ments over 58,009 Reddit comments. We map each selected emotion to its published parent and ask whether a single judgment contains both a positive-and a negative-parent emotion. Since the hierarchy is the dataset’s own, this is a test of GoEmotions against its own annotators. 
+
+Annotators respect the hierarchy. Of 35,994 multilabel emotional judgments, 16.28% combine positive- and negative-parent emotions (95% rater-cluster CI [14.68, 18.26]). A matched null that preserves label cardinality and label frequencies predicts 39.53%, and none of 10,000 null datasets produces a rate as low as observed (Table 4). Every one of the 27 categories is more parent-consistent than its own matched null (Appendix Table 13). 4All ( n = 2076 ) Polar ( n = 1681 ) Opposed ( n = 246 )Method Cov. Err. Cov. Err. Cov. Err. Pred. 0 Fixed lookup, unsigned 92.1 20.0 94.3 3.5 48.8 55.0 0Fixed lookup, positive 92.0 21.4 93.5 4.5 55.7 57.7 0Averaged priors, binary 100 23.5 100 5.5 100 58.9 0Label-set priors, binary 100 23.6 100 5.6 100 59.4 0Selective projection 88.2 18.5 91.4 2.8 15.4 55.3 0Averaged priors, 3-class 100 23.0 100 6.0 100 59.4 30 Label-set priors, 3-class 100 22.9 100 8.2 100 57.7 114 
+
+Table 3: Held-out SemEval-2018 emotion-to-valence projection using official V-oc labels. Cov. is prediction coverage (%); Err. is the percentage of incorrect predictions among covered items. All includes negative, neutral-or-mixed, and positive gold classes. Polar excludes gold class 0; Opposed contains conventional positive- and negative-label combinations and includes all three gold classes. Pred. 0 is the number of neutral-or-mixed predictions across the full test set. The selective projection is an illustrative abstention baseline. Polar-only evaluation is a retrospective diagnostic subset, not a deployable selection procedure.                       
+
+> Measure / denominator Observed Null P+N, multilabel judgments 16.28% 39.53% P+N, one-sentence multilabel 15.14% 41.02% Any-parent, multilabel judgments 39.40% 66.90% P+N, all emotional judgments 3.84% 9.31% Any-parent, all emotional judgments 9.30% 15.83% P+N, filtered item label sets 2.68% —Coarse entropy H(C)2.23 / 3 bits —Residual H(F|C)3.11 bits —
+
+Table 4: GoEmotions judgments crossing the pub-lished sentiment hierarchy. P+N: both positive- and negative-parent emotions selected. Each observed rate is compared with a null over the same denominator (Ap-pendix A). 
+
+But one multilabel judgment in six crosses it. 
+
+Positive–negative co-selection rises with length, from 1.08% of emotional judgments in the shortest token-length quintile to 6.04% in the longest, yet among the 18,713 multilabel judgments on single-sentence comments the rate is still 15.14% (null 41.02%). Strongly valenced categories cross too: 33.0% of multilabel judgments containing sadness also contain a positive emotion, and 37.7% of those containing remorse. Consensus filtering with the published two-annotator rule leaves 2.68% of non-neutral item label sets with both parents. The result is stable when the 1–10 most prolific raters are removed (3.51–3.93% of all emotional judgments, against 3.84% overall; Table 14). 
+
+3.3 Do the patterns extend to naturalistic emotion signals? 
+
+Self-labeled hashtags give an independent natural-istic signal that no annotator assigned. We use the Tweet Emotion Corpus (TEC; Mohammad and Kir-itchenko, 2015), which contains 21,051 tweets col-lected with emotion-word hashtags. After remov-ing hashtags, URLs, and mentions, lexical valence separates joy from the pooled negative categories only moderately ( D = .333 ). As a second check, we analyze TUSC social-media posts (Vishnub-hotla and Mohammad, 2022) as distributed through ABCDE (Wahle et al., 2026). The strict set yields 332 analyzable posts (97 joy, 235 pooled negative). Residual lexical valence distinguishes joy from the pooled negative categories with AUC = .716 [95% CI .654 , . 776 ], D = .433 [.308 , . 552 ]. Among the 231 strict-set posts containing at least one extreme lexical cue ( |V | ≥ .70 ), 26.8% contain extreme cues exclusively opposite to the hashtag-derived valence. Full preprocessing details, per-emotion comparisons, and robustness checks are reported in Appendix D. 
+
+4 Study 2: Same word, different context 
+
+Study 2 tests whether context changes a reader’s valence and emotion judgments of the same word, comparing isolated and contextualized uses within participants. 
+
+4.1 Design Materials. We designed contextual contrasts to examine how affective judgments vary with lexical meaning, evaluative framing, mixed af-fect, event-dependent affect, and register. Sense-disambiguation items contrasted different mean-ings of a word; evaluative reframing changed how a referent or situation was appraised; mixed-affect items combined positive and negative associations; event-dependent items varied the surrounding situa-tion; and register items contrasted conventional and colloquial usage. Stability controls were designed to preserve the expected affective reading. Iso-5cold She poured a cold drink after the walk. Her reply was cold and formal. change The change made the process much easier. The sudden change disrupted the schedule. surprise The package was a surprise for her birthday. The repair bill came as a surprise. 
+
+Isolated word Positive context Negative context 
+
+cold   
+
+> 25 annotations, 64 placements 17 annotations, 24 placements 18 annotations, 45 placements
+
+change   
+
+> 21 annotations, 66 placements 14 annotations, 24 placements 13 annotations, 29 placements
+
+surprise         
+
+> 23 annotations, 80 placements 13 annotations, 31 placements 13 annotations, 31 placements fear trust joy anticipation anger disgust sadness surprise
+> neutral fear trust joy anticipation anger disgust sadness surprise
+> neutral fear trust joy anticipation anger disgust sadness surprise
+> neutral
+> fear trust joy anticipation anger disgust sadness surprise
+> neutral fear trust joy anticipation anger disgust sadness surprise
+> neutral fear trust joy anticipation anger disgust sadness surprise
+> neutral
+> fear trust joy anticipation anger disgust sadness surprise
+> neutral fear trust joy anticipation anger disgust sadness surprise
+> neutral fear trust joy anticipation anger disgust sadness surprise
+> neutral
+
+Figure 1: Observed wheel placements for three illustrative lexical targets in isolation and in their two contextualized uses. Each dot is an observed Study 2 main-arm association point. The contextual columns are ordered by their observed coarse-valence balance for display only; all inferential analyses use the complete set of 50 targets. 
+
+lated trials presented the target word without sense information or sentence context; contextualized trials presented the same word within a sentence. We selected 50 diagnostic, non-representative En-glish targets using the NRC Emotion, Emotion In-tensity, and VAD lexicons (Mohammad and Tur-ney, 2010, 2013; Mohammad et al., 2018; Mo-hammad, 2018) and earlier lexical disagreement patterns (Appendix Table 18). The set comprised 13 sense-disambiguation, 17 evaluative-reframing, eight mixed-affect, six event-dependent, two regis-ter, and four control targets, yielding 50 isolated-word and 100 contextualized stimuli. 
+
+Instrument and procedure. Annotators used an extended version of Sentimentator (Öhman et al., 2018) with an inverted Plutchik-style wheel: angle encodes emotion category and distance from the center encodes intensity. They placed one to eight points on the wheel and separately chose Positive, Negative, Both, or Neither. In the main arm, each participant was scheduled to see every target in iso-lation first and in its two contexts later, with at least eight intervening trials. Completion of all 150 trials was not required. We compare each contextualized judgment with the same participant’s earlier judg-ment of that word in isolation, including only cases where both judgments are available. Exploratory arms that presented context before isolation were 6excluded because prior exposure to the sentence could influence the subsequent isolated-word judg-ment. 
+
+Measures. For an annotation with k points 
+
+p1, . . . , pk, normalized by the wheel radius, we compute the centroid μ, mean intensity I, direc-tional coherence C, and spread S:
+
+μ = 1
+
+> k
+
+P 
+
+> i
+
+pi, I = 1
+
+> k
+
+P
+
+> i
+
+∥pi∥,C = ∥μ∥/I, S =
+
+q 1
+
+> k
+
+P
+
+> i
+
+∥pi − μ∥2. (3) Several strong points in opposite directions give high I but low C. The main context effect is dis-placement ∆E = ∥μcontext − μisolated ∥ within participant and target. Because a centroid can hide a change in the dominant emotion, we also track the strongest association , the selected point with the greatest radial intensity, and map it to one of the wheel’s eight 45-degree basic-emotion sectors, or to Neutral if r < . 10 . We report pair-weighted sum-maries and participant-equal bootstrap estimates, since completion varied. Mechanism comparisons use stability controls as the reference, with two-way cluster-robust standard errors by participant and target and standardized trial position as a co-variate. 
+
+4.2 Results 
+
+Of 35 participants assigned to the main arm, 29 contributed at least one valid isolated–context pair. The analysis covers 2,810 annotations and 7,373 wheel points across all 50 targets (8–29 annota-tions per stimulus, median 17), giving 1,617 within-participant pairs. In every pair the isolated judg-ment came first. 
+
+Same reader, same word, different valence. 
+
+When participants saw a target again in con-text, their Positive/Negative/Both/Neither judg-ment changed in 56.8% of pairs (participant-equal 57.8%, 95% CI [54.2, 61.4]). Some change is ordi-nary response variability: stability controls, whose contexts were written to keep the isolated reading, switch in 19.9% of pairs. Targets whose contexts were designed to change the reading switch at 2.2 to 3.5 times that rate (44.5–68.8%; Table 5). 
+
+Mixed readings resolve. In isolation, 23.2% of judgments were Both ; in context, 8.9% were. Only 13.9% of isolated-Both judgments stayed Both . The rest went almost evenly to Positive (39.2%) and Negative (34.9%). A word that a reader holds as                       
+
+> Mechanism Targets Mean ∆ECoarse switch Stability control 4.346 19.9% Event-dependent affect 6.427 68.8% Mixed affect 8.436 44.5% Evaluative reframing 17 .451 62.4% Sense disambiguation 13 .476 66.9% Register 2.488 55.2%
+
+Table 5: Study 2 centroid displacement and coarse-label switch rate by context mechanism. Descriptive: groups differ in size and kind of target. 
+
+ambivalent on its own is usually committed to one side in context, and the context decides which side. 
+
+The dominant emotion changes too. The sector of the strongest association changed in 70.4% of pairs; moving the Neutral cutoff between .08 and 
+
+.12 changes this by at most 0.1 points. This mea-sure is noisier than the coarse label: even stability controls switch sector in 55.3% of pairs, against 72.0% for manipulated targets. The strongest as-sociation rotated by 71 .9◦ on average (median 
+
+56 .2◦) and moved .673 wheel units (participant-equal .711), while its intensity barely changed (∆r = −.021 ). Among the 925 switches from one non-neutral emotion sector to another, 63.8% moved to a non-adjacent sector, so the overall switch rate is not driven mainly by points cross-ing a neighboring sector boundary. Figure 2 shows the full transition matrix. 
+
+Context does not shift intensity. Centroids moved by ∆E = .443 on average (participant-equal .409 , [.372, .444]), about 40% of the wheel radius. Mean intensity did not change ( ∆I = .000 ,[−.023 , .026]). Multi-point responses instead be-came more coherent ( ∆C = .069 , [.047, .093]) and less spread out ( ∆S = −.052 , [ −.069 , −.034 ]): context pulled a reader’s associations toward one direction. Figure 1 shows what this looks like for three targets. 
+
+The effect follows the manipulation. Stability controls also moved least ( ∆E = .346 ). Displace-ment exceeded the control baseline for evaluative reframing ( β = .101 , [.026, .175]), sense dis-ambiguation ( β = .120 , [.028, .212]), and reg-ister ( β = .147 , [.067, .227]); estimates for event-dependent ( β = .074 , [ −.021 , .170]) and mixed affect ( β = .081 , [ −.001 , .164]) were less pre-cise. Trial position was unrelated to displacement (β = .015 , [ −.014 , .044]), so fatigue does not ex-plain the effect. 75 Discussion 
+
+Across corpora, valence diagnosticity varies markedly by category, and text-level valence changes with co-occurring labels. The projection evaluation shows that conventional mappings per-form well on clearly polar texts, but errors concen-trate in opposed-label configurations. These con-figurations account for 11.8% of labeled SemEval test tweets, yet 54.8% of polar prediction errors un-der learned binary averaging. They are also more than twice as likely to receive neutral-or-mixed V-oc labels. GoEmotions supplies complementary evidence at the within-annotator level: 16.28% of multilabel emotional judgments combine positive-and negative-parent emotions. The hashtag corpora show only moderate lexical separation between joy and negative emotion signals. Study 2 shows the same thing one level down. The corpora show that a single text can carry op-posed emotions; Study 2 shows that a single word can carry opposed readings until context selects one, and that the selection goes both ways. With word and reader fixed, context switched coarse judgments at nearly three times the control rate, and did so by resolving mixed readings rather than by intensifying them. A collapse can be right on average and still misrepresent a large share of indi-vidual instances. Categorical-to-dimensional mappings are useful and often accurate on average (Buechel and Hahn, 2018; Park et al., 2021). However, averaging emo-tion vectors into one sentence-level VAD target, as in El-Haj and Takanami (2023), can obscure co-occurring opposites: joy and sadness may yield a neutral-looking average even when both are an-notated. Projection is a modeling choice whose information loss depends on the combination of labels. 
+
+Implications for practice. Four consequences follow for emotion-label harmonization and eval-uation. (i) Use category-specific evidence. Ta-ble 6 groups categories by observed valence di-agnosticity; these are empirical priors rather than guarantees of item-level polarity. (ii) Account for label combinations. Opposed-label tweets are dis-proportionately difficult for the tested projection methods, even when their gold polarity is positive or negative. (iii) Preserve neutral-or-mixed out-comes and report abstention separately. Forced binary projections cannot recover this V-oc class, while abstention trades coverage for fewer predic-            
+
+> Handling Emotion categories High-diagnosticity prior joy, love, sadness, anger, disgust Uncertainty-aware prior optimism, pessimism, fear, trust No category-only po-larity anticipation, surprise
+> Table 6: Empirical guidance based on the minimum held-out diagnosticity Dacross SemEval languages. High diagnosticity: minimum D≥.50 ; uncertainty-aware: .15 ≤D < . 50 ; no category-only polarity: minimum D < . 15 . These descriptive groupings are not independently validated projection rules, and Ddoes not specify polarity direction.
+
+tions. (iv) Evaluate mappings across languages and datasets rather than assuming that category-level associations transfer unchanged. Where possible, estimate P (V | E1, . . . , E k) and retain the uncer-tainty of the resulting projection. 
+
+6 Conclusion 
+
+Emotion categories provide informative valence priors, but their reliability as text-level polarity pre-dictors depends on the categories and their com-binations. Conventional projection performs well on texts with clearly positive or negative gold va-lence, while opposed-label configurations account for a disproportionate share of prediction errors and frequently receive neutral-or-mixed valence labels. GoEmotions shows that individual annotators also select emotions across sentiment parents, and the controlled annotation study demonstrates that con-text can substantially change the affective interpre-tation of the same lexical item without increasing its intensity. Emotion-to-valence mappings should therefore be evaluated at the level of label config-urations, with explicit reporting of coverage, un-certainty, and the information lost through coarse projection. 
+
+Limitations 
+
+Study 1 is observational. In SemEval-2018, co-occurrence effects are properties of the annotated tweet: they may reflect distinct clauses, events, or spans and do not show that an emotion it-self changes valence when it co-occurs with an-other. Three languages do not establish broad cross-linguistic generality, and the Affective Text– EmoBank, GoEmotions, and hashtag analyses are English-only. 8The projection evaluation starts from gold emo-tion labels, so it gives an upper bound for label-based projection: a pipeline using predicted la-bels inherits these errors in addition to its own. The baselines are simple label-only methods and do not establish the best performance achievable from emotion labels; models that also see the text may resolve some opposed configurations. The V-oc classes are derived from continuous V-reg scores rather than elicited independently, and class 0 merges neutral and mixed valence, so we cannot separate texts that annotators found mixed from texts they found neutral. Opposed E-c labels ag-gregate judgments across annotators and need not mean that any single annotator selected both. The GoEmotions analysis audits a published hi-erarchy rather than comparing labels with an in-dependently elicited valence layer, and positive– negative co-selection may partly reflect dis-course composition that punctuation-based sen-tence counts only approximate. Raw judgments are dependent within items and raters, which we address with comment- and rater-cluster bootstraps; consensus-filtered rates are item-level and not di-rectly comparable with rater-level rates. Hashtag labels are self-assigned and noisy, the strict TUSC set is small and dominated by sadness, and lexical valence is a coarse proxy for text valence. Study 2 used a convenience sample of univer-sity students in a course setting, and completion varied: eight main-arm participants completed all 150 trials. We keep incomplete participants only where a valid within-participant pair exists and report participant-equal estimates alongside pair-weighted ones. The isolated target always came first; repeated targets were separated by at least eight trials and trial position showed no association with displacement, but order and prior exposure cannot be ruled out. The 50 targets were chosen to diagnose context sensitivity, not to represent En-glish vocabulary, and the mechanism groups are un-even (two register targets, four controls). Euclidean measures treat the wheel as a metric space, which we take as a property of the instrument rather than a claim about affective coordinates. Annotators did not rank their points, so the strongest association is derived from radial intensity rather than elicited directly. 
+
+Ethical Considerations 
+
+Study 2 participants were university students in a course taught by one of the authors. Before taking part, students were informed that the annotation activity formed part of an active research project and that their annotations could be used as data in a research publication. Research use was voluntary: students could opt out without consequence for their grade by completing an alternative task. The annotation platform collected no names, student numbers, or demographic information linked to the annotations; responses were associated only with non-identifying participant codes used to construct within-participant pairs. The task involved judgments of individual En-glish words and short invented sentences and con-tained no personal or sensitive questions, decep-tion, audio or video recording, or physical or psy-chological intervention. Under author’s institute 
+
+Ethics Committee Guidelines, research meeting these conditions does not require assessment by the university’s Ethics Committee. The guidelines additionally permit the use of students from the researcher’s own faculty where their status as stu-dents is not expected to affect the research results, provided that due consideration is given to pressure on students and protection of personal information; the voluntary alternative-task procedure was used for this purpose. 
+
+Data access and licensing. We use previously re-leased research datasets and document their sources in the corresponding methods sections. EmoBank is distributed under CC BY-SA 4.0. The NRC VAD Lexicon v2.1 permits noncommercial research and educational use but prohibits redistribution. GoE-motions is available through the Google Research repository; the original Reddit content remains sub-ject to applicable third-party rights. SemEval-2018, Affective Text, TEC, and TUSC/ABCDE are used through their released research resources, subject to their respective access conditions. We do not redistribute raw social-media text or NRC lexicon entries. Analysis code and aggregate results are made available separately. 
+
+Acknowledgments 
+
+This work was supported by JSPS KAKENHI Grant Number 24K21058. We thank Cheolyeon Byun and Jina Lee for their assistance with the maintenance and deployment 9of Sentimentator. We also thank the students who volunteered to participate in the annotation study. Computational resources were provided by CSC – IT Center for Science, Finland, through the Roihu computing environment. 
+
+References 
+
+Cecilia Ovesdotter Alm, Dan Roth, and Richard Sproat. 2005. Emotions from text: Machine learning for text-based emotion prediction. In Proceedings of Human Language Technology Conference and Conference on Empirical Methods in Natural Language Process-ing , pages 579–586, Vancouver, British Columbia, Canada. Association for Computational Linguistics. Laura-Ana-Maria Bostan and Roman Klinger. 2018. An analysis of annotated corpora for emotion clas-sification in text. In Proceedings of the 27th Inter-national Conference on Computational Linguistics ,pages 2104–2119, Santa Fe, New Mexico, USA. As-sociation for Computational Linguistics. Sven Buechel and Udo Hahn. 2017. EmoBank: Study-ing the impact of annotation perspective and repre-sentation format on dimensional emotion analysis. In Proceedings of the 15th Conference of the Euro-pean Chapter of the Association for Computational Linguistics: Volume 2, Short Papers , pages 578–585, Valencia, Spain. Association for Computational Lin-guistics. Sven Buechel and Udo Hahn. 2018. Emotion represen-tation mapping for automatic lexicon construction (mostly) performs on human level. In Proceedings of the 27th International Conference on Computa-tional Linguistics , pages 2892–2904, Santa Fe, New Mexico, USA. Association for Computational Lin-guistics. Alan S. Cowen and Dacher Keltner. 2017. Self-report captures 27 distinct categories of emotion bridged by continuous gradients. Proceedings of the National Academy of Sciences , 114(38):E7900–E7909. Dorottya Demszky, Dana Movshovitz-Attias, Jeongwoo Ko, Alan Cowen, Gaurav Nemade, and Sujith Ravi. 2020. GoEmotions: A dataset of fine-grained emo-tions. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics , pages 4040–4054, Online. Association for Computational Linguistics. Paul Ekman. 1992. An argument for basic emotions. 
+
+Cognition and Emotion , 6(3-4):169–200. Mo El-Haj and Ryutaro Takanami. 2023. Unifying emotion analysis datasets using valence arousal dom-inance (VAD). In Proceedings of the 4th Conference on Language, Data and Knowledge , pages 220–225, Vienna, Austria. NOVA CLUNL, Portugal. Ziwei Gong, Muyin Yao, Xinyi Hu, Xiaoning Zhu, and Julia Hirschberg. 2024. A mapping on current classi-fying categories of emotions used in multimodal mod-els for emotion recognition. In Proceedings of the 18th Linguistic Annotation Workshop (LAW-XVIII) ,pages 19–28. Association for Computational Linguis-tics. Jan Hofmann, Enrica Troiano, Kai Sassenberg, and Ro-man Klinger. 2020. Appraisal theories for emotion classification in text. In Proceedings of the 28th Inter-national Conference on Computational Linguistics ,pages 125–138, Barcelona, Spain (Online). Interna-tional Committee on Computational Linguistics. Svetlana Kiritchenko and Saif Mohammad. 2017. Best-worst scaling more reliable than rating scales: A case study on sentiment intensity annotation. In Proceed-ings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers) ,pages 465–470, Vancouver, Canada. Association for Computational Linguistics. Anna Koufakou and Elijah Nieves. 2025. Review of recent emotion-annotated text corpora and resources. 
+
+Language Resources and Evaluation , 59:4313–4347. Anna Koufakou, Elijah Nieves, and John Peller. 2024. Towards a new benchmark for emotion detection in NLP: A unifying framework of recent corpora. In 
+
+Proceedings of the 2nd GenBench Workshop on Gen-eralisation (Benchmarking) in NLP , pages 196–206, Miami, Florida, USA. Association for Computational Linguistics. Sylvia D. Kreibig and James J. Gross. 2017. Under-standing mixed emotions: Paradigms and measures. 
+
+Current Opinion in Behavioral Sciences , 15:62–71. Jeff T. Larsen and A. Peter McGraw. 2014. The case for mixed emotions. Social and Personality Psychology Compass , 8(6):263–274. Saif Mohammad. 2016. A practical guide to senti-ment annotation: Challenges and solutions. In Pro-ceedings of the 7th Workshop on Computational Ap-proaches to Subjectivity, Sentiment and Social Media Analysis , pages 174–179, San Diego, California. As-sociation for Computational Linguistics. Saif Mohammad. 2018. Obtaining reliable human rat-ings of valence, arousal, and dominance for 20,000 English words. In Proceedings of the 56th Annual Meeting of the Association for Computational Lin-guistics (Volume 1: Long Papers) , pages 174–184, Melbourne, Australia. Association for Computational Linguistics. Saif Mohammad, Felipe Bravo-Marquez, Mohammad Salameh, and Svetlana Kiritchenko. 2018. SemEval-2018 task 1: Affect in tweets. In Proceedings of the 12th International Workshop on Semantic Evaluation ,pages 1–17, New Orleans, Louisiana. Association for Computational Linguistics. 
+
+10 Saif Mohammad and Peter Turney. 2010. Emotions evoked by common words and phrases: Using Me-chanical Turk to create an emotion lexicon. In Pro-ceedings of the NAACL HLT 2010 Workshop on Com-putational Approaches to Analysis and Generation of Emotion in Text , pages 26–34, Los Angeles, CA. Association for Computational Linguistics. Saif M. Mohammad and Svetlana Kiritchenko. 2015. Using hashtags to capture fine emotion categories from tweets. Computational Intelligence , 31(2):301– 326. Saif M Mohammad and Peter D Turney. 2013. NRC emotion lexicon. National Research Council, Canada , 2:234. Emily Öhman. 2020. Emotion annotation: Rethinking emotion categorization. In Proceedings of the Digital Humanities in the Nordic Countries , volume 2865 of CEUR Workshop Proceedings , pages 134–144. CEUR-WS.org. Emily Öhman, Kaisla Kajava, Jörg Tiedemann, and Timo Honkela. 2018. Creating a dataset for multilingual fine-grained emotion-detection using gamification-based annotation. In Proceedings of the 9th Workshop on Computational Approaches to Sub-jectivity, Sentiment and Social Media Analysis , pages 24–30, Brussels, Belgium. Association for Computa-tional Linguistics. Emily Öhman and Anna Koufakou. 2026. Fear is not always fear: Variation in emotion label equivalence across datasets. Under review. Emily Öhman, Marc Pàmies, Kaisla Kajava, and Jörg Tiedemann. 2020. XED: A multilingual dataset for sentiment analysis and emotion detection. In 
+
+Proceedings of the 28th International Conference on Computational Linguistics , pages 6542–6552, Barcelona, Spain (Online). International Committee on Computational Linguistics. Sungjoon Park, Jiseon Kim, Seonghyeon Ye, Jaeyeol Jeon, Hee Young Park, and Alice Oh. 2021. Dimen-sional emotion detection from categorical emotion. In Proceedings of the 2021 Conference on Empiri-cal Methods in Natural Language Processing , pages 4367–4380, Online and Punta Cana, Dominican Re-public. Association for Computational Linguistics. Robert Plutchik. 1980. Emotion: A Psychoevolutionary Synthesis . Harper & Row, New York. James A. Russell. 1980. A circumplex model of af-fect. Journal of Personality and Social Psychology ,39(6):1161–1178. Tiberiu Sosea and Cornelia Caragea. 2025. Hard emo-tion test evaluation sets for language models. In Find-ings of the Association for Computational Linguis-tics: NAACL 2025 , pages 7945–7959. Association for Computational Linguistics. Carlo Strapparava and Rada Mihalcea. 2007. SemEval-2007 task 14: Affective text. In Proceedings of the Fourth International Workshop on Semantic Evalua-tions (SemEval-2007) , pages 70–74, Prague, Czech Republic. Association for Computational Linguistics. Enrica Troiano, Laura Oberländer, and Roman Klinger. 2023. Dimensional modeling of emotions in text with appraisal theories: Corpus creation, annotation reliability, and prediction. Computational Linguis-tics , 49(1):1–72. Krishnapriya Vishnubhotla and Saif M. Mohammad. 2022. Tweet Emotion Dynamics: Emotion word us-age in tweets from US and Canada. In Proceedings of the Thirteenth Language Resources and Evaluation Conference , pages 4162–4176, Marseille, France. Eu-ropean Language Resources Association. Jan Philip Wahle, Krishnapriya Vishnubhotla, Bela Gipp, and Saif M. Mohammad. 2026. Affect, body, cognition, demographics, and emotion: The ABCDE of text features for computational affective science. In Proceedings of Computational Affective Science (CAS) @ LREC 2026 , pages 217–234, Palma, Mal-lorca (Spain). ELRA Language Resources Associa-tion (ELRA). Xiangyu Wang and Chengqing Zong. 2021. Distributed representations of emotion categories in emotion space. In Proceedings of the 59th Annual Meet-ing of the Association for Computational Linguistics and the 11th International Joint Conference on Natu-ral Language Processing (Volume 1: Long Papers) ,pages 2364–2375. Association for Computational Linguistics. Samira Zad, Joshuan Jimenez, and Mark Finlayson. 2021. Hell hath no fury? correcting bias in the NRC emotion lexicon. In Proceedings of the 5th Workshop on Online Abuse and Harms (WOAH 2021) , pages 102–113. Association for Computational Linguistics. 
+
+A Analysis details 
+
+Diagnosticity and prototypes (SemEval-2018). 
+
+Because D folds AUC around the chance reference of .5, its bootstrap interval is descriptive rather than a test of D = 0 . We use 95% percentile intervals from 5,000 item-level bootstrap resamples within each language; cross-language summaries average the three language-specific estimates within each replicate. Continuous prototypes are training-set mean V-reg scores. Polarity is evaluated separately using official V-oc classes, with 0 retained as neu-tral or mixed. The single-label continuous-valence projection test ( R2) compares each score with one prototype rather than an aggregate of several; the test subsets contain 70 English, 125 Arabic, and 247 Spanish single-label tweets. 11 Polarity projection (SemEval-2018). We join V-oc to E-c and V-reg by tweet identifier, language, and original split. Of 2,128 test tweets, 52 have no E-c emotion label, leaving 2,076 for evaluation. Conventional lookup assigns positive polarity to joy, love, optimism, and trust, negative polarity to anger, disgust, fear, sadness, and pessimism, and leaves anticipation and surprise unsigned; ties pro-duce abstention. Learned baselines estimate V-oc class distributions from training data, either averag-ing per-label distributions or smoothing exact-label-set distributions toward those averages. Binary pre-dictions select a polarity, whereas three-class pre-dictions can also select neutral-or-mixed. Opposed configurations contain at least one conventionally positive and one conventionally negative label. We report coverage and error conditional on prediction, and repeat evaluation on the 1,681 test tweets with polar gold labels. Predictions of class 0 are not treated as abstentions. These comparisons evalu-ate the specified label-only baselines, not an upper bound on achievable performance. For each ordered pair (e, c ) and language, we compute ∆Ve,c = V (e, c ) − V (e, ¬c). Training pairs require at least five e + c tweets per language and the same sign of ∆V in English, Arabic, and Spanish; held-out dev+test data assess whether that sign replicates. This is a directional discovery– replication design rather than a multiple-testing procedure; held-out intervals use 5,000 bootstrap resamples. 
+
+Projection implementation settings. The label-based projection methods do not require neural-network training. Per-emotion and exact-label-set valence distributions are estimated from the Se-mEval training partitions. Exact-label-set estimates use ten pseudocounts with the averaged per-label distribution as the smoothing prior. This was a fixed reference setting, not the result of hyperpa-rameter optimization. Direction-stability estimates use 5,000 bootstrap resamples with random seed 20261011. Performance is evaluated on the orig-inal held-out test partitions without fitting to test labels. Error-rate intervals use the Wilson method. No hyperparameter search was performed for these projection baselines. 
+
+Affective Text × EmoBank (Study 1B). We use the released combined EmoBank valence score as primary and repeat the analysis for reader- and writer-perspective valence. Because the original test partition is small for several emotions, the all-item analysis is primary. At ≥ 75 several categories become too sparse, so we do not use that threshold. 
+
+GoEmotions (Study 1C). The ambiguous par-ent was left unpolarized by design, so the primary test is positive–negative co-selection; broader any-parent crossings are secondary. For rates over all emotional judgments, a cardinality-preserving per-mutation null (10,000 permutations) reshuffles la-bels while preserving judgment cardinality and approximately preserving label marginals. For multilabel rates, a matched null preserves the ob-served cardinality distribution and samples unique labels by their empirical frequencies; we generate 10,000 complete null datasets and compute one-sided Monte Carlo p-values (headline comparison 
+
+p = .00010 ). Category-level purity uses a category-conditioned version of the same null. Depen-dence is handled with cluster bootstraps over com-ments and, separately, over raters (all-judgment rate: comment-cluster CI [3.74, 3.95], rater-cluster CI [3.23, 4.45]), and by removing the 1, 3, 5, and 10 most prolific raters. Sentence counts are esti-mated from punctuation and only approximately bound discourse complexity. The published aggre-gation rule (labels chosen by at least two annota-tors) yields 54,263 items, 38,242 with a non-neutral label; rates after filtering are item-level. For a fine-grained label set F and its deterministic parent pro-jection C = g(F ), H(F | C) = H(F ) − H(C);the eight observed coarse signatures have a ceiling of log 2 8 = 3 bits. 
+
+Study 2. Angular and cosine measures of the cen-troid are secondary diagnostics, because centroid direction is unstable near the origin. The Neutral cutoff for the strongest association is varied from 
+
+.08 to .12 as a sensitivity check. 
+
+Computational resources. The analyses were performed on CPU-based computing environments without neural model training or GPU accelera-tion. The SemEval polarity-projection audit was implemented in Python 3.9.25 using the standard library. The analyses involved corpus statistics, bootstrap resampling, permutation-based null mod-els, and label-based projection. We estimate the total computational budget for the reported analy-ses at approximately 10 CPU-hours. 12 Base Co-emotion ∆V [95% CI] n+c                        
+
+> Love Joy +.258 [.226,.292] 543 Sadness Joy +.228 [.194,.263] 86 Anticipation Joy +.225 [.192,.258] 128 Anger Joy +.202 [.172,.231] 86 Optimism Sadness -.205 [-.241,-.166] 67 Joy Anger -.199 [-.229,-.169] 86 Joy Sadness -.194 [-.229,-.160] 86 Anticipation Anger -.159 [-.192,-.125] 75
+
+Table 7: Representative co-occurrence shifts in held-out SemEval-2018 data that replicated the training direction in all three languages and whose pooled 95% intervals exclude zero. n+c: held-out items carrying both labels. 
+
+B Additional results for Studies 1A and 1B 
+
+This section provides the analyses underlying the robustness results reported for SemEval-2018 and the Affective Text–EmoBank alignment. We report language-specific diagnosticity estimates (Table 8), co-occurrence results (Tables 7 and 9–11), and the EmoBank perspective analysis (Table 12). 
+
+B.1 Language-specific SemEval-2018 results B.2 Emotion co-occurrence effects 
+
+The main text reports representative co-occurrence effects. Tables 9–11 report the complete held-out screening results and give the complete set of support-eligible ordered pairs carried forward from the training analysis. 
+
+B.3 EmoBank perspective robustness 
+
+The main analysis uses combined EmoBank va-lence. Results are similar when reader and writer perspectives are analyzed separately. 
+
+C Additional analyses for Study 1C 
+
+The GoEmotions analyses in the main text aggre-gate across categories. Table 13 reports category-level hierarchy conformity, and Table 14 tests sen-sitivity to the most prolific annotators. 
+
+C.1 Category-level hierarchy results C.2 Rater sensitivity 
+
+D Additional analyses for Study 1D 
+
+This section reports descriptive lexical-valence dis-tributions and the expanded-hashtag robustness analysis for the naturalistic corpora. 
+
+D.1 TEC lexical-valence distributions D.2 TUSC/ABCDE hashtag robustness 
+
+The ABCDE/TUSC strict inventory uses direct af-fective variants: joy/joyful/happy/happiness ,
+
+sad/sadness , fear/fearful/scared ,
+
+anger/angry , and disgust/disgusted . The ex-panded inventory adds broader affective synonyms and hashtag phrases; the complete seed list is provided with the analysis code. All hashtags are removed before lexical scoring. 
+
+E Study 2 materials and supplementary analyses 
+
+This section documents the lexical material used to construct Study 2 and reproduces the annotation instructions shown to participants. 
+
+E.1 Candidate-generation data E.2 Annotation guidelines E.3 Annotation guidelines 
+
+F Full Transition Matrix G Empirical guide to emotion-to-valence projection 
+
+Table 19 reports the minimum held-out diagnostic-ity D across SemEval languages, so weakness in one language is not hidden by averaging. The han-dling categories are descriptive recommendations based on diagnosticity rather than validated polarity decision rules. Continuous-valence diagnosticity does not establish the direction or certainty of ordi-nal polarity. 
+
+Multilabel projection. Table 19 describes category-level evidence rather than item-level in-heritance rules. Opposed emotion labels indicate a configuration for which the tested polarity pro-jections are less reliable; they do not establish that a text is itself mixed. Where possible, project the complete label configuration using an estimated 
+
+P (V | E1, . . . , E k), retain uncertainty, and evalu-ate neutral-or-mixed outcomes separately. In GoE-motions, 33.0% of multilabel judgments containing sadness also contain a positive-parent emotion, il-lustrating information that would be discarded by an exclusive single-polarity representation. 13 Emotion Lang. ne D [95% CI] Mean train V
+
+Joy En 450 0.883 [0.850,0.912] 0.644 Joy Ar 292 0.896 [0.863,0.924] 0.738 Joy Es 229 0.860 [0.819,0.896] 0.690 Love En 167 0.658 [0.595,0.716] 0.706 Love Ar 261 0.782 [0.732,0.830] 0.707 Love Es 43 0.698 [0.593,0.793] 0.708 Sadness En 172 0.708 [0.646,0.765] 0.321 Sadness Ar 212 0.731 [0.678,0.781] 0.304 Sadness Es 111 0.597 [0.510,0.677] 0.333 Anger En 198 0.703 [0.646,0.758] 0.332 Anger Ar 227 0.637 [0.575,0.696] 0.319 Anger Es 189 0.599 [0.529,0.665] 0.329 Optimism En 340 0.665 [0.606,0.721] 0.629 Optimism Ar 250 0.769 [0.720,0.817] 0.709 Optimism Es 70 0.496 [0.388,0.599] 0.668 Disgust En 198 0.722 [0.669,0.773] 0.335 Disgust Ar 125 0.519 [0.447,0.591] 0.313 Disgust Es 117 0.533 [0.446,0.615] 0.333 Pessimism En 71 0.559 [0.461,0.653] 0.313 Pessimism Ar 151 0.573 [0.504,0.636] 0.339 Pessimism Es 154 0.409 [0.329,0.488] 0.367 Fear En 80 0.482 [0.399,0.566] 0.371 Fear Ar 105 0.532 [0.450,0.609] 0.318 Fear Es 47 0.321 [0.175,0.458] 0.380 Trust En 44 0.352 [0.221,0.479] 0.614 Trust Ar 53 0.326 [0.204,0.439] 0.631 Trust Es 31 0.356 [0.199,0.509] 0.633 Anticipation En 93 0.038 [0.002,0.139] 0.504 Anticipation Ar 86 0.150 [0.045,0.254] 0.441 Anticipation Es 63 0.133 [0.018,0.250] 0.535 Surprise En 56 0.040 [0.003,0.169] 0.572 Surprise Ar 23 0.090 [0.004,0.280] 0.463 Surprise Es 25 0.099 [0.007,0.257] 0.515 
+
+Table 8: Per-language SemEval-2018 continuous-valence results. ne denotes test items carrying each emotion; D
+
+measures threshold-free valence diagnosticity. Mean train V is the continuous V-reg mean and does not define categorical polarity. 
+
+Base Co-emotion Train dir. Held-out ∆V [95% CI] n+c Confirmed All 3 Love Joy positive +0.258 [+0.226,+0.292] 543 3/3 yes Sadness Joy positive +0.228 [+0.194,+0.263] 86 3/3 yes Anticipation Joy positive +0.225 [+0.192,+0.258] 128 3/3 yes Trust Joy positive +0.207 [+0.166,+0.249] 118 3/3 yes Optimism Sadness negative -0.205 [-0.241,-0.166] 67 3/3 yes Optimism Joy positive +0.205 [+0.182,+0.229] 751 3/3 yes Anger Joy positive +0.202 [+0.172,+0.231] 86 3/3 yes Pessimism Joy positive +0.202 [+0.168,+0.235] 53 3/3 yes Joy Anger negative -0.199 [-0.229,-0.169] 86 3/3 yes Sadness Optimism positive +0.196 [+0.160,+0.236] 67 3/3 yes Joy Sadness negative -0.194 [-0.229,-0.160] 86 3/3 yes Anger Optimism positive +0.190 [+0.134,+0.244] 37 3/3 yes Joy Pessimism negative -0.188 [-0.222,-0.156] 53 3/3 yes Optimism Anger negative -0.178 [-0.233,-0.126] 37 3/3 yes Anticipation Anger negative -0.159 [-0.192,-0.125] 75 3/3 yes Anticipation Sadness negative -0.148 [-0.185,-0.112] 54 3/3 yes Anticipation Optimism positive +0.148 [+0.109,+0.187] 103 3/3 yes Anticipation Disgust negative -0.146 [-0.179,-0.113] 43 3/3 yes Surprise Anger negative -0.145 [-0.202,-0.088] 27 3/3 yes Surprise Disgust negative -0.143 [-0.200,-0.088] 25 3/3 yes Anticipation Pessimism negative -0.138 [-0.171,-0.107] 47 3/3 yes 
+
+Table 9: Directional co-occurrence discoveries carried from training to held-out evaluation (part 1 of 3). “Confirmed”: held-out languages matching the training direction over languages with sufficient support. Of 68 support-eligible ordered pairs, 62 met the same-direction training criterion; 46 reproduced that direction in all three held-out languages, and 45 of those had pooled 95% intervals excluding zero. 
+
+14 Base Co-emotion Train dir. Held-out ∆V [95% CI] n+c Confirmed All 3 Pessimism Sadness negative -0.131 [-0.161,-0.102] 240 3/3 yes Fear Sadness negative -0.128 [-0.168,-0.083] 102 3/3 yes Trust Optimism positive +0.107 [+0.060,+0.153] 114 3/3 yes Joy Love positive +0.102 [+0.085,+0.120] 543 3/3 yes Disgust Surprise positive +0.101 [+0.055,+0.147] 25 3/3 yes Anger Surprise positive +0.099 [+0.052,+0.144] 27 3/3 yes Fear Anticipation positive +0.092 [+0.046,+0.142] 54 3/3 yes Fear Anger negative -0.089 [-0.125,-0.054] 92 3/3 yes Disgust Anger negative -0.088 [-0.117,-0.061] 482 3/3 yes Optimism Love positive +0.088 [+0.057,+0.122] 402 3/3 yes Anticipation Fear negative -0.087 [-0.133,-0.037] 54 3/3 yes Anger Sadness negative -0.084 [-0.105,-0.064] 285 3/3 yes Fear Disgust negative -0.084 [-0.121,-0.047] 73 3/3 yes Sadness Anticipation positive +0.082 [+0.050,+0.115] 54 3/3 yes Disgust Sadness negative -0.080 [-0.104,-0.056] 220 3/3 yes Anger Disgust negative -0.079 [-0.102,-0.055] 482 3/3 yes Optimism Anticipation negative -0.069 [-0.107,-0.031] 103 3/3 yes Joy Optimism positive +0.069 [+0.050,+0.086] 751 3/3 yes Anger Anticipation positive +0.067 [+0.037,+0.097] 75 3/3 yes Pessimism Anger negative -0.061 [-0.087,-0.034] 205 3/3 yes Sadness Anger negative -0.060 [-0.082,-0.038] 285 3/3 yes 
+
+Table 10: Directional co-occurrence discoveries (part 2 of 3). 
+
+Base Co-emotion Train dir. Held-out ∆V [95% CI] n+c Confirmed All 3 Pessimism Anticipation positive +0.057 [+0.026,+0.088] 47 3/3 yes Anger Fear negative -0.038 [-0.069,-0.008] 92 3/3 yes Sadness Pessimism negative -0.034 [-0.057,-0.010] 240 3/3 yes Optimism Trust negative -0.012 [-0.043,+0.020] 114 3/3 yes Love Sadness negative -0.270 – 39 2/2 no Fear Optimism positive +0.209 – 24 2/2 no Optimism Pessimism negative -0.200 – 20 2/2 no Surprise Sadness negative -0.200 – 18 2/2 no Sadness Love positive +0.175 – 39 2/2 no Optimism Fear negative -0.158 – 24 2/2 no Pessimism Optimism positive +0.138 – 20 2/2 no Trust Love positive +0.137 – 66 2/2 no Sadness Surprise positive +0.091 – 18 2/2 no Disgust Anticipation positive +0.062 [+0.033,+0.093] 43 2/3 no Sadness Fear negative -0.047 [-0.084,-0.005] 102 2/3 no Love Optimism positive +0.035 [+0.002,+0.070] 402 2/3 no Joy Anticipation negative -0.034 [-0.064,-0.002] 128 2/3 no Disgust Fear negative -0.033 [-0.065,-0.000] 73 2/3 no Pessimism Disgust negative -0.028 [-0.057,+0.000] 171 2/3 no Pessimism Fear negative -0.015 [-0.048,+0.020] 67 2/3 no 
+
+Table 11: Directional co-occurrence discoveries (part 3 of 3). 
+
+Emotion n Reader D [95% CI] Writer D [95% CI] Combined D [95% CI] Reader ρ Writer ρ Combined ρ
+
+Anger 38 .614 [.502,.723] .472 [.328,.609] .603 [.493,.706] -.545 -.479 -.558 Disgust 19 .642 [.537,.742] .562 [.374,.725] .661 [.539,.769] -.404 -.346 -.407 Fear 114 .614 [.534,.688] .467 [.379,.549] .609 [.535,.678] -.549 -.474 -.562 Joy 144 .767 [.720,.810] .759 [.707,.810] .843 [.808,.875] +.731 +.684 +.773 Sadness 139 .793 [.747,.836] .752 [.692,.808] .832 [.787,.873] -.677 -.632 -.709 Surprise 49 .217 [.061,.370] .171 [.027,.320] .220 [.065,.370] +.123 +.142 +.143 
+
+Table 12: Affective Text × EmoBank across reader, writer, and combined valence. The ordering is preserved in all three; the combined score is slightly more diagnostic for joy and sadness, as expected from averaging two noisy ratings. 
+
+15 Emotion Parent nM L Purity obs. Purity null Opp./val. obs. Opp./val. null Admiration positive 6600 0.721 0.407 0.130 0.418 Amusement positive 3115 0.574 0.436 0.220 0.387 Approval positive 6361 0.617 0.412 0.167 0.410 Caring positive 2476 0.628 0.431 0.251 0.399 Desire positive 1670 0.620 0.432 0.213 0.399 Excitement positive 2609 0.729 0.425 0.086 0.406 Gratitude positive 4550 0.702 0.427 0.155 0.398 Joy positive 3654 0.799 0.428 0.088 0.400 Love positive 3234 0.736 0.434 0.163 0.395 Optimism positive 4196 0.649 0.422 0.209 0.405 Pride positive 612 0.778 0.387 0.132 0.449 Relief positive 501 0.683 0.439 0.216 0.395 Anger negative 2882 0.706 0.252 0.186 0.587 Annoyance negative 5276 0.657 0.245 0.214 0.590 Disappointment negative 3763 0.604 0.244 0.260 0.601 Disapproval negative 3738 0.565 0.256 0.284 0.584 Disgust negative 2387 0.650 0.251 0.227 0.596 Embarrassment negative 1043 0.583 0.240 0.264 0.618 Fear negative 1419 0.607 0.274 0.256 0.575 Grief negative 322 0.624 0.256 0.280 0.598 Nervousness negative 1014 0.669 0.259 0.215 0.594 Remorse negative 1015 0.464 0.265 0.377 0.583 Sadness negative 2931 0.531 0.249 0.330 0.594 Confusion ambiguous 2421 0.363 0.114 0.637 0.886 Curiosity ambiguous 3807 0.308 0.097 0.692 0.903 Realization ambiguous 4071 0.165 0.097 0.835 0.903 Surprise ambiguous 2042 0.286 0.114 0.714 0.886 
+
+Table 13: GoEmotions category-level multilabel results. For positive and negative categories, “Opp./val.” is opposite-valence co-selection; for ambiguous categories, co-selection with either valenced parent. Nulls preserve the cardinality distribution of judgments containing each category and sample remaining labels by empirical frequency. 
+
+16 Annotation instructions 
+
+In this study, you will annotate the emotional associations of words and expressions. 
+
+For each target word, you will first see the word by itself. Later, you will see the same word used in short sentences. When you see a sentence, use the sentence to understand the meaning and use of the highlighted word. However, focus your annotation on the highlighted word, rather than on the overall mood or emotion of the sentence. 
+
+When considering the emotional associations of a word, think about both: 
+
+● Emotions directly expressed or described by the word. For example, anger is directly associated with furious .
+
+● Emotions that the word evokes, suggests, or is commonly associated with , even when the word does not directly describe an emotion. For example, home may evoke warmth, comfort, or happiness, while murder may evoke fear, sadness, or disgust. 
+
+Thus, a word does not need to name or describe an emotion for you to associate it with an emotion. 
+
+Emotion annotation 
+
+Use the emotion wheel to show which emotion or emotions you associate with the highlighted word in that particular use .
+
+● Place a point in the area of the wheel that best matches the emotion. 
+
+● Distance from the centre shows intensity: 
+
+closer to the centre means weaker ;
+
+farther from the centre means stronger .
+
+● You may place more than one point if the word is associated with more than one emotion. 
+
+● Consider both: the emotions directly expressed by the word and emotions that the word evokes or suggests. 
+
+● If several emotions come to mind, you may indicate all of them rather than choosing only one. 
+
+For example, home might be associated with warmth, comfort, and happiness, even though it does not explicitly name an emotion. 
+
+Sentiment Annotation 
+
+Next, decide whether the highlighted word has positive or negative emotional associations in that particular use. 17 Choose one: 
+
+● Positive: the word has positive emotional associations. 
+
+● Negative: the word has negative emotional associations. 
+
+● Both: the word has both positive and negative emotional associations. 
+
+● Neither: the word has no clear positive or negative emotional associations. 
+
+Choose Both only when both positive and negative associations are genuinely present. Do not choose Both simply because you are uncertain whether the word is positive or negative. 
+
+Remember that you are rating the highlighted word , not the overall emotional tone of the sentence. A word may have positive emotional associations even when it appears in a negative sentence, or negative emotional associations when it appears in a positive sentence. 
+
+Important 
+
+Do not over think your responses. Let your instincts as a speaker of English guide you. 
+
+Consider the emotions that the word itself brings to mind, including emotions it may evoke, suggest, or connote , not only emotions that it explicitly describes. 
+
+We are interested in your interpretation of how most people will perceive the emotion associations of the word. 18 Rater set Positive+negative Any-parent All raters 3.84% 9.30% Drop top 1 3.93% 9.47% Drop top 3 3.62% 7.98% Drop top 5 3.51% 7.49% Drop top 10 3.67% 8.13% 
+
+Table 14: GoEmotions sensitivity to prolific raters, over all emotional rater-level judgments.                             
+
+> Corpus Joy vs. nAUC [95% CI] D[95% CI] TEC pooled negative 17,144 .666 [.658,.675] .333 [.317,.349] sadness 12,036 .648 [.638,.658] .296 [.275,.316] fear 11,024 .639 [.627,.651] .278 [.254,.303] anger 9,778 .736 [.723,.749] .472 [.445,.498] disgust 8,987 .716 [.698,.735] .433 [.395,.469] TUSC pooled neg., strict 332 .716 [.654,.776] .433 [.308,.552] pooled neg., expanded 946 .808 [.779,.836] .616 [.558,.672]
+
+Table 15: Study 1D: how well residual lexical valence separates hashtag-labeled joy from negative categories after all hashtags are removed. n: tweets in the compar-ison. 95% intervals from 5,000 bootstrap resamples. 
+
+Emotion n Mean lexical V Median lexical V
+
+Joy 8,227 .204 .199 Sadness 3,809 .120 .125 Fear 2,797 .116 .123 Disgust 760 .077 .089 Anger 1,551 .066 .077 
+
+Table 16: Mean lexical valence in TEC by hashtag emo-tion after removal of hashtag, URL, and mention mate-rial. 
+
+Inventory n AUC [95% CI] D [95% CI] Opp.-only †
+
+Strict 332 .716 [.654,.776] .433 [.308,.552] 26.8% Expanded 946 .808 [.779,.836] .616 [.558,.672] 12.9% 
+
+Table 17: ABCDE/TUSC joy-versus-pooled-negative robustness analysis after removal of all hashtags. 
+
+†Among posts containing at least one extreme lexical cue ( |V | ≥ .70 ), the percentage containing extreme cues exclusively opposite to the hashtag-derived valence. The strict and expanded analyses contain 231 and 728 extreme-cued posts, respectively. 
+
+Figure 2: Row-normalized transition matrix for the strongest emotion association from the isolated lexi-cal target to a contextualized use. Rows are the isolated strongest-emotion sector and columns the contextual strongest-emotion sector. 
+
+19 Lexical item Positive (%) Negative (%) Neither (%) Both (%) Hnorm 
+
+bear 8.7 34.8 26.1 30.4 .932 escape 26.1 21.7 8.7 43.5 .907 happen 4.3 17.4 30.4 47.8 .833 stare 0.0 47.8 34.8 17.4 .739 fire 0.0 21.7 21.7 56.5 .711 surprise 34.8 0.0 8.7 56.5 .651 morning 65.2 0.0 13.0 21.7 .632 help 69.6 13.0 0.0 17.4 .593 time 4.5 0.0 59.1 36.4 .591 continue 69.6 0.0 21.7 8.7 .575 strike 0.0 72.7 13.6 13.6 .559 promise 78.3 0.0 8.7 13.0 .483 hide 0.0 78.3 17.4 4.3 .456 cold 0.0 81.8 9.1 9.1 .433 fall 0.0 81.8 13.6 4.5 .416 cry 0.0 78.3 0.0 21.7 .378 brother 78.3 0.0 21.7 0.0 .378 strong 87.0 0.0 4.3 8.7 .339 home 82.6 0.0 17.4 0.0 .333 strange 0.0 87.0 13.0 0.0 .279 doubt 0.0 91.3 4.3 4.3 .257 suspect 0.0 91.3 4.3 4.3 .257 lose 0.0 91.3 0.0 8.7 .213 laugh 91.3 0.0 0.0 8.7 .213 die 0.0 91.3 0.0 8.7 .213 hell 0.0 91.3 8.7 0.0 .213 pretty 95.7 0.0 0.0 4.3 .129 together 95.7 0.0 0.0 4.3 .129 lie 0.0 95.7 0.0 4.3 .129 dark 0.0 95.7 0.0 4.3 .129 light 95.7 0.0 4.3 0.0 .129 hope 100.0 0.0 0.0 0.0 .000 bad 0.0 100.0 0.0 0.0 .000 kill 0.0 100.0 0.0 0.0 .000 grow 100.0 0.0 0.0 0.0 .000 party 100.0 0.0 0.0 0.0 .000 friend 100.0 0.0 0.0 0.0 .000 depressed 0.0 100.0 0.0 0.0 .000 struggle 0.0 100.0 0.0 0.0 .000 murder 0.0 100.0 0.0 0.0 .000 steal 0.0 100.0 0.0 0.0 .000 
+
+Table 18: Earlier lexical annotation data used as one source for Study 2 candidate generation. Twenty-three annotators judged 41 isolated English words as Positive, Negative, Neither, or Both; four of 943 possible judgments are missing. Hnorm is normalized four-category response entropy. Items are ordered from highest to lowest disagreement. 
+
+Emotion Min. D Study 1B Handling Joy 0.860 strong high-diagnosticity prior Love 0.658 – high-diagnosticity prior Sadness 0.597 strong high-diagnosticity prior Anger 0.599 intermediate high-diagnosticity prior Disgust 0.519 intermediate high-diagnosticity prior Optimism 0.496 – uncertainty-aware prior Pessimism 0.409 – uncertainty-aware prior Fear 0.321 intermediate uncertainty-aware prior Trust 0.326 – uncertainty-aware prior Anticipation 0.038 – no category-only polarity Surprise 0.040 weak no category-only polarity 
+
+Table 19: Reference diagnosticity values and empirical handling recommendations. Study 1B gives cross-dataset evidence for six categories. Groupings follow Table 6 and are not validated prediction rules. 
+
+20

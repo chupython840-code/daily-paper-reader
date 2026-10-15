@@ -1,8 +1,121 @@
 {
   "date": "20261006-20261015",
   "date_label": "2026-10-06 ~ 2026-10-15",
-  "generated_at": "2026-10-15 03:57:14 UTC",
+  "generated_at": "2026-10-15 05:42:30 UTC",
   "recommend_exists": true,
-  "run_count": 1,
-  "papers": []
+  "run_count": 2,
+  "papers": [
+    {
+      "paper_id": "2610.12841v1",
+      "route": "20261006-20261015/2610.12841v1-fear-is-not-always-fear-variation-in-emotion-label-equivalence-across-datasets",
+      "title": "Fear Is Not Always Fear: Variation in Emotion Label Equivalence Across Datasets",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ea"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "跨数据集情感标签等价性差异",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    },
+    {
+      "paper_id": "2610.15977v1",
+      "route": "20261006-20261015/2610.15977v1-mixed-feelings-single-polarity",
+      "title": "Mixed Feelings, Single Polarity",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ea"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "混合情感标签破坏固定极性映射",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    },
+    {
+      "paper_id": "2610.14497v1",
+      "route": "20261006-20261015/2610.14497v1-deft-disentanglement-enhanced-fine-tuning-for-eeg-foundation-models",
+      "title": "DEFT: Disentanglement-Enhanced Fine-Tuning for EEG Foundation Models",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "csg"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "为跨被试EEG解耦被试风格与任务内容",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    },
+    {
+      "paper_id": "2610.10318v1",
+      "route": "20261006-20261015/2610.10318v1-nobody-truly-agrees-on-sentiment-humans-bespoke-tools-and-llms-struggle-with-social-media-texts",
+      "title": "Nobody Truly Agrees on Sentiment: Humans, Bespoke Tools, and LLMs Struggle with Social Media Texts",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ea"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "情感标签上的人与模型标注不一致",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    },
+    {
+      "paper_id": "2610.13013v1",
+      "route": "20261006-20261015/2610.13013v1-evidential-multimodal-transformers-with-dempster-shafer-fusion-for-emotion-recognition",
+      "title": "Evidential Multimodal Transformers with Dempster-Shafer Fusion for Emotion Recognition",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ea"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "对矛盾或受损情感信号进行不确定性量化，处理模糊情感证据",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    },
+    {
+      "paper_id": "2610.11155v1",
+      "route": "20261006-20261015/2610.11155v1-social-pain-disrupts-emotion-action-brain-state-dynamics-in-adolescents-with-non-suicidal-self-injury",
+      "title": "Social Pain Disrupts Emotion-Action Brain-State Dynamics in Adolescents with Non-Suicidal Self-Injury",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ab"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "结合域对抗学习的EEG情感-动作脑状态解码",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    },
+    {
+      "paper_id": "2610.16589v1",
+      "route": "20261006-20261015/2610.16589v1-hybra-eeg-hyperbolic-global-local-brain-region-aggregation-for-self-supervised-eeg-representation-learning",
+      "title": "HyBRA-EEG: Hyperbolic Global-Local Brain-Region Aggregation for Self-Supervised EEG Representation Learning",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "csg"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向跨被试差异与异构蒙太奇的自监督EEG表征学习",
+      "first_seen_at": "2026-10-15 05:42:30 UTC",
+      "updated_at": "2026-10-15 05:42:30 UTC"
+    }
+  ]
 }

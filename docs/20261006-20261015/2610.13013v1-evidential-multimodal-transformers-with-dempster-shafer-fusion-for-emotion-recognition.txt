@@ -1,0 +1,1546 @@
+Title: Evidential Multimodal Transformers with Dempster-Shafer Fusion for Emotion Recognition
+
+URL Source: https://arxiv.org/pdf/2610.13013v1
+
+Published Time: Mon, 12 Oct 2026 00:38:18 GMT
+
+Number of Pages: 23
+
+Markdown Content:
+> IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 1
+
+# Evidential Multimodal Transformers with Dempster-Shafer Fusion for Emotion Recognition 
+
+Muhammad Usama ∗† and Yeoreum Jung ∗
+
+Abstract —Multimodal emotion recognition faces the challenge of overconfidence, where standard softmax-based methods assign high probability even when sensor data is corrupted or contradic-tory. For instance, facial expressions may suggest positive valence while vocal prosody indicates negative arousal, creating semantic conflict that standard averaging suppresses. We present an Evidential Multimodal Transformer with Dempster-Shafer Fusion (EMT-DS) that addresses this problem through formal uncertainty quantification. EMT-DS models predictions as Subjective Opinions (Dirichlet distributions) rather than point estimates, separating epistemic uncertainty (lack of evidence) from aleatoric uncertainty (sensor noise). Modality-specific transformer encoders generate belief mass distributions, which we fuse using Dempster’s Rule of Combination. This mechanism mathematically distinguishes agreement from conflict by normalizing the joint belief mass with a conflict coefficient ( 1/(1 − c)), so that contradictory evidence is explicitly quantified as conflict and the fused decision probability becomes diffuse rather than being forced into an unjustified consensus. We demonstrate that EMT-DS achieves consistent performance gains across four benchmark datasets under subject-independent and speaker-independent evaluation. On IEMOCAP (audio+text), EMT-DS achieves 84.3% accuracy versus 81.7% for the best base-line DCT (+2.6 points, p < 0.01 ). On DEAP (EEG+physiological), under leave-one-subject-out evaluation we obtain 82.4% accuracy versus 78.1% for the strongest baseline (+4.3 points). On the highly imbalanced KEMDy20, EMT-DS reaches 96.8% accuracy, and on the large-scale CMU-MOSEI benchmark it improves accuracy by 2.4 points over the strongest evidential baseline. Through controlled ablation, we demonstrate that EMT-DS reduces Expected Calibration Error from 0.153 (standard softmax transformer) to 0.042. Furthermore, the model maintains 71.2% accuracy under severe noise ( σ = 1.0 additive Gaussian corruption on audio features) where attention baselines drop to 45.3%, and degrades gracefully when entire modalities are absent. These gains are achieved with O(MK 2) fusion complexity, significantly lower than the O(M2d2) of cross-modal attention. Finally, we demonstrate that the learned conflict metric effectively flags potential errors, enabling a downstream selective-review strategy that captures 80% of misclassifications by reviewing just 20% of samples. This capability to reliably reject unsafe predictions is critical for deployment in clinical and safety-critical systems. 
+
+Index Terms —Multimodal Emotion Recognition, Evidential Deep Learning, Subjective Logic, Dempster-Shafer Theory, Uncer-tainty Quantification, Confidence Calibration, Conflict Modeling, Trustworthy Multimodal Fusion 
+
+∗Braindeck Inc., Seoul, Republic of Korea (emails: usama@braindeck.net, summer@braindeck.net). †School of Electrical Engineering, Korea Advanced Institute of Science and Technology (KAIST), Daejeon 34141, Republic of Korea (email: us-ama@kaist.ac.kr). Corresponding author: Muhammad Usama (email: usama@kaist.ac.kr) This work was supported by Braindeck Inc. and by the National IT Industry Promotion Agency (NIPA), funded by the Ministry of Science and ICT (MSIT), Korea, under Grant No.PJT-25-040359. 
+
+I. I NTRODUCTION 
+
+Emotion recognition systems enable advanced human-computer interaction in mental health monitoring, intelligent tutoring, autonomous vehicles, and social robotics [1], [2]. Human emotions manifest across multiple modalities: facial expressions convey valence, vocal prosody signals arousal, physiological signals reveal autonomic responses, and linguistic content provides semantic context [3], [4]. Multimodal systems integrating these heterogeneous streams consistently outperform unimodal approaches [5], [6]. 
+
+A. Problem Definition 
+
+Despite advances in transformer-based multimodal fusion [7]– [9], existing methods face a fundamental problem: the inability to represent ignorance. We distinguish the task of emotion recognition (mapping sensors to labels) from the core problem of uncertainty quantification. Standard fusion methods, such as concatenation, attention [10], [11], or mixture-of-experts [12], [13], map inputs to a probability distribution on the simplex 
+
+∆K−1. The obstacle is the softmax normalization constraint 
+
+∑ πk = 1, which forces a deterministic distribution even when evidence is weak or conflicting. This “forced confidence” leads to brittle failure modes: (1) sensor failure where noise is interpreted as a confident prediction; (2) semantic conflict where contradictory modalities (e.g., sarcasm) are averaged out rather than flagged. Our solution is to reformulate the output as a Dirichlet distribution over the simplex, explicitly separating belief from uncertainty using Subjective Logic. We present Evidential Multimodal Transformer with Dempster-Shafer Fusion (EMT-DS), integrating these frame-works. First, each modality is processed by specialized transformer encoders [14]–[16] followed by evidential layers predicting Dirichlet parameters. The loss combines Bayes risk with KL regularization that penalizes overconfidence on noisy inputs [17]. Second, a differentiable Dempster-Shafer (D-S) fusion layer computes belief masses, uncertainty, and conflict for each modality pair. Unlike attention mechanisms that learn arbitrary weights [10], our fusion follows mathematically grounded belief combination semantics, explicitly using conflict to detect complex emotional states or sensor failures. Third, we show that under low conflict, fused uncertainty decreases below individual modalities, while cross-modal disagreement is explicitly quantified as conflict and drives the fused decision probability toward a non-committal state, providing robustness. The KL regularizer also drives the evidence toward the vacuous opinion for out-of-distribution (OOD) samples, so that gradients vanish and noise is not fit.  
+
+> © 2026 IEEE. Personal use of this material is permitted. Permission from IEEE must be obtained for all other uses, in any current or future media, including reprinting/republishing this material for advertising or promotional purposes, creating new collective works, for resale or redistribution to servers or lists, or reuse of any copyrighted component of this work in other works. Accepted for publication in IEEE Transactions on Affective Computing. arXiv:2610.13013v1 [cs.LG] 9 Oct 2026 IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 2
+
+We delineate the novelty of EMT-DS precisely. Evidential deep learning and Subjective Logic are established tools that we build upon rather than claim as contributions. The technical novelty lies in three elements. First, we design a fully differentiable Dempster-Shafer fusion layer that backpropagates gradients through the conflict coefficient, in contrast to prior Dempster-Shafer emotion-recognition methods [18]–[20] that apply combination rules post hoc to the outputs of separately trained classifiers. Second, we treat the cross-modal conflict as an explicit supervised training signal and as a deployable abstention score for human review, rather than as a quantity to be normalized away. Third, we provide a theoretical account connecting the fusion to Bayes-optimal inference and connecting the evidential regularizer to out-of-distribution uncertainty, and we validate it under subject-independent, missing-modality, and backbone-agnostic protocols. Unlike attention or gating mechanisms that learn weights with no fixed semantics [10], [12], the belief and conflict quantities in EMT-DS carry a fixed probabilistic meaning and make cross-modal disagreement explicit through the conflict mass. Validation on IEMOCAP [21], DEAP [22], KEMDy20 [23], and the large-scale CMU-MOSEI [24] benchmark shows EMT-DS outperforms transformer-based [5], [6], [25], mixture-of-experts [13], evidential [26], and cross-modal attention [10], [27] methods by 2.3 to 4.3 percentage points in accuracy and 2.4 to 4.2 points in macro F1-score on the subject-independent and speaker-independent benchmarks (IEMOCAP, DEAP, and KEMDy20), and remains ahead of the strongest recent 2026 baseline on the large-scale CMU-MOSEI corpus, while reducing Expected Calibration Error by up to a factor of three. Learned conflict patterns reveal systematic cross-modal dissonance in specific emotion pairs, providing interpretable insights. Section II reviews related work. Section III presents the math-ematical formulation. Section IV describes datasets, reports results, comparisons, and provides detailed ablation studies. Section V analyzes key findings. Section VI concludes with implications and future directions. II. R ELATED WORK 
+
+A. Multimodal Emotion Recognition 
+
+Multimodal emotion recognition has evolved from early concatenation [3] to deep learning fusion. Early fusion con-catenates low-level features [4], enabling joint representations but requiring synchronization. Late fusion combines classifier outputs [28], providing robustness to missing modalities but discarding low-level interactions. Hybrid approaches [19] balance both strategies. Attention-based fusion [10], [11] dynamically weights modalities, but lacks a formal mechanism to reject disagreements. Transformer architectures [7] dominate recent work. Le et al. [5] proposed transformer fusion with emotion-level representation learning. Zhao et al. [6] introduced TDFNet with deep-scale fusion across temporal resolutions. Maji et al. [10] combined cross-modal transformers with temporal self-attention. Tsai et al. [25] introduced the Multimodal Transformer (MulT) with directional pairwise cross-modal attention for unaligned sequences, which remains a strong general-purpose baseline. Liu et al. [9] proposed TACFN with adaptive cross-modal fusion, while Yi et al. [29] introduced dual cross-modal attention. Beyond attention, recent conversational emotion-recognition methods model richer interaction structure: Shi et al. [30] drive multimodal fusion with speaker-identity and modality attributes through a speaker-centric graph, and Chen and Shi [31] construct dynamic monologic and dialogic sub-hypergraphs to capture interaction-pattern-specific emotional relationships. These graph- and attribute-based designs improve accuracy by structuring cross-utterance interactions, but, like the attention and mixture-of-experts models, they produce softmax outputs without a formal account of uncertainty or cross-modal conflict; EMT-DS is complementary, contributing belief and conflict quantities with fixed probabilistic meaning that could augment such architectures. Mixture-of-experts approaches like FuseMoE [12] and CAG-MoE [13] provide modality special-ization with sparse activation. However, all these methods rely on softmax outputs lacking formal uncertainty quantification, making them brittle when modalities conflict or sensors fail, the gap that EMT-DS addresses through evidential Dirichlet modeling and conflict-aware Dempster-Shafer fusion. Research in 2026 has continued to pursue robustness and reliability in multimodal fusion. Wei et al. [32] debias dynamic fusion with a noise-aware uncertainty estimator, Huang et al. [33] route spectral bands under complementarity supervision, and Zhang et al. [34] combine dynamic weighting with Dempster-Shafer evidence for trustworthy dual-modal inference. Closest to our setting, Grzeczkowicz et al. [35] also pair Dempster-Shafer theory with Dirichlet evidence for emotion recognition, but as a training-free procedure applied post hoc to the logits of a frozen model. EMT-DS differs in that its Dempster-Shafer fusion is learned end to end, with gradients flowing through the conflict coefficient, with conflict serving as an explicit supervised signal and abstention score, and with the accompanying calibration and out-of-distribution analysis that a post-hoc wrapper does not provide. 
+
+B. Physiological-Based Emotion Recognition 
+
+Physiological signals (EEG, EDA, HRV) directly measure autonomic responses to emotional stimuli [36], [37]. On the DEAP benchmark [22], Sartipi et al. [38] proposed spatiotemporal attention with graph-based smoothing. Yin et al. [39] demonstrated complementarity between EEG and electrooculography. Zhang et al. [27] introduced cross-modal credibility modeling for EEG systems with learned reliability scores. These credibility measures are heuristic rather than grounded in formal uncertainty frameworks, unlike EMT-DS’s Subjective Logic foundation. 
+
+C. Evidential Deep Learning and Subjective Logic 
+
+Evidential deep learning [17] reformulates classification as predicting Dirichlet parameters, with strength directly quantifying epistemic uncertainty. Li et al. [40] extended this to hierarchical settings, while Li et al. [41] applied it to medical segmentation with improved noise robustness. Subjective Logic [42] provides formal algebra for belief IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 3
+
+reasoning through opinions ω = ( b, u, a) with belief masses, uncertainty, and base rates. Koksalmis and Kabak [43] applied Dempster-Shafer combination to large-scale sensor fusion, showing that explicit conflict handling improves classification reliability. Recent work explored evidential multimodal fusion in other domains. Han et al. [26] proposed trusted multi-view classifica-tion, which characterizes each view by a Dirichlet distribution and integrates views through Dempster-Shafer combination; it is the closest evidential-fusion baseline to our setting, although it targets generic multi-view inputs and does not model temporal emotional dynamics or treat conflict as a supervised signal. Huang et al. [44] proposed deep evidential fusion for medical segmentation. Mohey El-Din et al. [45] developed adaptive fusion using Dempster-Shafer theory for visual-textual object recognition. However, these approaches focus on static images rather than temporal emotion dynamics. EMT-DS uniquely integrates evidential transformers with differentiable Dempster-Shafer fusion for emotion recognition, enabling end-to-end learning where conflict signals complex emotional states rather than being discarded. 
+
+D. Uncertainty Quantification in Deep Learning 
+
+Bayesian neural networks [46] and ensemble methods [47] enable uncertainty estimation but require multiple forward passes, increasing cost. Gal and Ghahramani [46] interpreted dropout as Bayesian approximation for Monte Carlo sampling. Kendall and Gal [47] distinguished aleatoric and epistemic uncertainty for safety-critical applications. Evidential methods offer single-pass uncertainty through predictive distribution parameterization. Pandey and Yu [48] showed evidential net-works accumulate evidence across training samples, improving generalization. EMT-DS leverages this for multimodal emotion recognition, where evidential encoding captures varying modal-ity reliability while Dempster-Shafer fusion provides formal conflict resolution. 
+
+E. Dempster-Shafer Theory in Emotion Recognition 
+
+Dempster-Shafer Theory [49], [50] has limited application to emotion recognition. Xu et al. [18] derived belief assignments from classifier confidences for multimodal video emotion recognition. Nemati et al. [19] employed weighted belief combination in hybrid latent fusion. Soroush et al. [20], [51] applied modified Dempster-Shafer theory to EEG recognition with nonlinear features. These treat Dempster-Shafer as post-hoc fusion on pre-trained outputs. EMT-DS differs in three concrete respects: (1) Dirichlet-parameterized evidential layers are embedded in the architecture for end-to-end belief learning; (2) differentiable Dempster-Shafer fusion backpropagates gradients through conflict com-putation; (3) conflict serves as an explicit signal for complex emotional states rather than being normalized away. This enables learning when and why modalities conflict, providing both improved accuracy (2.3 to 4.3 percentage points on the subject-independent and speaker-independent benchmarks) and interpretable uncertainty estimates. III. E VIDENTIAL MULTIMODAL TRANSFORMER WITH 
+
+DEMPSTER -S HAFER FUSION 
+
+This section presents the mathematical formulation of EMT-DS. We begin by establishing notation and the problem formulation, then detail the evidential encoding mechanism, the Dempster-Shafer fusion layer, the training procedure, and conclude with theoretical analysis. Figure 1 provides an overview of the complete framework, illustrating the flow from raw multimodal inputs through transformer encoders, evidential heads, and Dempster-Shafer fusion to the final emotion prediction. 
+
+A. Notation and Problem Formulation 
+
+Consider a multimodal emotion recognition task with K
+
+discrete emotion classes. Let X = {x1, . . . , xM } denote the set of inputs from M heterogeneous modalities, where xm
+
+represents the raw input for modality m ∈ { 1, . . . , M}. In our experiments, we consider M ∈ { 2, 3} modalities depending on the dataset: audio waveforms, video frames, transcribed text, and physiological signals (EEG, EDA, or IBI). The objective is to predict the emotion label y ∈ { 1, . . . , K} from X .Conventional deep learning approaches learn a function 
+
+fθ : X → ∆K−1 that maps inputs to the (K − 1)-dimensional probability simplex. Let π = [ π1, . . . , πK ]⊤ denote the latent random variable representing the true class probability distri-bution. Standard softmax classifiers estimate a point mass ˆπ, but this forces a deterministic distribution even when the input evidence is weak or conflicting. This limitation becomes problematic in three scenarios: (1) sensor failure where modality m produces out-of-distribution or corrupted data; (2) semantic conflict where modalities provide contradictory signals; and (3) incomplete data where certain modalities are missing. We reformulate the problem using Subjective Logic [42], which represents knowledge about a proposition through a Subjective Opinion. For each modality m and emotion class k,we define a Subjective Opinion ωm as a triplet: 
+
+ωm = ( bm, um, am),
+
+where bm = [ bm 
+
+> 1
+
+, . . . , bmK ]⊤ is the belief mass vector, with bmk ∈
+
+[0, 1] representing the degree of belief that modality m assigns to emotion class k; um ∈ [0, 1] is the epistemic uncertainty (also called vacuity), representing the lack of evidence due to insufficient or ambiguous data; and am = [ am 
+
+> 1
+
+, . . . , amK ]⊤ is the base rate (prior distribution), typically set to the uniform distribution amk = 1/K in the absence of domain knowledge. These components satisfy the additivity constraint: 
+
+> K
+
+# ∑
+
+> k=1
+
+bmk + um = 1. (1) The projected probability vector pm = [ pm 
+
+> 1
+
+, . . . , pmK ]⊤ represents the expectation of π under the Dirichlet distribution: 
+
+pmk = E[πk] = bmk + um · amk . (2) This formulation provides a critical advantage: when ev-idence is strong, um ≈ 0 and pmk ≈ bmk , yielding confident predictions. When evidence is weak, um ≈ 1 and pmk ≈ amk ,IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 4Modality-Specific Encoding       
+
+> Audio Input Wav2Vec2
+> (Global Avg Pool)
+> Video Input ViT-B/16
+> ([CLS] Token)
+> Text Input
+> BERT / KoELECTRA
+> ([CLS] Token)
+> B x T x 1 B x D
+> B x T x C x H x W B x D
+> B x Seq_Len B x D
+> Evidential
+> Head
+> Evidential
+> Head
+> Evidential
+> Head
+> (Audio)
+> (Video)
+> (Text)
+> Aggregated
+> Opinion
+> Dissonance-Aware
+> Dempster-Shafer Fusion
+> Final Prediction
+> Fused Opinion Projected Prob Dirichlet
+> Params
+> (Iterative Process)
+> See Figure 3 for details
+
+Fig. 1: Overall architecture of EMT-DS. Modality-specific encoders (e.g., Wav2Vec2, ViT-B/16, BERT/KoELECTRA, and a physiological 1D-CNN) extract features hm ∈ Rd from heterogeneous inputs such as audio, video, text, and physiological signals. Evidential heads generate Subjective Opinions ωm = ( bm, um, am) by predicting Dirichlet parameters via softplus-activated layers (Eq. 5), yielding belief masses and uncertainty (Eq. 9). The Dempster-Shafer fusion module iteratively combines opinions (Eqs. 12, 13), computing conflict c to quantify cross-modal disagreement. The fused opinion produces final class probabilities via Eq. 2. reverting to the prior. Importantly, the uncertainty um is explicitly quantified rather than hidden in probability mass spread across classes. 
+
+B. Modality-Specific Evidential Encoding 
+
+Each modality requires specialized processing to extract discriminative features. We employ transformer-based encoders tailored to the characteristics of each input modality, followed by an evidential head that generates Subjective Opinions. We employ transformer-based encoders to capture long-range temporal dependencies inherent in emotional expression (e.g., prosodic contours in audio or micro-expressions in video) which are often missed by local convolution operations. The complete evidential encoding pipeline is illustrated schematically in the Supplementary Material. 
+
+1) Transformer-Based Feature Extraction: For modality m,we apply a domain-specific transformer encoder T m to extract a latent representation hm ∈ Rd :
+
+hm = T m(xm; θ m), (3) where θ m denotes the learnable parameters. For audio wave-forms, we employ Wav2Vec2-Large [15], extracting the final hidden state with global average pooling to obtain haudio ∈
+
+R1024 . For facial expressions, we use Vision Transformer (ViT) [14] with patch size 16, extracting the [CLS] token embedding to yield hvideo ∈ R768 . For transcribed speech, we employ pretrained BERT [16] or KoELECTRA [52] for Korean text, using the [CLS] token representation to provide 
+
+htext ∈ R768 . For physiological signals (EEG, EDA, IBI), we use 1D convolutional networks followed by temporal self-attention to capture local patterns and long-range dependencies, producing hphysio ∈ R512 . All pretrained encoders are used as frozen feature extractors so that the reported gains are attributable to the evidential fusion mechanism rather than to encoder fine-tuning; the evidential heads and fusion layers are trained from scratch (Section IV). 
+
+2) Evidential Output Layer: Our primary technical contri-bution lies in replacing the standard softmax classifier with an evidential head that outputs Dirichlet distribution parameters. Following the evidential deep learning framework [17], we model the class probability distribution π as a random variable drawn from a Dirichlet distribution: 
+
+π ∼ Dir (αm) = 1
+
+B(αm)
+
+> K
+
+# ∏
+
+> k=1
+
+παmk −1 
+
+> k
+
+, (4) where αm = [ αm 
+
+> 1
+
+, . . . , αmK ]⊤ are the concentration parameters and B(αm) is the multivariate beta function. To ensure non-negativity of the Dirichlet parameters, we apply a softplus activation to a linear projection of the feature representation. Let ε = 10 −6 denote the numerical stability constant (standard float32 machine epsilon). The raw evidence vector is computed as: ˜em = Softplus (Wmhm + bm) + ε, (5) where Wm ∈ RK×d and bm ∈ RK are learnable parameters, and Softplus (x) = log (1 + ex) ensures positivity. To make the evidence magnitude bounded by construction rather than merely small in practice, we project the raw evidence onto the L1 ball of radius Emax :
+
+em = ˜em · min 
+
+
+
+1, Emax 
+
+∥˜em∥1
+
+
+
+, Emax = 1000 . (6) The projection is the identity whenever ∥˜em∥1 ≤ Emax , and otherwise rescales the evidence so that ∥em∥1 = Emax ; in either case ∥em∥1 = min (∥˜em∥1, Emax ) ≤ Emax and em ≥ 0. Because 
+
+Emax is set an order of magnitude above the empirically observed evidence norm ( ∥em∥1 ≈ 100, Section IV-K), the cap leaves the low-evidence regime untouched, and in particular preserves the vacuous limit em = 0 (um = 1), while guaranteeing the finite evidence bound used in Theorem III.1. The vector 
+
+em = [ em 
+
+> 1
+
+, . . . , emK ]⊤ represents the bounded evidence for each class. The Dirichlet concentration parameters are defined as: 
+
+αmk = emk + 1, k = 1, . . . , K. (7) The additive constant 1 ensures αmk ≥ 1, corresponding to the non-informative Dirichlet prior when emk = 0. The mapping between Dirichlet parameters and Subjective Logic components is established through the Dirichlet strength: 
+
+Sm =
+
+> K
+
+# ∑
+
+> k=1
+
+αmk =
+
+> K
+
+# ∑
+
+> k=1
+
+(emk + 1) = 
+
+> K
+
+# ∑
+
+> k=1
+
+emk
+
+!
+
++ K. (8) The belief mass and uncertainty are then computed as: 
+
+bmk = emk
+
+Sm , um = KSm . (9) IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 5
+
+TABLE I: Intuitive interpretation of the Subjective Logic quantities used in EMT-DS, and the familiar quantities they should not be confused with.                      
+
+> Quantity Intuitive meaning Not the same as
+> Belief mass bmkEvidence-backed support for class kSoftmax confidence Uncertainty umAmount of missing evidence (vacuity) Predictive entropy Base rate amkPrior used when evidence is absent A learned gating weight Conflict cExtent of cross-modal disagreement A reliability or similarity score Projected prob. pmkDecision-time probability bmk+umamkRaw softmax output
+
+Note that these definitions automatically satisfy the additivity constraint in Eq. 1. Uncertainty Decomposition: This framework explicitly sep-arates two types of uncertainty. Epistemic uncertainty (or vacuity) is captured by um, reflecting the lack of evidence (e.g., OOD data) where the model cannot form a distinct opinion. Aleatoric uncertainty (data noise or ambiguity) is captured by the entropy of the belief distribution bm. For example, a sample with bm = [ 0.45 , 0.45 , 0.1, 0] has low epistemic uncertainty (um = 0) but high aleatoric uncertainty due to class overlap, whereas a sample with bm = [ 0, 0, 0, 0] and um = 1 is purely epistemically uncertain. To make the Subjective Logic quantities accessible to readers outside the Dempster-Shafer and Subjective Logic communities, Table I summarizes their intuitive meaning and contrasts each with the familiar quantity it is most often confused with. The central distinction is that belief mass is not softmax confidence and uncertainty is not entropy: belief masses need not sum to one, and the residual mass 
+
+um explicitly measures missing evidence rather than the spread of a fixed distribution. As a concrete illustration with K = 4 classes, an audio modality producing evidence 
+
+eaudio = [ 8, 0, 0, 0] has Dirichlet strength S = 8 + 4 = 12, belief 
+
+b1 = 8/12 = 0.667, and uncertainty u = 4/12 = 0.333, giving a projected probability p1 = 0.667 + 0.333 × 0.25 = 0.75. A second modality producing no evidence, e = [ 0, 0, 0, 0], yields 
+
+b = 0 and u = 1, expressing total ignorance. A standard softmax classifier cannot represent this state: a uniform softmax output [0.25 , 0.25 , 0.25 , 0.25 ] and the vacuous opinion ( u = 1) yield identical point probabilities yet carry opposite epistemic meaning, a distinction EMT-DS preserves through u.
+
+C. Dempster-Shafer Fusion 
+
+Given Subjective Opinions ω1, . . . , ωM from M modalities, we must fuse them into a joint opinion ωfused . Traditional approaches such as weighted averaging or concatenation do not provide a mechanism for handling contradictory evidence. We employ Dempster’s Rule of Combination [49], [50], which explicitly computes the conflict between opinions and adjusts the fused belief accordingly. We favor Dempster-Shafer over Yager or simple Bayesian fusion because it strictly penalizes conflicting evidence through the normalization term, providing a mathematically grounded rejection of inconsistent multimodal inputs (e.g., in cases of sensor failure or sarcasm) rather than averaging them out. This contrasts with Yager’s rule, which redistributes conflict to the universal set (uncertainty) without re-weighting the beliefs, or Bayesian averaging which ignores conflict entirely. The computational flow of the fusion module is illustrated schematically in the Supplementary Material. 
+
+1) Pairwise Belief Fusion: Consider two modalities i and j
+
+with Subjective Opinions ωi = ( bi, ui, ai) and ω j = ( b j, u j, a j).The fusion operation ωi ⊕ ω j proceeds as follows: The conflict (or dissonance) measures the degree to which the two opinions assign belief to mutually exclusive hypotheses: 
+
+ci j =
+
+> K
+
+# ∑
+
+> k=1
+
+# ∑
+
+> ℓ̸=k
+
+bikb j 
+
+> ℓ
+
+.
+
+This simplifies to: 
+
+ci j =
+
+> K
+
+# ∑
+
+> k=1
+
+bik
+
+! K
+
+# ∑
+
+> k=1
+
+b jk
+
+!
+
+−
+
+> K
+
+# ∑
+
+> k=1
+
+bikb jk = ( 1−ui)( 1−u j)−
+
+> K
+
+# ∑
+
+> k=1
+
+bikb jk.
+
+(10) Intuitively, ci j = 0 when the modalities agree perfectly (e.g., both strongly support “happy”), while ci j → 1 when they completely disagree (e.g., one supports “happy” and the other “angry”). The fusion rule renormalizes the belief mass by discarding the conflicting mass. Let ni j ∈ [1, ∞) denote the conflict-based normalization factor: 
+
+ni j = 11 − ci j 
+
+. (11) When conflict is low, ni j ≈ 1. When conflict is high, ni j 
+
+becomes large, redistributing mass to account for the inconsis-tency. The fused belief mass for class k is: 
+
+bi⊕ jk = ni j 
+
+
+
+bikb jk + biku j + b jkui
+
+. (12) The three terms represent: (1) both modalities agreeing on class 
+
+k (bikb jk), (2) modality i supports k while j is uncertain ( biku j), and (3) modality j supports k while i is uncertain ( b jkui). The fused uncertainty is: 
+
+ui⊕ j = ni j 
+
+ uiu j . (13) This product structure implies that the combined uncertainty decreases exponentially as we add informative modalities (those with low u). 
+
+2) Multi-Modal Fusion Algorithm: For M > 2 modalities, we iteratively apply pairwise fusion. Algorithm 1 summarizes the forward pass of EMT-DS. Implementation Note: To ensure numerical stability when ci j 
+
+approaches 1 (near-total conflict), we apply a small threshold: if 
+
+ci j > 0.999, we clip the conflict. Specifically, the normalization term is capped at ni j = 1/(1−0.999 ) = 1000 to prevent floating-point overflow while preserving the gradient signal that high conflict reduces the effective weight of the fusion. For more than two modalities we summarize cross-modal disagreement by the mean pairwise conflict computed from the original per-modality opinions, 
+
+ctotal = 2
+
+M(M − 1) ∑ 
+
+> 1≤i<j≤M
+
+ci j , ci j = ( 1−ui)( 1−u j)−
+
+> K
+
+# ∑
+
+> k=1
+
+bikb jk.
+
+(14) Each pairwise term satisfies ci j = ∑k̸ =ℓ bikb j 
+
+> ℓ
+
+∈ [0, 1), so ctotal ∈
+
+[0, 1), and because the sum ranges over unordered pairs of the fixed per-modality opinions, ctotal is permutation invariant with respect to the fusion order. For M = 2 it reduces to the IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 6
+
+Algorithm 1 EMT-DS Forward Pass 
+
+Require: Multimodal inputs X = {x1, . . . , xM }, number of classes K
+
+Ensure: Fused belief bfused , fused uncertainty ufused , conflict 
+
+ctotal  
+
+> 1:
+
+// Step 1: Modality-Specific Evidence Generation  
+
+> 2:
+
+for m = 1 to M do  
+
+> 3:
+
+hm ← T m(xm; θ m) ▷ Extract features via Eq. 3  
+
+> 4:
+
+˜em ← Softplus (Wmhm + bm) + ε ▷ Raw evidence via Eq. 5  
+
+> 5:
+
+em ← ˜em · min (1, Emax /∥˜em∥1) ▷ Evidence cap via Eq. 6  
+
+> 6:
+
+Sm ← ∑Kk=1(emk + 1) ▷ Dirichlet strength via Eq. 8  
+
+> 7:
+
+bmk ← emk /Sm, um ← K/Sm for k = 1, . . . , K ▷ Beliefs and uncertainty via Eq. 9  
+
+> 8:
+
+end for  
+
+> 9: 10:
+
+// Step 2: Multi-source conflict (permutation-invariant, Eq. 14)  
+
+> 11:
+
+ctotal ← 2
+
+M(M − 1) ∑1≤i< j≤M
+
+(1 − ui)( 1 − u j) −
+
+∑Kk=1 bikb jk
+
+ 
+
+> 12: 13:
+
+// Step 3: Iterative Dempster-Shafer belief fusion  
+
+> 14:
+
+Initialize bagg ← b1, uagg ← u1 
+
+> 15:
+
+for m = 2 to M do  
+
+> 16:
+
+c ← (1 − uagg )( 1 − um) − ∑Kk=1 bagg  
+
+> k
+
+bmk ▷ Pairwise conflict, Eq. 10  
+
+> 17:
+
+n ← 1/(1 − c) ▷ Normalization via Eq. 11  
+
+> 18:
+
+for k = 1 to K do  
+
+> 19:
+
+btemp  
+
+> k
+
+← n · (bagg  
+
+> k
+
+bmk + bagg  
+
+> k
+
+um + bmk uagg ) ▷ Via Eq. 12  
+
+> 20:
+
+end for  
+
+> 21:
+
+utemp ← n · (uagg um) ▷ Via Eq. 13  
+
+> 22:
+
+bagg ← btemp , uagg ← utemp  
+
+> 23:
+
+end for  
+
+> 24:
+
+bfused ← bagg , ufused ← uagg  
+
+> 25:
+
+return b fused , ufused , ctotal 
+
+single pairwise conflict c12 , so the two-modality analyses in this paper are unaffected by the choice of definition. Keeping the measure in [0, 1) for any number of modalities makes the threshold τ = 0.5 used below a valid midpoint of the conflict range. 
+
+D. Training Procedure and Loss Functions 
+
+Training evidential networks requires a specialized loss function that respects the Dirichlet parameterization. We cannot use standard cross-entropy loss, as the output is not a fixed probability vector but a distribution over probability vectors. 
+
+1) Bayes Risk Loss: For a training sample with one-hot ground truth label y = [ y1, . . . , yK ]⊤ (where yk = 1 if k is the true class, else 0), we minimize the expected Bayes risk under the Dirichlet predictive distribution. The expected probability for class k under Dir (αm) is: 
+
+Ep∼Dir (αm)[pk] = αmk
+
+Sm = emk + 1
+
+Sm .
+
+The Bayes risk loss for modality m is defined as the sum of squared errors (SSE) between the ground truth and the expected probability, plus the variance term that penalizes high uncertainty: 
+
+L m 
+
+> risk
+
+=
+
+> K
+
+# ∑
+
+> k=1
+
+(yk − E[pk]) 2 +
+
+> K
+
+# ∑
+
+> k=1
+
+Var (pk), (15) where the variance of the Dirichlet distribution is: Var (pk) = αmk (Sm − αmk )(Sm)2(Sm + 1) .
+
+2) KL Divergence Regularization: A critical component is the KL divergence regularizer that penalizes deviations from the uniform Dirichlet prior Dir (1) (where 1 = [ 1, . . . , 1]⊤). This encourages the model to predict maximum uncertainty when the input lacks discriminative features: 
+
+L m 
+
+> KL
+
+= λt · KL [Dir (αm) ∥ Dir (1)] ,
+
+where λt is a time-dependent annealing coefficient that in-creases linearly from 0.01 to 1.0 over the first 10 epochs. The KL divergence between two Dirichlet distributions is: KL [Dir (αm) ∥ Dir (1)] = log B(1)
+
+B(αm) +
+
+> K
+
+# ∑
+
+> k=1
+
+(αmk − 1) [ ψ(αmk ) − ψ(Sm)] ,
+
+where ψ(·) is the digamma function and B(αm) = ∏Kk=1 Γ(αmk )
+
+> Γ(Sm)
+
+is the multivariate beta function. 
+
+3) Total Loss: The total loss function aggregates the risk and KL terms across all modalities and the fused opinion: 
+
+Ltotal =
+
+> M
+
+# ∑
+
+> m=1
+
+(L m 
+
+> risk
+
++ L m
+
+> KL
+
+) + L fused risk + L fused KL + λcLconflict ,
+
+(16) where Lconflict is an auxiliary loss that encourages the model to learn meaningful conflict patterns with weight λc (conflict loss coefficient). Let τ = 0.5 denote the conflict threshold, chosen as the midpoint of the conflict range [0, 1) (Eq. 14), representing the crossover between conflicting and supportive evidence. The conflict loss is defined as: 
+
+Lconflict = max (0, τ − ctotal ) · I[misclassified ], (17) where I[misclassified ] is the indicator function for incorrect predictions. By penalizing c < τ only when the model is incorrect, we encourage the network to be conflicted (uncertain) rather than confidently wrong. The indicator is computed from an arg max comparison and is therefore non-differentiable; we apply it as a detached stop-gradient mask, so that gradients flow only through the conflict magnitude ctotal and never through the arg max operation. Because the mask only gates which samples contribute to Lconflict , it introduces no instability in early training, when most samples are misclassified and the term simply behaves as a uniform penalty on low conflict; as accuracy improves, the mask sparsifies and the penalty concentrates on the remaining errors. The fused evidential terms L fused risk and L fused KL are computed by mapping the fused opinion (bfused , ufused ) back to Dirichlet parameters. Inverting Eq. 9, the fused Dirichlet strength is 
+
+Sfused = K/ufused , the fused evidence is efused  
+
+> k
+
+= bfused  
+
+> k
+
+Sfused ,and the fused concentration parameters are αfused  
+
+> k
+
+= efused  
+
+> k
+
++ 1. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 7
+
+Substituting these parameters into Eq. 15 and the KL term supervises the fused opinion with the same evidential objective as the individual modalities, closing the differentiable path from raw inputs through fusion to the loss. We optimize the model parameters Θ =
+
+{θ 1, . . . , θ M , W1, . . . , WM } using the AdamW optimizer [53] with learning rate η = 2 × 10 −4, weight decay λw = 0.01, and cosine annealing schedule over 50 epochs. 
+
+E. Theoretical Analysis 
+
+We establish three theoretical results for EMT-DS, stating ex-plicitly the assumptions each relies on and separating them from the empirical observations they explain. First, we show that the evidential parameterization removes the fusion divergence associated with Zadeh’s Paradox, with the required evidence bound guaranteed by construction through an architectural cap (Eq. 6). Second, we show that evidential Dempster-Shafer fusion is Bayes-consistent under conditional independence, which explains our empirical Expected Calibration Error reduction under weak cross-modal error correlation. Third, we show that the KL regularizer is uniquely minimized by the vacuous opinion, encoding a preference for maximum uncertainty in the absence of evidence, and we corroborate the resulting out-of-distribution behavior empirically. 
+
+1) Unconditional Stability via an Architectural Evidence Cap: A fundamental critique of classical Dempster-Shafer theory is Zadeh’s Paradox [54], which demonstrates that when conflict c → 1, the normalization term n = 1/(1 − c) → ∞. This causes the fusion operator to become discontinuous and hyper-sensitive to noise, severely limiting its use in deep learning. We show that the Dirichlet-parameterized evidential mapping removes this singularity. The required evidence bound is not left to chance: the L1 projection in Eq. 6 guarantees ∥em∥1 ≤
+
+Emax for every input by construction, so the stability below is unconditional rather than an empirical regularity. The softplus activation and KL regularization additionally keep evidence magnitudes well within this cap in practice (measured ∥em∥1 ≈
+
+100 ≪ Emax , Section IV-K), so the projection is inactive on observed data while the bound it provides remains permanently valid. 
+
+Theorem III.1 (Unconditional Stability of Evidential Demp-ster-Shafer Fusion) . Let E M = {e1, . . . , eM } be the evidence vectors produced by the capped evidential layer (Eq. 6), which satisfy ∥em∥1 ≤ Emax < ∞ by construction. Then the Evidential Dempster-Shafer fusion operator Φ : E M → ∆K−1
+
+is topologically stable. Specifically, the conflict c is strictly bounded away from 1, satisfying: c ≤ 1 − KM
+
+(Emax + K)M (18) 
+
+Consequently, the fusion mapping is globally L-Lipschitz contin-uous with L = ( Emax + K)M /KM , rendering it deterministically robust to adversarial input perturbations δ .Proof sketch. The architectural cap (Eq. 6) guarantees ∥em∥1 ≤
+
+Emax , hence um = K/Sm ≥ K/(Emax + K) > 0. The non-conflicting mass then satisfies 1 − ci j ≥ uiu j ≥ K2/(Emax +
+
+K)2 > 0, so the normalizer ni j = 1/(1 − ci j ) cannot diverge; induction over the M modalities yields Eq. 18 and the finite Lipschitz constant L = ( Emax + K)M /KM . The complete proof is given in the Supplementary Material. Theorem III.1 shows that, conditioned on bounded evidence, forcing uncertainty u to be inversely proportional to the Dirich-let strength through Eq. 9 prevents the normalization factor from diverging. Conflicting modalities are then accommodated by the bounded normalizer rather than causing numerical instability. We distinguish the guaranteed bound from the operating range. The evidence bound holds for every input by the architectural cap (Eq. 6), so the stability of Theorem III.1 is unconditional and the Lipschitz constant L = ( Emax + K)M /KM
+
+is a genuine finite constant rather than an empirical regularity. This worst-case constant is large but never approached in practice: with Emax = 1000, M = 4, and K = 7 it evaluates to L ≈ 4 × 10 8, whereas the cap radius is set an order of magnitude above the empirically measured evidence norm (∥em∥1 ≈ 100, Section IV-K), so the projection is the identity on all observed samples and the empirical Lipschitz behavior remains many orders of magnitude smaller. The cap plays the same role in evidence space that the conflict clip (Section III-C) plays in fusion space: it removes a worst-case singularity by construction while remaining inactive in the operating regime. Gradient clipping at threshold 1.0 is retained as an additional safeguard. 
+
+2) Bayesian Consistency of Evidential Fusion: We connect Dempster-Shafer fusion to Bayes-optimal inference, which explains why conflict-aware evidential fusion improves calibra-tion. We first characterize the fused decision probability exactly, then show that under standard independence assumptions it recovers the Bayes posterior. 
+
+Proposition III.1 (Exact form of the fused decision probability) .
+
+For two modalities with uniform base rate a k = 1/K, the fused projected probability is exactly p1⊕2 
+
+> k
+
+= n
+
+h
+
+p1 
+
+> k
+
+p2 
+
+> k
+
++ 1− 1
+
+> K
+
+  u2 p1 
+
+> k
+
++u1 p2
+
+> k
+
+− K−1 
+
+> K2
+
+u1u2 i
+
+, n = 11−c .
+
+(19) 
+
+In the confident limit u 1, u2 → 0 this reduces to the normalized product p1⊕2 
+
+> k
+
+= p1 
+
+> k
+
+p2 
+
+> k
+
+/ ∑ℓ p1 
+
+> ℓ
+
+p2 
+
+> ℓ
+
+, and when one modality is vacuous (u m → 1) it returns the opinion of the other modality. 
+
+Theorem III.2 (Bayesian consistency and calibration of Dempster-Shafer fusion) . Suppose the two modalities are conditionally independent given the label Y and the class prior is uniform. If each modality is calibrated in the sense that p mk = P(Y = k | xm), then in the confident limit the fused prediction of Eq. 19 equals the Bayes-optimal posterior, p1⊕2 
+
+> k
+
+= P(Y = k | x1, x2), (20) 
+
+and is therefore itself calibrated. The Dempster-Shafer nor-malizer n = 1/(1 − c) coincides with the Bayesian evidence term, and the conflict c = 1 − ∑ℓ p1 
+
+> ℓ
+
+p2 
+
+> ℓ
+
+is one minus the probability that the two modalities agree. For u m > 0 the fused prediction interpolates, by Proposition III.1, between this Bayesian product and deferral to the more certain modality. Proof sketch. Conditional independence and a uniform prior give P(Y = k | x1, x2) ∝ P(x1 | Y = k) P(x2 | Y = k). Bayes’ rule IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 8
+
+per modality gives P(xm | Y = k) ∝ pmk /πk, so with uniform πk
+
+the joint posterior is proportional to p1 
+
+> k
+
+p2 
+
+> k
+
+. Normalizing and invoking the confident limit of Proposition III.1 yields Eq. 20; the fused prediction then equals the true conditional and is calibrated by definition. The complete argument, including the 
+
+um > 0 interpolation, is given in the Supplementary Material. Theorem III.2 identifies the mechanism behind the empirical calibration gains: conflict-normalized evidential fusion approxi-mates the Bayes-optimal posterior, which is calibrated whenever the modality opinions are. The assumption of conditional independence is the same one underlying naive-Bayes and late-fusion classifiers; where it fails, the fused prediction departs from the Bayes posterior by an amount governed by the cross-modal error correlation ρ, which we measure per class (|ρ| = 0.16 ± 0.09 across classes on IEMOCAP, Supplementary Material) and find to be modest. This also clarifies the behavior under disagreement: when the modalities are confident but contradictory, the fused decision probability becomes diffuse (for instance [0.9, 0.1] fused with [0.1, 0.9] yields [0.5, 0.5]), so genuine conflict lowers confidence rather than producing an overconfident consensus. The observed reduction of Expected Calibration Error from 0.153 to 0.042 (Section IV) is consistent with near-Bayesian fusion in this weakly-correlated regime. 
+
+3) Out-of-Distribution Uncertainty via the Evidential Reg-ularizer: Standard softmax networks struggle with out-of-distribution data due to the shift-invariance of the softmax function, leading to arbitrary overconfident predictions. We show that the KL regularizer of EMT-DS is uniquely minimized by the vacuous opinion, encoding a preference for maximum uncertainty in the absence of discriminative evidence. 
+
+Theorem III.3 (The vacuous opinion uniquely minimizes the evidential regularizer) . The KL regularizer LKL (α) = 
+
+KL [Dir (α) ∥ Dir (1)] is nonnegative and vanishes only at α = 1,equivalently e = 0 and u = 1. Hence the vacuous opinion is its unique global minimizer, and ∇α LKL (1) = 0. The regularizer therefore encodes a strict preference for maximum epistemic uncertainty in the absence of discriminative evidence. Proof sketch. By Gibbs’ inequality KL [P∥Q] ≥ 0 with equality if and only if P = Q, so LKL ≥ 0 with equality only at Dir (α) = 
+
+Dir (1), i.e. α = 1. Differentiating gives ∂ LKL /∂ α j = ( α j −
+
+1)ψ′(α j) − (S − K)ψ′(S), which vanishes at α = 1. With the Softplus floor e ≥ ε the minimizer is approached as e → 0
+
+(u → 1). The complete argument is given in the Supplementary Material. The regularizer LKL is strictly convex in a neighborhood of the vacuous opinion but is not globally convex; for instance at α = ( 1, 10 ) its exact Hessian, including the trigamma-derivative terms, is indefinite, so we rely on the unconditional minimizer property above rather than on a global convexity claim. Theorem III.3 and Lemma III.3 act in opposite directions: on labeled, informative samples the Bayes risk drives evidence upward, while on inputs without discriminative signal the KL term is minimized only by the vacuous opinion, so the training objective prefers maximum uncertainty exactly where evidence is absent. We do not claim that an arbitrary out-of-distribution input is forced to this state at test time; rather, we observe empirically (Section IV-K) that as corruption increases the predicted uncertainty rises toward one and the KL-gradient norm collapses, consistent with this design. This behavior underlies the following robustness properties of the fusion process. 
+
+Lemma III.1 (Modality Noise Immunity) . If a modality m is uninformative such that u m → 1 and b mk → 0 for all k, the Dempster-Shafer fusion operator Φ (Eqs. 12, 13) becomes invariant to modality m, such that the fused opinion ωfused is determined solely by the remaining informative modalities. Proof sketch. As um → 1 and bmk → 0, the agreement and partial-support terms in Eq. 12 vanish and the normalizer 
+
+nim → 1 (since cim → 0 when one modality is maximally uncertain), so the fused opinion converges to (bik, ui, ak). The complete proof is given in the Supplementary Material. 
+
+Lemma III.2 (Gradient Vanishing at the Vacuous Opinion) .
+
+At the vacuous configuration e = 0 that minimizes the KL regularizer (Theorem III.3), the gradient of the KL loss with respect to model parameters ∇θ LKL vanishes, so no parameter update fits spurious patterns in uninformative data at that configuration. Proof sketch. At α = 1 we have ∇eLKL = 0 (Theorem III.3); the chain rule then gives ∇θ LKL = ( ∂ LKL /∂ e)( ∂ e/∂ θ ) = 0.Empirically, the gradient norm collapses toward zero as inputs become uninformative (Section IV-K). The complete argument is given in the Supplementary Material. 
+
+Lemma III.3 (Non-Triviality of Evidential Learning) . The Bayes risk term Lrisk (Eq. 15) prevents the trivial collapse of the evidence e → 0 for informative training samples. For a sample with true class k, as e → 0, the expected risk provides a non-zero lower bound (K − 1)/K, encouraging the network to accumulate discriminative evidence rather than defaulting to maximum uncertainty. Proof sketch. At e = 0 the expected probabilities are uniform (E[pk] = 1/K), so the sum of squared errors against a one-hot label equals (K − 1)/K, which is strictly positive for K ≥ 2and prevents collapse to e = 0 on labeled data. The complete computation is given in the Supplementary Material. IV. E XPERIMENTS AND RESULTS 
+
+This section presents a comprehensive empirical evaluation of EMT-DS across four benchmark datasets. We begin by describing the benchmark datasets, followed by experimental setup details, quantitative comparisons with existing baselines, and an in-depth ablation study analyzing the contribution of each architectural component. 
+
+A. Benchmark Datasets 
+
+We evaluate EMT-DS on four widely used multimodal emotion recognition benchmarks that collectively span diverse modalities, cultural contexts, scales, and emotional taxonomies. IEMOCAP [21] contains approximately 12 hours of audio-visual data from 10 professional actors engaged in scripted IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 9
+
+and improvised dyadic interactions. Following standard prac-tice [55], [56], we adopt the 4-class protocol (Neutral, Happy, Sad, Angry), in which the Excited class is merged into Happy, giving a corpus of 5,531 utterances with an approximately balanced distribution. We use audio (Wav2Vec2 [15]) and text (BERT [16]) modalities with 5-fold session-independent cross-validation, where the five recording sessions form the five folds; in each fold one session is held out for testing and a second for validation, so no speaker appears in both training and test. DEAP [22] comprises physiological recordings from 32 participants who watched 40 one-minute music videos. The dataset provides 32-channel EEG (128 Hz) and 8 peripheral physiological signals (EDA, respiration, BVP, temperature). Participants rated each video on 1-9 scales for Valence and Arousal. We threshold ratings at 5.0 to create four valence-arousal quadrant classes (LALV, HALV, LAHV, HAHV), using EEG and peripheral signals with subject-independent leave-one-subject-out cross-validation. This corrects the subject-dependent protocol used in some prior work, which allows trials from the same participant to appear in both training and test and inflates accuracy; under our protocol every test subject is entirely unseen during training. KEMDy20 [13], [23] contains data from 80 Korean-speaking participants (40 dyadic pairs) engaged in naturalistic conver-sations, providing four modalities: audio, text, physiological signals (EDA/IBI/temperature via Empatica E4), and video. We retain five emotion classes (Neutral, Happy, Sad, Angry, Surprise) and exclude Disgust and Fear because they contain too few samples for reliable speaker-independent evaluation (157 utterances combined, under 1.2% of the corpus), following common practice on this Neutral-dominated dataset. The re-tained classes exhibit severe imbalance, with Neutral and Happy accounting for roughly 95% of samples; the per-class counts are Neutral 9,603, Happy 3,147, Sad 301, Angry 228, and Surprise 161 (13,440 utterances). We use audio (Wav2Vec2), text (KoELECTRA [52]), physiological (1D-CNN), and video (ViT) features with 5-fold speaker-independent cross-validation, verified so that no speaker appears in more than one fold. All KEMDy20 results, tables, and the confusion matrix use this five-class protocol. CMU-MOSEI [24] is a large-scale, speaker-diverse bench-mark of about 23,000 utterances from roughly 1,000 distinct speakers in in-the-wild monologue videos, with audio, text, and video modalities. We evaluate the six-class joint emotion classification task (happy, sad, angry, fear, disgust, surprise) using the official train, validation, and test splits, which provides a stringent test of generalization at scale. To prevent information leakage in every dataset, all prepro-cessing statistics (normalization means and variances, filter parameters) are estimated on the training fold only and applied unchanged to validation and test, and no subject, speaker, or session is shared across splits. No data augmentation is applied to the test sets. Table II summarizes the key characteristics of these datasets, highlighting their complementary nature in modality coverage, emotion elicitation paradigms, scale, and class balance. TABLE II: Summary of Benchmark Dataset Characteristics (A: Audio, T: Text, V: Video, Physio: Physiological signals). CV: cross-validation; LOSO: leave-one-subject-out.                                     
+
+> Characteristic IEMOCAP DEAP KEMDy20 CMU-MOSEI
+> Participants 10 32 80 ∼1000 Language English N/A Korean English Utterances 5,531 1,280 ∼13k ∼23k Emotion Model Discrete (4) Dimensional (VA) Discrete (5) Discrete (6) Modalities Used A+T EEG+Physio A+T+Physio+V A+T+V Elicitation Acted/Improv Passive Viewing Naturalistic In-the-wild Class Balance Balanced Balanced Highly Imbalanced Imbalanced Evaluation Session CV LOSO Speaker CV Official splits
+
+B. Experimental Setup 1) Hardware and Software Configuration: We conducted all experiments on an NVIDIA GeForce RTX 5090 GPU with 32GB VRAM. We implemented models in PyTorch 2.1 with mixed-precision training enabled for computational efficiency. Training utilized the AdamW optimizer [53] with decoupled weight decay. To support reproducibility, the manuscript specifies the complete preprocessing and alignment pipeline, the full physiological 1D-CNN architecture, the exact cross-validation protocols and seeds, the model-selection rule, and the per-method tuning budget. 
+
+2) Modality-Specific Feature Extraction: For audio modality, we employ the Wav2Vec2-Large model [15] pretrained on 960 hours of LibriSpeech. We sample input waveforms at 16 kHz and extract the final layer hidden states (1024 dimensions), applying temporal mean pooling to obtain fixed-length repre-sentations. For text modality, IEMOCAP experiments use BERT-Base (uncased) [16] with 768-dimensional embeddings. For KEMDy20, we employ KoELECTRA-Base [52], which is pretrained on Korean corpora and better suited to this dataset. We tokenize text inputs with a maximum sequence length of 128 tokens and use the final [CLS] token embedding as the utterance-level representation. For physiological signals (EEG in DEAP; EDA/IBI/Temperature in KEMDy20), we adopt a unified 1D convolutional architecture. We normalize raw signals to zero mean and unit variance using statistics computed on the training fold. For EEG, we apply a bandpass filter (4-45 Hz) to isolate relevant frequency bands and segment signals into 1-second non-overlapping windows. For peripheral signals, we apply simple moving average smoothing with a 0.5-second window. The encoder is a 4-layer 1D-CNN with output channels [64, 128, 256, 512], kernel sizes [32, 16, 8, 4], stride 2 and “same” padding at every layer, each followed by batch normalization and a GELU activation. The resulting sequence of 512-dimensional vectors is passed through a single temporal self-attention block with 8 heads to capture long-range dependencies, after which global average pooling over time yields the final hphysio ∈ R512 representation. For CMU-MOSEI, audio and text use the same Wav2Vec2-Large and BERT encoders, and video uses the ViT [CLS] embedding, with utterance-level features obtained by mean pooling over the aligned frame sequence. 
+
+3) Training Protocol: We train EMT-DS end-to-end with a batch size of 32 for IEMOCAP and KEMDy20, and 16 for DEAP due to the higher dimensionality of EEG signals. The initial learning rate is set to 2 × 10 −4 with a cosine annealing IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 10 
+
+schedule reducing to 1 ×10 −6 over 50 epochs. For the annealing coefficient λt in the loss function (Eq. 16), we employ a linear warm-up from 0.01 to 1.0 over the first 10 epochs, following [17]. The conflict regularization weight λc (Eq. 17) is set to 0.10 for IEMOCAP and DEAP, and 0.15 for KEMDy20 to provide stronger conflict suppression given the higher noise in naturalistic conversation; a sensitivity analysis over this choice is reported in Section IV-J5. We apply dropout with rate 0.3 in fusion layers and 0.1 in transformer encoder layers for regularization. Model selection within each fold uses the best validation unweighted accuracy (validation accuracy for DEAP), with early stopping on the same metric (patience 10 epochs); all reported runs use the five seeds {7, 13 , 21 , 42 , 2024 }.For KEMDy20, we address class imbalance using focal loss [57] with γ = 2 in the Bayes risk term (Eq. 15) to down-weight the contribution of well-classified majority class samples. Additionally, we apply class-balanced sampling during training with probabilities inversely proportional to class frequencies. 
+
+4) Evaluation Metrics: We report standard metrics for each dataset following established protocols. For IEMOCAP and KEMDy20, we compute weighted accuracy (WA), unweighted accuracy (UA), and macro F1-score. UA treats all classes equally regardless of their frequency and is particularly critical for KEMDy20 given its severe imbalance. For DEAP, we report unweighted accuracy for the 4-class valence-arousal quadrant classification. Because trustworthiness is central to our claims, we additionally report calibration and selective-prediction metrics throughout: Expected Calibration Error (ECE, 15 equal-width bins), Maximum Calibration Error (MCE), negative log-likelihood (NLL), Brier score, and the area under the risk-coverage curve (AURC). Reported accuracies are unweighted unless noted. 
+
+C. Comparison with Existing Methods 
+
+We compare EMT-DS against recent multimodal fusion ap-proaches. The general multimodal baselines are: (1) TACFN [9], a transformer-based adaptive cross-modal fusion network; (2) CAG-MoE [13], a cross-attention gated mixture of experts that is the prior best method on KEMDy20; (3) ERTNet [58], an interpretable transformer for EEG emotion recognition; (4) DCT [55], a dual cross-modal transformer with multi-ple acoustic features; (5) Ensemble-DL [59], an ensemble deep learning approach for DEAP; and (6) the Multimodal Transformer (MulT) [25], a widely used directional cross-modal attention model. To compare directly against uncertainty-aware and evidential methods, we additionally include (7) trusted multi-view classification (TMC) [26], an evidential Dempster-Shafer fusion model that is the closest competitor to our setting, and (8) a variational Bayesian multimodal baseline (VMM-Dropout) that estimates predictive uncertainty through Monte Carlo dropout [46]. We additionally compare against four further methods: (9) MISA [60], which learns modality-invariant and modality-specific representations; (10) ConFEDE [61], which performs contrastive feature decom-position; (11) QMF [62], a quality-aware dynamic fusion method that weights modalities by estimated uncertainty; and (12) a 2026 method, the complementarity-supervised spectral-band routing network (Atsuko) [33]. QMF is evaluated on all datasets, MISA on the language-bearing ones, and ConFEDE and Atsuko on CMU-MOSEI for which they were designed; all are reimplemented under the same protocol. Temperature scaling, MC dropout, and deep ensembles are further analyzed as uncertainty baselines in Section IV-G. All baselines were reimplemented under a single unified protocol with identical feature extractors, data splits, and tuning budget; no numbers are quoted from the original papers, so the comparison is strictly controlled. All methods received an identical compute budget (Random Search, 50 trials per dataset), and results are reported as mean ± 95% confidence interval over five random seeds across the cross-validation folds. Table III presents the comparison. EMT-DS outperforms all baselines on every dataset, with the largest margins on datasets exhibiting high uncertainty and conflict, and consistently attains the lowest calibration error. On IEMOCAP, EMT-DS achieves 84.3% accuracy (UA) and 82.7% F1, surpassing the previous best method (DCT) by 2.6 points in accuracy while reducing ECE from 0.129 to 0.042. On DEAP, under the corrected leave-one-subject-out protocol, EMT-DS obtains 82.4% accuracy, a 4.3-point improvement over the strongest baseline (TMC, 78.1%); the subject-independent protocol yields lower absolute accuracy than the subject-dependent splits used in some prior work, but provides a leakage-free and more realistic estimate of generalization to unseen subjects. On the severely imbalanced KEMDy20, EMT-DS achieves 96.8% accuracy and 94.9% F1, outperforming CAG-MoE by 2.3 and 2.7 points respectively. Paired t-tests with Holm-Bonferroni correction confirm that the accuracy improvements of EMT-DS over the strongest baseline are statistically significant on all three datasets ( p < 0.01). Notably, the evidential baselines TMC and VMM-Dropout substantially close the calibration gap to EMT-DS (for example ECE of 0.082 and 0.068 on IEMOCAP) yet remain less accurate, indicating that the differentiable Dempster-Shafer fusion contributes beyond evidential encoding alone. The added baselines do not change the ranking: MISA reaches competitive accuracy but is poorly calibrated, while QMF, being uncertainty-aware, is better calibrated but less accurate than EMT-DS, which remains best on every dataset and metric. 
+
+D. Large-Scale Generalization on CMU-MOSEI 
+
+To assess generalization on a larger and more speaker-diverse benchmark, we evaluate EMT-DS on CMU-MOSEI [24] for the six-class joint emotion classification task using the official splits. Table IV reports the results. EMT-DS achieves 54.8% accuracy, exceeding the strongest baseline, the 2026 spectral-band routing network (Atsuko), by 1.7 points and the strongest evidential baseline (TMC) by 2.4 points, while delivering substantially better calibration (ECE 0.052 versus 0.079 for the best-calibrated baseline, QMF) and the lowest NLL and Brier score. The consistent advantage on a corpus with roughly 1,000 speakers indicates that the benefits of conflict-aware evidential fusion are not specific to small acted or laboratory datasets but extend to naturalistic, in-the-wild multimodal data. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 11 
+
+TABLE III: Main benchmark comparison under subject-independent (DEAP, leave-one-subject-out) and speaker-independent (KEMDy20) protocols. Values are unweighted accuracy, macro F1, and Expected Calibration Error (ECE) as mean ± 95% confidence interval over five seeds. All baselines were reimplemented under one unified protocol with identical features, splits, and tuning budget. Dashes denote a method not applicable to that dataset’s modality set. Best per dataset in bold.                                                                                                                                                                                                                             
+
+> Dataset Method Acc. F1 ECE
+> IEMOCAP TACFN [9] 0.798 ±0.011 0.782 ±0.012 0.147 ±0.012 CAG-MoE [13] 0.805 ±0.009 0.791 ±0.010 0.138 ±0.010 DCT [55] 0.817 ±0.010 0.803 ±0.011 0.129 ±0.009 MulT [25] 0.784 ±0.012 0.769 ±0.013 0.155 ±0.014 MISA [60] 0.808 ±0.010 0.793 ±0.011 0.144 ±0.011 TMC [26] 0.812 ±0.008 0.798 ±0.009 0.082 ±0.007 VMM-Dropout 0.809 ±0.011 0.794 ±0.012 0.068 ±0.006 QMF [62] 0.814 ±0.009 0.799 ±0.010 0.076 ±0.006
+> EMT-DS (Ours) 0.843 ±0.007 0.827 ±0.008 0.042 ±0.004
+> DEAP TACFN [9] 0.752 ±0.024 0.738 ±0.026 0.214 ±0.021 CAG-MoE [13] 0.768 ±0.021 0.754 ±0.023 0.198 ±0.018 ERTNet [58] 0.742 ±0.028 0.725 ±0.030 0.225 ±0.025 Ensemble-DL [59] 0.774 ±0.020 0.760 ±0.022 0.185 ±0.015 TMC [26] 0.781 ±0.018 0.766 ±0.020 0.112 ±0.011 VMM-Dropout 0.778 ±0.022 0.762 ±0.024 0.098 ±0.009 QMF [62] 0.776 ±0.020 0.761 ±0.022 0.104 ±0.010
+> EMT-DS (Ours) 0.824 ±0.015 0.808 ±0.017 0.053 ±0.005
+> KEMDy20 TACFN [9] 0.897 ±0.009 0.863 ±0.011 0.162 ±0.011 CAG-MoE [13] 0.945 ±0.007 0.922 ±0.008 0.124 ±0.008 MISA [60] 0.928 ±0.009 0.902 ±0.010 0.139 ±0.010 TMC [26] 0.938 ±0.008 0.914 ±0.009 0.078 ±0.006 VMM-Dropout 0.935 ±0.010 0.911 ±0.011 0.062 ±0.005 QMF [62] 0.941 ±0.007 0.918 ±0.008 0.071 ±0.005
+> EMT-DS (Ours) 0.968 ±0.005 0.949 ±0.006 0.038 ±0.003
+
+TABLE IV: Performance on the CMU-MOSEI six-class joint emotion classification task. Accuracy and F1 are mean ± 95% CI over five seeds; calibration metrics are means. Best in bold.                                                                                                
+
+> Method Acc. F1 ECE NLL Brier
+> MulT [25] 0.498 ±0.011 0.475 ±0.012 0.174 1.428 0.285 TACFN [9] 0.505 ±0.010 0.482 ±0.011 0.161 1.395 0.278 CAG-MoE [13] 0.518 ±0.009 0.496 ±0.010 0.152 1.324 0.269 MISA [60] 0.512 ±0.010 0.489 ±0.011 0.158 1.352 0.272 ConFEDE [61] 0.527 ±0.009 0.508 ±0.010 0.146 1.298 0.259 Atsuko [33] 0.531 ±0.008 0.512 ±0.009 0.149 1.286 0.256 TMC [26] 0.524 ±0.008 0.503 ±0.009 0.091 1.268 0.224 VMM-Dropout 0.521 ±0.010 0.499 ±0.011 0.082 1.215 0.218 QMF [62] 0.522 ±0.009 0.502 ±0.010 0.079 1.238 0.221
+> EMT-DS (Ours) 0.548 ±0.007 0.529 ±0.008 0.052 1.112 0.198
+
+E. Confusion Matrix Analysis 
+
+To understand the model’s behavior across different emotion classes, Figure 2 presents the confusion matrices for all three datasets. On IEMOCAP, EMT-DS achieves high per-class accuracy with minimal confusion between distinct emotions. The most common confusion occurs between Sad and Neutral (6.1%), which is expected given the acoustic similarity of low-arousal states. On DEAP, under the subject-independent leave-one-subject-out protocol, the confusion matrices show consistent discrimination across all four valence-arousal quad-rants, with diagonal elements averaging 0.82, indicating that the model captures both arousal and valence dimensions from physiological signals even when generalizing to unseen subjects. On KEMDy20, despite severe class imbalance, EMT-DS achieves balanced performance, with the minority classes (Sad, Angry, Surprise) attaining recall above 90% even though each holds only a few hundred samples. This validates the effectiveness of our uncertainty-aware training strategy in TABLE V: Controlled Ablation Study on IEMOCAP: Isolating the Contribution of Evidential Encoding and D-S Fusion                         
+
+> Method Acc. (%) F1 (%) ECE Mem (GB)
+> Transformer + Softmax + Concat 76.4 74.8 0.153 8.2 Transformer + Softmax + Attention 80.3 78.6 0.147 12.3 Transformer + Evidential + Concat 79.2 77.5 0.089 8.4 Transformer + Evidential + Attention 82.1 80.3 0.067 12.5
+> Transformer + Evidential + D-S (Ours) 84.3 82.7 0.042 8.7
+
+handling imbalanced distributions. 
+
+F. Ablation Study 
+
+To systematically analyze the contribution of each component in EMT-DS, we conduct comprehensive ablation studies on the IEMOCAP dataset. Table V presents quantitative results for five configurations in a controlled design that crosses the encoder output (softmax versus evidential) with the fusion operator (concatenation, attention, and Dempster-Shafer): (1) Softmax with concatenation, (2) Softmax with attention, (3) Evidential with concatenation, (4) Evidential with attention, and (5) Evidential with Dempster-Shafer fusion (the complete EMT-DS model). To rigorously isolate the contributions of our evidential encoding and Dempster-Shafer fusion strategy, we conducted a controlled ablation study on the IEMOCAP dataset (Table V). We compared five configurations: (1) Standard Transformer + Softmax + Concat, (2) Transformer + Softmax + Attention [10], (3) Transformer + Evidential + Concat, (4) Transformer + Evidential + Attention, and (5) EMT-DS. The transition from Softmax to Evidential encoding (Rows 1 → 3 and 2 → 4) substantially reduces the ECE from 
+
+> 0.14 to < 0.09, confirming that modeling distributions rather than point estimates improves uncertainty calibration. Attention mechanisms (Row 2) improve accuracy over simple concatenation (Row 1) (+3.9 points) but at a substantial computational cost, increasing GPU memory usage from 8.2 GB to 12.3 GB due to the quadratic complexity of cross-modal attention maps ( O(M2d2)). Critically, our proposed EMT-DS (Row 5) outperforms the computationally expensive Attention-based evidential model (Row 4) by +2.2 points in accuracy while maintaining a memory footprint comparable to the simple concatenation baseline (8.7 GB vs 8.2 GB). This efficiency arises because Dempster-Shafer fusion operates on the low-dimensional belief vectors (O(MK 2)) rather than the high-dimensional feature maps. Because every method received the identical 50-trial tuning budget under one unified protocol (Section IV), the improved performance of EMT-DS is attributable to the architectural benefits of principled uncertainty modeling and conflict-aware fusion, not to under-tuned baselines. The incremental contribution of each component is as follows. Evidential encoding provides a substantial 2.8-point improve-ment over the baseline by enabling uncertainty quantification at the modality level. Introducing Dempster-Shafer fusion yields an additional 2.3-point gain by explicitly reasoning about belief transfer and conflict resolution. Adding the optimized KL annealing schedule further improves performance by 1.3 points to 82.8%, while reducing average conflict from 0.198 to 0.143. Finally, the conflict regularization loss yields the full EMT-DS IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 12 Neu Hap Sad Ang Neu Hap Sad Ang             
+
+> 0.85 0.04 0.06 0.04 0.05 0.84 0.07 0.05 0.06 0.05 0.84 0.06 0.04 0.03 0.05 0.89
+
+(a) IEMOCAP LALV HALV LAHV HAHV LALV HALV LAHV HAHV              
+
+> 0.85 0.07 0.05 0.03 0.07 0.83 0.05 0.04 0.05 0.07 0.81 0.07 0.05 0.05 0.08 0.82
+
+(b) DEAP Neu Hap Sad Ang Sur Neu Hap Sad Ang Sur                      
+
+> 0.99 0.01 0.00 0.00 0.00 0.00 0.97 0.02 0.01 0.00 0.01 0.01 0.94 0.02 0.02 0.01 0.00 0.02 0.95 0.02 0.00 0.01 0.01 0.00 0.97
+
+(c) KEMDy20 
+
+Fig. 2: Confusion matrices for EMT-DS on the three benchmark datasets. Diagonal elements represent correct classification rates. The model demonstrates strong discrimination across all emotion classes, including minority classes in the imbalanced KEMDy20 dataset. model at 84.3% accuracy, a further 1.5-point gain, driving the average conflict down to 0.126 and demonstrating that the components work synergistically. 
+
+G. Comparison with Uncertainty Quantification Methods 
+
+Against established uncertainty quantification baselines on IEMOCAP (temperature scaling [63], Monte Carlo dropout [46] with 30 passes, a five-model deep ensemble, and an evidential model without Dempster-Shafer fusion), EMT-DS attains the lowest Expected Calibration Error (0.042) and the best risk-coverage area (AURC 0.071) at a single forward pass, while remaining the most accurate; deep ensembles match its calibration only at five times the inference cost and MC dropout at thirty times. The full method comparison is provided in the Supplementary Material. 
+
+H. Uncertainty and Conflict Analysis 
+
+A key advantage of EMT-DS is its ability to quantify uncertainty and detect inter-modality conflicts. Figure 3 (left) presents the mean uncertainty mass u (± standard deviation) for each modality on KEMDy20, computed over the test utterances aggregated across the five speaker-independent folds. The text modality exhibits the lowest uncertainty (0 .176 ± 0.083) due to its semantic richness and high signal-to-noise ratio. Physio-logical signals show the highest uncertainty (0 .263 ± 0.112), reflecting the inherent noise in biosensor data and the indirect relationship between autonomic arousal and discrete emotions. After Dempster-Shafer fusion, the fused representation achieves substantially reduced uncertainty (0 .086 ± 0.071), validating that multimodal integration mitigates single-modality ambigui-ties. Figure 3 (right) illustrates the relationship between Dempster-Shafer conflict and prediction accuracy. We observe a negative correlation: samples with high conflict ( ctotal > 0.4) exhibit substantially lower accuracy, indicating genuine disagreement between modalities. Conversely, low-conflict samples ( ctotal <
+
+0.2) consistently achieve high accuracy. This demonstrates that conflict serves as a reliable indicator of prediction reliability, enabling downstream applications to flag uncertain predictions for human review. Video Audio Text Physio Fused 0.0 0.1 0.2 0.3 0.4    
+
+> Epistemic Uncertainty ( u)
+> 0.0 0.2 0.4 0.6
+> D-S Conflict ( c)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Prediction Accuracy
+> 10 0
+> 10 1
+> log(Sample Density)
+
+Fig. 3: (Left) Average uncertainty by modality on KEMDy20. Text exhibits lowest uncertainty, while physiological signals are most uncertain. Fusion substantially reduces uncertainty. (Right) Relationship between Dempster-Shafer conflict and prediction accuracy on IEMOCAP. High conflict indicates low model confidence and correlates with reduced accuracy. 
+
+I. Modality Contribution Analysis 
+
+To understand how different modalities contribute to recog-nizing specific emotions, we analyze the average belief mass 
+
+bmk assigned by each modality to correctly classified IEMOCAP utterances, aggregated across the five test folds (a heatmap is provided in the Supplementary Material). Several notable patterns emerge. For Neutral emotion, the text modality contributes the highest belief mass (0.35), as neutral emotional states often correlate with factual or descriptive language. For Happy emotion, audio (0.34) provides the strongest cues, capturing vocal prosody and positive affect. For Sad emotion, audio emerges as the dominant modality (0.34), reflecting the importance of prosodic features such as reduced pitch and slower speaking rate. For Angry emotion, audio contributes the highest belief mass (0.36), capturing the elevated pitch, increased loudness, and harsh voice quality associated with anger. The modalities exhibit complementary strengths, with text providing semantic context while audio captures paralinguistic affective cues. These findings validate the heterogeneous nature of mul-timodal emotion recognition and underscore the importance of adaptive fusion mechanisms that respect modality-specific strengths. 
+
+J. Extended Ablation Studies 
+
+We conduct additional ablation experiments to analyze the robustness and design choices of EMT-DS across multiple dimensions. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 13 
+
+TABLE VI: Comparison of fusion rules on IEMOCAP using identical evidential opinions. Mean conflict is undefined (N/A) for rules that do not compute a Dempster-Shafer conflict mass. Best in bold.                                              
+
+> Fusion Rule Acc. F1 ECE Conflict AURC
+> Softmax-then-DS 0.788 0.771 0.118 0.254 0.145 Reliability-Gated 0.809 0.792 0.121 N/A 0.132 Uncertainty-Weighted 0.815 0.798 0.084 N/A 0.114 Yager’s Rule 0.821 0.804 0.072 0.182 0.102 Murphy’s Average 0.824 0.808 0.068 0.165 0.095 PCR5 0.836 0.820 0.048 0.141 0.079 EMT-DS (No Conflict Loss) 0.828 0.811 0.058 0.143 0.088
+> EMT-DS (Dempster, Ours) 0.843 0.827 0.042 0.126 0.071
+
+1) Fusion Strategy Comparison: Comparing five fusion paradigms on IEMOCAP (early, late, attention, mixture-of-experts, and Dempster-Shafer), D-S fusion achieves the best accuracy (84.3%) and the lowest conflict (0.126), whereas attention-based fusion shows 87% higher conflict (0.235); the full table is provided in the Supplementary Material. The next experiment isolates the combination rule itself under identical evidence. 
+
+2) Fusion Rule Comparison under Identical Evidence: 
+
+The comparison above varies the fusion paradigm. To isolate the contribution of Dempster’s combination rule specifically, we hold the modality-specific evidential opinions fixed and vary only the operator that combines them at inference time. Table VI compares Dempster’s rule against Yager’s rule, Murphy’s averaging, proportional conflict redistribution (PCR5), uncertainty-weighted averaging, a learned reliability-gated fusion, and a softmax-then-Dempster baseline that applies the rule directly to softmax probabilities without evidential heads. Dempster’s rule achieves the best accuracy (84.3%) and the lowest calibration error (0.042). The softmax-then-Dempster baseline is the weakest, confirming that applying the combination rule without a principled uncertainty repre-sentation is insufficient; the value comes from the synergy between evidential parameterization and Dempster-Shafer fusion. Reliability-gated and uncertainty-weighted schemes, which resemble the confidence-aware and gated-fusion methods common in the literature, trail our rule by 3.4 and 2.8 accuracy points and exhibit higher AURC, indicating weaker abstention behavior. Removing the conflict loss from EMT-DS reduces accuracy to 82.8% and raises ECE to 0.058, quantifying the benefit of supervising conflict directly. 
+
+3) Backbone-Agnostic Ablation: The evidential head and Dempster-Shafer fusion operate on modality feature vectors and are therefore independent of the encoder architecture. Replacing the Wav2Vec2 and BERT encoders on IEMOCAP with a CNN-LSTM audio encoder and a BiLSTM text encoder, the evidential framework delivers the same qualitative benefits despite lower absolute accuracy: under this non-transformer backbone it reduces ECE from 0.178 to 0.054 and improves the noise-corrupted accuracy at σ = 1.0 from 38.4% to 66.8%. This confirms that the calibration and robustness advantages stem from the fusion mechanism rather than from the transformer backbones. The full table is provided in the Supplementary Material. 
+
+4) Modality Combination Analysis: To understand the complementary nature of modalities, Table VII presents results TABLE VII: Performance with Different Modality Combina-tions on KEMDy20 (A: Audio, T: Text, P: Physiological signals, V: Video) 
+
+Modality Combination Acc. (%) F1 (%) 
+
+Audio only 65.3 58.2 Text only 71.2 64.8 Physiological only 58.7 51.3 Video only 62.4 55.9 Audio + Text 88.4 85.1 Audio + Physio 76.9 70.2 Text + Physio 82.6 78.4 Audio + Text + Physio 92.7 90.3 
+
+All (A+T+P+V) 96.8 94.9 0.0 0.2 0.4 0.6 0.8 1.0              
+
+> KL Annealing ( t)
+> 78 79 80 81 82 83 84 85 86
+> Accuracy (%)
+> Peak: 84.3
+> 0.00 0.05 0.10 0.15 0.20 0.25 0.30
+> Conflict Reg. ( c)
+> 78 79 80 81 82 83 84 85 86
+> Accuracy (%)  Peak: 84.3
+> 1e-5 5e-5 1e-4 2e-4 5e-4 1e-3
+> Learning Rate (log scale step)
+> 78 79 80 81 82 83 84 85 86
+> Accuracy (%)
+
+Fig. 4: Sensitivity analysis of key hyperparameters on IEMO-CAP. (a) KL annealing coefficient λt peaks at 0.8. (b) Conflict regularization λc optimal at 0.10. (c) Learning rate plateau between 1 × 10 −4 and 5 × 10 −4.for different modality combinations on KEMDy20. Single modalities achieve modest performance, with text being the strongest (71.2% accuracy) due to its semantic richness. Audio and text together achieve 88.4%, demonstrating strong complementarity between linguistic content and paralinguistic cues. Adding physiological signals improves performance to 92.7% by capturing autonomic responses. The full four-modality configuration achieves 96.8%, with video contributing an additional 4.1% by capturing facial expressions and gestures. 
+
+5) Hyperparameter and Loss Sensitivity Analysis: We analyze the sensitivity of EMT-DS to its key hyperparameters and loss terms. Figure 4 shows the impact of (a) the KL annealing coefficient λt , (b) the conflict regularization weight 
+
+λc, and (c) the learning rate on IEMOCAP validation accuracy. The model exhibits stable performance across a wide range of hyperparameters. Accuracy peaks at λt = 0.8, confirming that gradual introduction of KL regularization prevents premature commitment. Learning rate analysis shows a plateau between 1 × 10 −4 and 5 × 10 −4, with our chosen value of 2 × 10 −4 near the center of this stable region. Explicit sweeps confirm these design choices are robust. Accuracy and the selective-review error-detection rate both peak at the conflict threshold τ = 0.5 and are stable in a broad neighborhood; the conflict weight λc = 0.10 lies in a stable region, with λc = 0 (no conflict loss) dropping accuracy to 82.8% and worsening calibration; and the numerical clipping constant leaves accuracy and ECE invariant from 0.99 to 0.9999 while activating on at most 0.02% of fusion operations, confirming it is a float-precision guard rather than a tuned hyperparameter. The full sweep tables are provided in the Supplementary Material. 
+
+6) Cross-Dataset Generalization: EMT-DS exhibits the key safety behavior under domain shift. In zero-shot cross-dataset transfer (training on one dataset and testing on another without IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 14 
+
+fine-tuning), accuracy naturally drops, for example IEMOCAP 
+
+→ KEMDy20 reaches 62.3%, well below the 96.8% obtained when training in-domain on KEMDy20, but the model flags this degradation rather than failing silently: predicted uncertainty rises with error, so rejecting the least-confident half of the samples restores over 90% accuracy on the remainder, and the mean conflict rises markedly under shift (0.342 and 0.468 for the two transfers from IEMOCAP, versus 0.126 in-domain). The full transfer results and the rejection-accuracy curve are provided in the Supplementary Material. 
+
+K. Robustness to Modality Corruption 
+
+To verify Lemma III.1 (Noise Immunity), we evaluate model performance under severe sensor corruption. We inject additive Gaussian noise N (0, σ 2) into the audio representations of the IEMOCAP test set, with σ ranging from 0.0 to 1.0. Figure 5 presents the results. Conventional Attention Fusion degrades rapidly (80.3% → 45.3%) because softmax normal-ization forces the model to attend to noisy features if they have large magnitudes. Early Fusion collapses even faster. In contrast, EMT-DS retains strong robustness, maintaining 71.2% accuracy even at σ = 1.0. As the audio signal becomes uninformative, the evidential head predicts high uncertainty ( uaudio → 1), causing the D-S fusion rule to automatically downweight the corrupted modality and rely on the clean text modality. This confirms that evidential fusion acts as a functional safety mechanism, not just a regularizer. Furthermore, the gradient-norm analysis (Supplementary Material) empirically verifies Lemma III.2: as noise increases (σ → 1), the gradient norm ∥∇θ LKL ∥ of EMT-DS collapses to zero, preventing the model from updating weights based on corrupted data. In contrast, the softmax baseline maintains high gradient variance, leading to noise overfitting. Additionally, we track gradient norms during training over 50 epochs to validate the Lipschitz bound from Theorem III.1. We observe that despite the theoretical worst-case bound of L ≈ 4 × 10 8,empirical gradient norms remain bounded below 10 3 throughout training, confirming that the softplus activation and KL regu-larization keep evidence magnitudes moderate ( ∥em∥1 ≈ 100 in practice). Consistent with this, the architectural evidence cap (Eq. 6, Emax = 1000) behaves exactly like the conflict clip (analyzed in the Supplementary Material): because the per-modality evidence norm never approaches Emax , the L1
+
+projection is the identity on every observed sample, leaving accuracy and ECE unchanged while guaranteeing the finite Lipschitz constant of Theorem III.1. The cap is therefore a guarantee by construction rather than a tuned hyperparameter. Gradient clipping at threshold 1.0 is applied as an additional safety mechanism but is rarely triggered (less than 0.5% of batches). 
+
+1) Complete Modality Missingness: Beyond additive noise, real deployments frequently lose entire modalities through sensor failure, video occlusion, or untranscribed speech. We evaluate this by removing one or more modalities at inference time. EMT-DS handles a missing modality natively: setting its evidence to zero drives its uncertainty u → 1, so by Lemma III.1 the Dempster-Shafer rule defers to the remaining modalities. 0.0 0.2 0.4 0.6 0.8 1.0  
+
+> Noise Intensity ( )
+> 30 40 50 60 70 80 90
+> Accuracy (%)  71.1% 44.9%
+> EMT-DS (Ours) Attention Fusion Early Fusion
+
+Fig. 5: Robustness to audio modality corruption. EMT-DS (green) maintains high accuracy as noise increases, while Attention Fusion (red) and Early Fusion (blue) degrade rapidly. Shaded regions indicate ±1 std. deviation. TABLE VIII: Accuracy under complete modality missingness on IEMOCAP and KEMDy20. EMT-DS fused uncertainty rises as modalities are removed. Best accuracy per row in bold.                                               
+
+> Dataset Missing Attn. CAG-MoE EMT-DS EMT-DS u
+> IEMOCAP None 0.803 0.819 0.843 0.142 Audio 0.564 0.621 0.712 0.385 Text 0.482 0.556 0.653 0.468 KEMDy20 None 0.897 0.945 0.968 0.086 Audio 0.768 0.852 0.884 0.182 Text 0.684 0.789 0.826 0.215 Physio. 0.851 0.912 0.927 0.114 Video 0.848 0.908 0.927 0.118 Audio+Video 0.542 0.648 0.826 0.342 Physio+Video 0.784 0.845 0.884 0.224
+
+For the attention and mixture-of-experts baselines, absent features are zero-imputed. Table VIII reports the results. EMT-DS degrades far more gracefully than the baselines: dropping audio on IEMOCAP retains 71.2% accuracy versus 56.4% for attention fusion, and dropping both audio and video on KEMDy20 retains 82.6% versus 54.2%. In every case the fused uncertainty rises in proportion to the information lost, providing an explicit signal that the prediction is now based on partial evidence, which the softmax baselines cannot express. 
+
+L. Uncertainty Calibration Analysis 
+
+A critical requirement for safety-critical systems is that predicted confidence matches true accuracy. We quantify this using the Expected Calibration Error (ECE): ECE =
+
+> M
+
+# ∑
+
+> m=1
+
+|Bm|
+
+N |acc (Bm) − conf (Bm)| (21) where Bm are probability bins. Figure 6 compares the reliability diagrams of EMT-DS and a standard Softmax Transformer. The softmax baseline is systematically overconfident (ECE = 0.153), frequently assigning > 0.9 probability to incorrect predictions. EMT-DS achieves a substantially lower ECE of 0.042, with the reliability curve closely tracking the diagonal ideal. This indicates that when EMT-DS predicts 70% confidence, the expected accuracy is indeed ≈ 70%, making it suitable for clinical decision support where trust is paramount. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 15 0.0 0.2 0.4 0.6 0.8 1.0 
+
+> Confidence
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Accuracy
+> Perfect Calibration EMT-DS (ECE=0.042) Softmax (ECE=0.153)
+
+Fig. 6: Reliability diagram comparing EMT-DS (green) and standard Softmax (red). EMT-DS is well-calibrated (ECE=0.042), while Softmax is overconfident (ECE=0.153). 
+
+M. Conflict-Triggered Selective Review 
+
+We evaluate the Dempster-Shafer conflict ctotal as a signal for selective review, where the goal is to flag likely-misclassified samples for human inspection. This is a selective-prediction (error-triage) procedure rather than a full active-learning loop: it involves no iterative querying, relabeling, or retraining. To avoid optimistic bias, all operating points and risk-coverage curves are fit on a held-out calibration split and evaluated on a disjoint test split. Figure 7 plots the percentage of total errors detected against the fraction of data reviewed (sorted by decreasing conflict). Because the conflict loss (Eq. 17) trains the conflict to correlate with errors, part of the error-detection ability could in principle be an artifact of that objective. We therefore separate the intrinsic signal from the trained one. Table IX compares review strategies. The intrinsic Dempster-Shafer conflict of the model trained without the conflict loss, which depends only on belief-mass disagreement (Eq. 10) and never sees an error label, already detects 71.2% of errors within a 20% review budget, well above predictive entropy (58.3%) and random review (20.1%). Adding the conflict loss raises detection to 80.2% and lowers the area under the risk-coverage curve to 0.071. A directly supervised error-prediction (abstention) head, trained on the misclassification indicator, is marginally better at pure error detection (80.9%) but has worse risk-coverage (0.074), adds parameters, and yields no interpretable quantity beyond an error score. Conflict matches it with no added parameters, retains a fixed probabilistic meaning, and simultaneously governs the fusion. To test whether conflict reflects genuine semantic disagree-ment rather than only error, we annotated a random subset of 300 IEMOCAP test utterances for cross-modal incongruence on a three-point scale, independently of the model outputs. The Dempster-Shafer conflict correlates with these human incongruence labels at Spearman ρ = 0.57 ( p < 0.001), whereas the learned error head aligns with them only weakly ( ρ = 0.34). Conflict therefore tracks true cross-modal disagreement, not merely the error indicator it is partly trained on, and provides an interpretable basis for human-in-the-loop review. TABLE IX: Selective-review error detection on IEMOCAP, with operating points fit on a disjoint calibration split. Err.@20%: fraction of errors found within a 20% review budget (mean ± 95% CI over five seeds); AURC: area under the risk-coverage curve (lower is better). Best in bold.                                  
+
+> Review strategy Extra params Err.@20% AURC
+> Random 00.201 ±0.017 0.170 Predictive entropy 00.583 ±0.021 0.118 D-S conflict (no conflict loss) 00.712 ±0.019 0.094 Learned error head +0.3M 0.809 ±0.016 0.074
+> D-S conflict (EMT-DS) 00.802 ±0.014 0.071 020 40 60 80 100
+> % Data Queried
+> 020 40 60 80 100
+> % Errors Detected  80% Errors Found
+> Conflict (EMT-DS) Learned Error Head Conflict (no conflict loss) Entropy Random
+
+Fig. 7: Error detection under selective review (horizontal axis: percentage of data reviewed; vertical axis: percentage of total errors detected). Sorting by Dempster-Shafer conflict (purple) detects 80% of errors within a 20% review budget, and the intrinsic conflict without the conflict loss (green) still outperforms predictive entropy (blue), indicating that the signal is not merely an artifact of the training objective. A learned error-prediction head (orange) is comparable on pure error detection. Operating points are fit on a disjoint calibration split. 
+
+N. Qualitative Failure Case Analysis 
+
+To verify that the conflict metric reflects genuine semantic and physical cross-modal discrepancies rather than a numerical correlate of error, we qualitatively examine representative IEMOCAP test cases spanning the four conflict-by-correctness quadrants (four illustrative cases are tabulated in the Supple-mentary Material). The high-conflict correct prediction is a sarcastic utterance whose lexical sentiment is positive while the vocal prosody is angry, producing a high conflict of 0.62 that the model resolves by relying on prosody. The high-conflict incorrect prediction is a sample corrupted by loud background music; here the conflict of 0.58 and elevated fused uncertainty correctly flag the failure to a downstream reviewer rather than yielding a silent error. The two low-conflict cases behave as expected: agreement yields a confident correct prediction, whereas an inherently ambiguous laughing-versus-crying sample produces a low-conflict error because both modalities are coherently misled. These cases show that conflict and uncertainty carry interpretable, actionable meaning: high conflict marks samples worth deferring, and low-conflict errors correspond to genuinely ambiguous inputs rather than fusion failures. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 16 
+
+TABLE X: Runtime Performance Comparison (IEMOCAP, Batch Size 32). Train: Forward + Backward pass; Inference: Forward only; Params: Total model parameters in millions (M).                     
+
+> Method Train Inference Params (ms/sample) (ms/sample) (M)
+> Baseline (Concat) 10.4 6.5 87.2 Attention Fusion 14.7 8.9 94.6 CAG-MoE 43.2 12.3 112.8 DCT 18.9 10.2 98.4
+> EMT-DS (Ours) 11.5 7.0 89.7
+
+O. Computational Complexity Analysis 1) Theoretical Complexity: We analyze the computational complexity of EMT-DS and compare it with baseline methods. Let M denote the number of modalities, K the number of classes, N the sequence length, and d the embedding dimension. The forward pass complexity consists of three components. Each transformer encoder has complexity O(N2d + Nd 2) for self-attention and feed-forward layers, yielding O(M(N2d +
+
+Nd 2)) for M modalities. The evidential head requires linear pro-jection to evidence space with complexity O(MdK ). Pairwise Dempster-Shafer fusion requires computing conflict and fused beliefs, with complexity O(MK 2) for conflict computation and O(MK ) for belief updates, totaling O(MK 2). The total complexity is O(M(N2d + Nd 2) + MdK + MK 2). For typical values ( N = 128, d = 768, K = 7, M = 4), the dominant term is O(MN 2d) from transformer encoders, making EMT-DS asymptotically equivalent to standard multimodal transformers while adding negligible overhead for D-S fusion. Compared to attention-based fusion which requires O(M2d2)
+
+for cross-modal attention, our D-S fusion ( O(MK 2)) is more efficient since K ≪ d in typical scenarios. 
+
+2) Empirical Runtime Analysis: Table X presents wall-clock time measurements on NVIDIA RTX 5090 GPU for batch size 32 on IEMOCAP. EMT-DS achieves 87.0 samples/second during training and 142.9 samples/second during inference, representing only 11% and 8% overhead respectively compared to the baseline concatenation approach. This demonstrates that the evidential encoding and D-S fusion add minimal computational burden while providing substantial accuracy gains. Peak GPU memory usage (VRAM) was measured using 
+
+nvidia-smi during training with mixed precision. Compared to CAG-MoE which requires 43.2ms per sample due to sparse expert routing, EMT-DS is 3.76 × faster during training while achieving 3.8% higher accuracy on IEMOCAP. The efficiency stems from our closed-form D-S fusion rule compared to iterative attention mechanisms. The full end-to-end cost profile (total training time, epochs to convergence, feature-extraction latency, inference latency, peak VRAM, and parameter count) is provided in the Supplementary Material. In summary, EMT-DS converges in 26 epochs and 1.4 hours, close to the concatenation baseline (1.2 hours) and more than three times faster than CAG-MoE (4.5 hours), while its 8.7 GB peak memory remains suitable for commodity and edge GPUs. 
+
+3) Memory Footprint: In terms of memory, EMT-DS main-tains a peak footprint comparable to the baseline (8.7 GB at batch size 32) while attention-based fusion requires 12.3 GB due to storing cross-modal attention maps. The memory efficiency of D-S fusion stems from operating on compact belief representations ( M × K tensors) rather than full feature tensors ( M × N × d). V. D ISCUSSION 
+
+EMT-DS improves over existing methods across all four benchmarks. On IEMOCAP the gains hold under session-independent cross-validation despite speaker-induced distri-bution shift, and the confusion matrix (Figure 2) shows balanced per-class performance (diagonals above 0.83). On DEAP the leakage-free subject-independent numbers are lower than the inflated subject-dependent results common in the literature but reflect genuine generalization to unseen par-ticipants. The advantage stems from Dempster-Shafer fusion explicitly modeling conflict: it attains the lowest conflict (0.126) among fusion strategies, whereas attention-based fusion shows 87% higher conflict (0.235), suggesting that learned attention weights may amplify rather than resolve disagreement. On the imbalanced KEMDy20, belief mass is allocated adaptively (text dominating for Neutral, audio for Angry), and the incremental and controlled ablations (Table V) confirm each component’s contribution. The model is robust across wide ranges of the KL anneal-ing coefficient, conflict weight, and learning rate (accuracy variance below 2.5%), and under zero-shot cross-dataset transfer accuracy degrades while conflict rises in step, so the model flags its own ignorance and acts as a domain-shift detector rather than failing silently (Supplementary Material). A distinctive advantage is interpretability: Subjective Logic opinions decompose predictions into belief masses, uncertainty, and base rates, unlike the scalar weights of attention, and the negative correlation between conflict and accuracy (Pearson 
+
+r = −0.68) makes conflict a reliable signal for flagging samples for human review. The strengthened baseline set clarifies where the improve-ment originates. The strong softmax methods (MISA, Con-FEDE, and the 2026 spectral-band routing network) are competitive on accuracy but poorly calibrated, whereas the uncertainty-aware QMF calibrates well yet trails on accuracy; EMT-DS is the only method that lands on the better side of both axes at once. This separation is diagnostic. QMF reweights each modality by a scalar quality estimate but never represents cross-modal conflict, so it cannot express, or act on, the case in which two confident modalities disagree. EMT-DS instead carries a belief-mass opinion per modality together with a conflict coefficient of fixed probabilistic meaning, which simultaneously tightens calibration and yields a deployable abstention signal. The comparison with the softmax-then-Dempster-Shafer variant (Section IV-J2) and with recent post-hoc evidential wrappers reinforces the point: applying the combination rule to frozen outputs recovers only part of the benefit, while learning the fusion end to end, with gradients flowing through the conflict term and a supervised conflict loss, is what closes the accuracy-calibration gap. Because inference remains a single forward pass with a closed-form fusion step, these gains arrive without the sampling or ensembling cost of the Bayesian baselines, IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 17 
+
+which matters for the clinical and edge deployments that motivate trustworthy emotion recognition. A limitation is that Theorem III.2 assumes conditional independence between the modalities. The residual dependence, captured by the correlation ρ between modality calibration errors, is class-dependent (highest for the high-arousal Angry class, ρ = 0.28, and lowest for Neutral and Sad, ρ = 0.08 and 0 .11) but modest on average ( |ρ| = 0.16 ± 0.09), and the measured fused ECE stays low for every class, so the near-independence approximation is adequate in practice. Modeling this residual dependence explicitly, for instance through copula-based couplings of the modality posteriors, is left to future work. VI. C ONCLUSION 
+
+This paper presented EMT-DS, which advances multimodal emotion recognition through formal uncertainty quantification and interpretable fusion. Grounding predictions in Subjective Logic and combining modalities via Dempster-Shafer theory yields explicit epistemic uncertainty and cross-modal conflict, an interpretable belief-mass decomposition, and efficient closed-form fusion. Across four benchmarks EMT-DS improves accuracy over the previous best methods, by 2.6, 4.3, and 2.3 points on IEMOCAP, DEAP, and KEMDy20 respectively, and by 2.4 points over the strongest evidential baseline on CMU-MOSEI, while reducing calibration error and adding only modest overhead (11% training time and 29% lower memory than attention-based fusion). The conflict term flags high-conflict samples for human review, which is essential for safety-critical deployment. Future work includes extending to continuous emotion spaces, incorporating temporal dynamics, and developing adaptive fusion for robust handling of sensor failures. REFERENCES [1] R. W. Picard, Affective computing . MIT Press, 2000. [2] H. Gunes and B. Schuller, “Categorical and dimensional affect analysis in continuous input: Current trends and future directions,” Image and Vision Computing , vol. 31, no. 2, pp. 120–136, 2013. [3] S. Poria, E. Cambria, R. Bajpai, and A. Hussain, “A review of affective computing: From unimodal analysis to multimodal fusion,” Information Fusion , vol. 37, pp. 98–125, 2017. [4] T. Baltruˇ saitis, C. Ahuja, and L.-P. Morency, “Multimodal machine learning: A survey and taxonomy,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 41, no. 2, pp. 423–443, 2019. [5] H.-D. Le, G. Lee, S.-h. Kim, S.-w. Kim, and H.-J. Yang, “Multi-label multimodal emotion recognition with transformer-based fusion and emotion-level representation learning,” IEEE Access , vol. 11, pp. 14 742–14 751, 2023. [6] Z. Zhao, Y. Wang, G. Shen, Y. Xu, and J. Zhang, “Tdfnet: Transformer-based deep-scale fusion network for multimodal emotion recognition,” 
+
+IEEE/ACM Transactions on Audio, Speech, and Language Processing ,vol. 31, pp. 3699–3710, 2023. [7] A. Vaswani, N. Shazeer, N. Parmar, J. Uszkoreit, L. Jones, A. N. Gomez, Ł. Kaiser, and I. Polosukhin, “Attention is all you need,” in Advances in Neural Information Processing Systems , vol. 30, 2017. [8] J. Dhanith, S. Venkatraman, M. Narendra, V. Sharma, S. Malarvannan, and A. H. Gandomi, “Multimodal emotion recognition using audio-video transformer fusion with cross attention,” arXiv preprint arXiv:2407.18552 ,2024. [9] F. Liu, Z. Fu, Y. Wang, and Q. Zheng, “Tacfn: Transformer-based adaptive cross-modal fusion network for multimodal emotion recognition,” arXiv preprint arXiv:2505.06536 , 2025. [10] B. Maji, M. Swain, R. Guha, and A. Routray, “Multimodal emotion recognition based on deep temporal features using cross-modal trans-former and self-attention,” in IEEE International Conference on Acoustics, Speech, and Signal Processing , 2023, pp. 1–5. [11] P. Waligora, H. Aslam, O. Zeeshan, S. Belharbi, A. Koerich, M. Pedersoli, S. Bacon, and E. Granger, “Joint multimodal transformer for emotion recognition in the wild,” in IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops , 2024, pp. 4654–4663. [12] X. Han, H. Nguyen, C. Harris, N. Ho, and S. Saria, “Fusemoe: Mixture-of-experts transformers for fleximodal fusion,” in Advances in Neural Information Processing Systems , 2024. [13] A. G. Mengara and Y.-k. Moon, “Cag-moe: Multimodal emotion recognition with cross-attention gated mixture of experts,” Mathematics ,vol. 13, no. 12, p. 1907, 2025. [14] A. Dosovitskiy, L. Beyer, A. Kolesnikov, D. Weissenborn, X. Zhai, T. Unterthiner, M. Dehghani, M. Minderer, G. Heigold, S. Gelly et al. ,“An image is worth 16x16 words: Transformers for image recognition at scale,” in International Conference on Learning Representations , 2021. [15] A. Baevski, Y. Zhou, A. Mohamed, and M. Auli, “wav2vec 2.0: A framework for self-supervised learning of speech representations,” 
+
+Advances in Neural Information Processing Systems , vol. 33, pp. 12 449– 12 460, 2020. [16] J. Devlin, M.-W. Chang, K. Lee, and K. Toutanova, “BERT: Pre-training of deep bidirectional transformers for language understanding,” in Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (NAACL-HLT) , 2019, pp. 4171–4186. [17] M. Sensoy, L. Kaplan, and M. Kandemir, “Evidential deep learning to quantify classification uncertainty,” in Advances in Neural Information Processing Systems , vol. 31, 2018, pp. 3179–3189. [18] Q. Xu, C. Zhang, and B. Sun, “Emotion recognition model based on the Dempster-Shafer evidence theory,” Journal of Electronic Imaging ,vol. 29, no. 2, p. 023018, 2020. [19] S. Nemati, D. A. Rohani, M. E. Basiri, M. Abdar, N. Yen, and S. Samavi, “A hybrid latent space data fusion method for multimodal emotion recognition,” IEEE Access , vol. 7, pp. 172 948–172 964, 2019. [20] M. Zangeneh Soroush, K. Maghooli, S. K. Setarehdan, and A. M. Nasrabadi, “Emotion recognition through EEG phase space dynamics and Dempster-Shafer theory,” Medical Hypotheses , vol. 127, pp. 34–45, 2019. [21] C. Busso, M. Bulut, C.-C. Lee, A. Kazemzadeh, E. Mower, S. Kim, J. N. Chang, S. Lee, and S. S. Narayanan, “Iemocap: Interactive emotional dyadic motion capture database,” in Language Resources and Evaluation ,vol. 42, 2008, pp. 335–359. [22] S. Koelstra, C. Muhl, M. Soleymani, J.-S. Lee, A. Yazdani, T. Ebrahimi, T. Pun, A. Nijholt, and I. Patras, “Deap: A database for emotion analysis using physiological signals,” IEEE Transactions on Affective Computing ,vol. 3, no. 1, pp. 18–31, 2012. [23] Electronics and Telecommunications Research Institute (ETRI), “Korean emotion multimodal database in 2020 (KEMDy20),” 2020, available at: https://nanum.etri.re.kr/share/kjnoh2/KEMDy20. [24] A. Zadeh, P. P. Liang, S. Poria, E. Cambria, and L.-P. Morency, “Multimodal language analysis in the wild: CMU-MOSEI dataset and interpretable dynamic fusion graph,” in Proceedings of the 56th Annual Meeting of the Association for Computational Linguistics (ACL) , 2018, pp. 2236–2246. [25] Y.-H. H. Tsai, S. Bai, P. P. Liang, J. Z. Kolter, L.-P. Morency, and R. Salakhutdinov, “Multimodal transformer for unaligned multimodal language sequences,” in Proceedings of the 57th Annual Meeting of the Association for Computational Linguistics (ACL) , 2019, pp. 6558–6569. [26] Z. Han, C. Zhang, H. Fu, and J. T. Zhou, “Trusted multi-view classification with dynamic evidential fusion,” IEEE Transactions on Pattern Analysis and Machine Intelligence , vol. 45, no. 2, pp. 2551–2566, 2022. [27] Y. Zhang, H. Liu, D. Wang, D. Zhang, T. Lou, Q. Zheng, and C. Quek, “Cross-modal credibility modelling for eeg-based multimodal emotion recognition,” Journal of Neural Engineering , vol. 21, no. 2, p. 026032, 2024. [28] R. Rifkin and A. Klautau, “In defense of one-vs-all classification,” Journal of machine learning research , vol. 5, no. Jan, pp. 101–141, 2004. [29] M. Yi, K.-C. Kwak, and J. Shin, “HyFusER: Hybrid multimodal transformer for emotion recognition using dual cross modal attention,” 
+
+Applied Sciences , vol. 15, no. 3, p. 1053, 2025. [30] W. Shi, X. Chen, B. Yao, Y. Wen, and B. Sheng, “Identity and modality attributes driven multimodal fusion networks for emotion recognition in conversations,” IEEE Transactions on Multimedia , vol. 27, pp. 4361– 4371, 2025. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING 18 
+
+[31] X. Chen and W. Shi, “Dynamic interactive bimodal hypergraph networks for emotion recognition in conversations,” in Proceedings of the AAAI Conference on Artificial Intelligence , vol. 39, no. 2, 2025, pp. 1256–1264. [32] S. Wei, K. Zhang, L. Chen, T. He, and G. Duan, “Unbiased dynamic multimodal fusion,” arXiv preprint arXiv:2603.19681 , 2026. [33] Z. Huang, B. Zhao, H. Ma, Z. Liu, J. Zhang, R. Zhang, S. Ding, and Z. Yu, “Complementarity-supervised spectral-band routing for multimodal emotion recognition,” arXiv preprint arXiv:2603.13340 , 2026. [34] D.-P. Zhang, Q.-P. Ma, Z.-H. Shen, W.-W. Ma, Y.-G. Yan, and S. Kong, “Trustworthy emotion recognition: A dynamic weighting dempster–shafer fusion method for multimodal emotion inference,” Multimedia Systems ,vol. 32, 2026. [35] R. Grzeczkowicz, ´ E. Soriano, A. Janati, M. Zhang, G. Comas-Quiles, V. Carballo Araruna, and A. Jonelagadda, “Uncertainty-aware multimodal emotion recognition through dirichlet parameterization,” arXiv preprint arXiv:2602.09121 , 2026. [36] R. Jenke, A. Peer, and M. Buss, “Feature extraction and selection for emotion recognition from eeg,” IEEE Transactions on Affective Computing , vol. 5, no. 3, pp. 327–339, 2014. [37] W. Boucsein, Electrodermal activity . Springer Science & Business Media, 2012. [38] S. Sartipi, M. Torkamani-Azar, and M. C ¸ etin, “A hybrid end-to-end spatiotemporal attention neural network with graph-smooth signals for eeg emotion recognition,” IEEE Transactions on Cognitive and Developmental Systems , vol. 16, no. 2, pp. 732–742, 2023. [39] J. Yin, M. Wu, Y. Yang, P. Li, F. Li, W. Liang, and Z. Lv, “Research on multimodal emotion recognition based on fusion of electroencephalogram and electrooculography,” IEEE Transactions on Instrumentation and Measurement , vol. 73, pp. 1–14, 2024. [40] C. Li, K. Li, Y. Ou, L. M. Kaplan, A. Jøsang, J.-H. Cho, D. Jeong, and F. Chen, “Hyper evidential deep learning to quantify composite classification uncertainty,” in International Conference on Learning Representations , 2024. [41] H. Li, Y. Nan, J. D. Ser, and G. Yang, “Region-based evidential deep learning to quantify uncertainty and improve robustness of brain tumor segmentation,” Neural Computing and Applications , pp. 22 071–22 085, 2022. [42] A. Jøsang, Subjective logic: A formalism for reasoning under uncertainty .Springer, 2016. [43] E. Koksalmis and ¨ O. Kabak, “Sensor fusion based on Dempster-Shafer theory of evidence using a large scale group decision making approach,” 
+
+International Journal of Intelligent Systems , vol. 35, no. 7, pp. 1126–1162, 2020. [44] L. Huang, S. Ruan, P. Decazes, and T. Denoeux, “Deep evidential fusion with uncertainty quantification and reliability learning for multimodal medical image segmentation,” Information Fusion , vol. 104, p. 102648, 2025. [45] D. Mohey El-Din, A. E. Hassanien, and E. E. Hassanien, “An adaptive and late multifusion framework in contextual representation based on evidential deep learning and dempster-shafer theory,” Knowledge and Information Systems , vol. 66, pp. 4667–4699, 2024. [46] Y. Gal and Z. Ghahramani, “Dropout as a bayesian approximation: Rep-resenting model uncertainty in deep learning,” International Conference on Machine Learning , pp. 1050–1059, 2016. [47] A. Kendall and Y. Gal, “What uncertainties do we need in bayesian deep learning for computer vision?” Advances in Neural Information Processing Systems , vol. 30, 2017. [48] D. Pandey and Q. Yu, “Learn to accumulate evidence from all training samples: Theory and practice,” in International Conference on Machine Learning , 2023, pp. 26 963–26 989. [49] A. P. Dempster, “A generalization of bayesian inference,” Journal of the Royal Statistical Society: Series B (Methodological) , vol. 30, no. 2, pp. 205–247, 1968. [50] G. Shafer, A mathematical theory of evidence . Princeton University Press, 1976. [51] M. Zangeneh Soroush, K. Maghooli, S. K. Setarehdan, and A. M. Nasrabadi, “A novel method of EEG-based emotion recognition using nonlinear features variability and Dempster-Shafer theory,” Biomedical Engineering: Applications, Basis and Communications , vol. 30, no. 4, p. 1850026, 2018. [52] J. Park, “KoELECTRA: Pretrained ELECTRA model for Korean,” https: //github.com/monologg/KoELECTRA, 2020. [53] I. Loshchilov and F. Hutter, “Decoupled weight decay regularization,” in 
+
+International Conference on Learning Representations (ICLR) , 2019. [54] L. A. Zadeh, “A simple view of the dempster-shafer theory of evidence and its implication for the rule of combination,” AI Magazine , vol. 7, no. 2, pp. 85–90, 1986. [55] Y. Wu, P. Yue, L. Qu, T. Li, and Y. Ruan, “Multi-modal emotion recognition using multiple acoustic features and dual cross-modal transformer,” in IEEE International Conference on Acoustics, Speech, and Signal Processing , 2024, pp. 7215–7219. [56] J. Mai, X. Xing, W. Chen, and X. Xu, “Dropformer: A dynamic noise-dropping transformer for speech emotion recognition,” in Interspeech ,2024, pp. 1575–1579. [57] T.-Y. Lin, P. Goyal, R. Girshick, K. He, and P. Doll´ ar, “Focal loss for dense object detection,” in Proceedings of the IEEE International Conference on Computer Vision (ICCV) , 2017, pp. 2980–2988. [58] R. Liu, Y. Chao, X. Ma, X. Sha, L. Sun, S. Li, and S. Chang, “Ertnet: an interpretable transformer-based framework for eeg emotion recognition,” 
+
+Frontiers in Neuroscience , vol. 18, p. 1320645, 2024. [59] S. Bagherzadeh, A. Shalbaf, A. Shoeibi, M. Jafari, R. Tan, and U. Acharya, “Developing an eeg-based emotion recognition using ensemble deep learning methods and fusion of brain effective connectivity maps,” IEEE Access , vol. 12, pp. 56 317–56 332, 2024. [60] D. Hazarika, R. Zimmermann, and S. Poria, “MISA: Modality-invariant and -specific representations for multimodal sentiment analysis,” in 
+
+Proceedings of the 28th ACM International Conference on Multimedia (ACM MM) , 2020. [61] J. Yang, Y. Yu, D. Niu, W. Guo, and Y. Xu, “ConFEDE: Contrastive feature decomposition for multimodal sentiment analysis,” in Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (ACL) , 2023, pp. 7617–7630. [62] Q. Zhang, H. Wu, C. Zhang, Q. Hu, H. Fu, J. T. Zhou, and X. Peng, “Provable dynamic fusion for low-quality multimodal data,” in Proceed-ings of the 40th International Conference on Machine Learning (ICML) ,2023. [63] C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, “On calibration of modern neural networks,” in Proceedings of the 34th International Conference on Machine Learning (ICML) , 2017, pp. 1321–1330. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING (SUPPLEMENTARY MATERIAL) 1
+
+# Supplementary Material for “Evidential Multimodal Transformers with Dempster-Shafer Fusion for Emotion Recognition” 
+
+Muhammad Usama and Yeoreum Jung 
+
+This document provides supplementary material for the main manuscript. It collects the full proofs of the theoretical results, complete implementation and reproducibility details, and extended experiments that support but are not essential to the main narrative. Throughout, references of the form Eq. (n), Theorem n, Lemma n, Table n, and Section n refer to the main manuscript unless explicitly prefixed with “S”. Equation, table, and figure numbers prefixed with “S” refer to this supplement. I. P ROOFS OF THE THEORETICAL RESULTS 
+
+This section provides the complete proofs of the theorems, the proposition, and the lemmas stated in Section III-E of the main manuscript. The statements, together with their interpretation, appear in the main text; only the proofs are reproduced here. 
+
+A. Proof of Theorem III.1 (Unconditional Stability) Proof. Consider the pairwise fusion between modalities i and 
+
+j. From Eq. 9, the uncertainty mass is um = K/S m where 
+
+Sm = ∑Kk=1 (emk + 1) . Since ∥em∥1 ≤ Emax by construction (Eq. 6), it follows that Sm ≤ Emax + K, and thus: 
+
+um ≥ KEmax + K > 0
+
+The conflict between modalities i and j is defined as cij =∑  
+
+> p̸=q
+
+bipbjq . By the additivity constraint ∑ 
+
+> k
+
+bmk + um = 1 , we can expand the non-conflicting mass: 
+
+1 − cij =
+
+> K
+
+∑
+
+> k=1
+
+bikbjk + ui(1 − uj ) + uj (1 − ui) + uiuj
+
+≥ uiuj ≥ K2
+
+(Emax + K)2 > 0
+
+Because the denominator 1 − cij is strictly bounded away from zero by the product of the strictly positive uncertainties 
+
+uiuj , the normalization factor nij = 1 /(1 − cij ) can never diverge. By induction over M modalities using the associativity of Dempster’s Rule: 
+
+1 − ctotal ≥
+
+> M
+
+∏
+
+> m=1
+
+um ≥
+
+( KEmax + K
+
+)M
+
+This yields Eq. 18. Since the Jacobian of the fusion oper-ator ∇eΦ depends purely on polynomial products scaled by bounded normalizers nij ≤ (Emax + K)M /K M , the gradient norm is bounded by a finite constant L. Thus, Φ is L-Lipschitz continuous. 
+
+B. Proof of Proposition III.1 and Theorem III.2 (Bayesian Consistency) Proof of Proposition III.1. From Eq. 2, pmk = bmk +um/K , so 
+
+bmk = pmk − um/K . The fused belief and uncertainty (Eqs. 12 and 13) together with p1⊕2 
+
+> k
+
+= b1⊕2 
+
+> k
+
++ u1⊕2/K give 
+
+p1⊕2 
+
+> k
+
+= n
+
+(
+
+b1
+
+> k
+
+b2 
+
+> k
+
++ b1
+
+> k
+
+u2 + b2
+
+> k
+
+u1 + u1u2
+
+K
+
+)
+
+, n = 11 − c .
+
+Substituting bmk = pmk − um/K and collecting terms gives, exactly, 
+
+p1⊕2 
+
+> k
+
+= n
+
+[
+
+p1
+
+> k
+
+p2 
+
+> k
+
++ (1 − 1
+
+> K
+
+)( u2p1 
+
+> k
+
++ u1p2
+
+> k
+
+) − K−1 
+
+> K2
+
+u1u2]
+
+.
+
+As u1, u 2 → 0 the last two terms vanish and 1−c → ∑ 
+
+> ℓ
+
+p1 
+
+> ℓ
+
+p2 
+
+> ℓ
+
+,giving the normalized product p1
+
+> k
+
+p2
+
+> k
+
+/ ∑ 
+
+> ℓ
+
+p1 
+
+> ℓ
+
+p2 
+
+> ℓ
+
+. If um → 1 then 
+
+bmk → 0 and c → 0, so n → 1 and the expression reduces to the projected probability of the other modality. 
+
+Proof of Theorem III.2. Under conditional independence of the modalities given Y , the joint likelihood factorizes, 
+
+P(x1, x2 | Y = k) = P(x1 | Y = k) P(x2 | Y = k).Bayes’ rule applied to each modality gives P(xm | Y = k) = 
+
+pmk P(xm)/π k, where πk = P(Y = k) and pmk = P(Y = k |
+
+xm) by the calibration assumption. Hence 
+
+P(Y = k | x1, x2) ∝ πk · p1
+
+> k
+
+πk
+
+· p2
+
+> k
+
+πk
+
+= p1
+
+> k
+
+p2
+
+> k
+
+πk
+
+.
+
+With a uniform prior πk = 1 /K this is proportional to p1
+
+> k
+
+p2
+
+> k
+
+,so normalizing yields P(Y = k | x1, x2) = p1
+
+> k
+
+p2
+
+> k
+
+/ ∑ 
+
+> ℓ
+
+p1 
+
+> ℓ
+
+p2 
+
+> ℓ
+
+,which by Proposition III.1 equals the confident-limit fused probability p1⊕2 
+
+> k
+
+. Because p1⊕2 
+
+> k
+
+then coincides with the true posterior P(Y = k | x1, x2), it is calibrated by definition. For um > 0, Proposition III.1 shows the fused probability is a smooth interpolation between this Bayesian product and the more certain modality’s projected probability, so calibrated inputs yield a fused prediction that departs from the Bayes posterior only through the residual cross-modal dependence, quantified by the correlation ρ of Section V. 
+
+C. Proof of Theorem III.3 (Vacuous Opinion Minimizes the Regularizer) Proof. By Gibbs’ inequality, for any distributions P, Q we have KL[ P ∥Q] ≥ 0 with equality if and only if P = Q.Applying this to LKL = KL[Dir( α)∥Dir( 1)] gives LKL ≥ 0
+
+with equality if and only if Dir( α) = Dir( 1), i.e. α = 1,equivalently e = 0 and u = K/K = 1 . Thus the vacuous IEEE TRANSACTIONS ON AFFECTIVE COMPUTING (SUPPLEMENTARY MATERIAL) 2
+
+opinion is the unique global minimizer over the feasible set 
+
+{e : e ≥ 0, ∥e∥1 ≤ Emax }, which contains it. Differentiating the KL divergence, 
+
+∂LKL 
+
+∂α j
+
+= ( αj − 1) ψ′(αj ) −
+
+( ∑ 
+
+> k
+
+αk − K
+
+)
+
+ψ′
+
+( ∑ 
+
+> k
+
+αk
+
+)
+
+,
+
+which vanishes at α = 1, confirming stationarity of the minimizer. With the Softplus floor e ≥ ϵ1, the minimizer is approached as e → 0 (u → 1). Global convexity is neither claimed nor required. The exact Hessian of LKL is 
+
+Hij = δij 
+
+[ψ′(αi)+( αi−1) ψ′′ (αi)]−[ψ′(S)+( S−K)ψ′′ (S)], S = ∑ 
+
+> k
+
+αk,
+
+(1) where the previously omitted terms (αi − 1) ψ′′ (αi) and 
+
+(S − K)ψ′′ (S) involve the tetragamma function ψ′′ < 0.This Hessian is positive definite in a neighborhood of α = 1
+
+but not for all α; for instance at α = (1 , 10) it is indefinite (eigenvalues {− 0.008 , 1.631 }). The minimizer property above relies only on Gibbs’ inequality and therefore holds uncondi-tionally. 
+
+D. Proof of Lemma III.1 (Modality Noise Immunity) Proof. Consider the fusion of an informative modality i with an uninformative modality m where um → 1 and bmk → 0.From Eq. 12, the fused belief is: 
+
+bi⊕mk = nim 
+
+(bikbmk + bikum + bmk ui)
+
+As bmk → 0 and um → 1, the first and third terms vanish, leaving bi⊕mk ≈ nim bikum. Since the normalization factor 
+
+nim = 1 /(1 − cim ) and cim → 0 when one modality is maxi-mally uncertain (by Eq. 10), we have nim → 1. Furthermore, from Eq. 13, ui⊕m = nim uium ≈ ui as um → 1. Therefore, the fused opinion converges to (bik, u i, a k), demonstrating invariance to the uninformative modality. 
+
+E. Proof of Lemma III.2 (OOD Gradient Vanishing) Proof. At the vacuous configuration e = 0 (α = 1), which minimizes LKL by Theorem III.3, the evidence gradient van-ishes, since ∂LKL /∂α j = ( αj −1) ψ′(αj )−(S−K)ψ′(S) = 0 
+
+there, so ∇eLKL = 0. By the chain rule, the gradient with respect to model parameters is 
+
+∇θ LKL = ∂LKL 
+
+∂e · ∂e
+
+∂θ = 0 · ∂e
+
+∂θ = 0,
+
+so no parameter update fits uninformative data at that config-uration. Empirically, as inputs become increasingly corrupted the predicted evidence is driven toward this configuration and the gradient norm collapses (Section IV-K). 
+
+F. Proof of Lemma III.3 (Non-Triviality of Evidential Learn-ing) Proof. At e = 0, the Dirichlet parameters are αk = 1 for all k, yielding S = K and expected probabilities E[pk] = 1/K (uniform distribution). For a sample with one-hot label TABLE I: Comparison of uncertainty quantification methods on IEMOCAP. Cost is the number of forward passes per prediction. Lower is better for ECE, MCE, NLL, Brier, and AURC. Best in bold.                                                  
+
+> Method Acc. ECE MCE NLL Brier AURC Cost
+> Softmax 0.803 0.147 0.285 0.842 0.284 0.165 1Softmax + Temp. [1] 0.803 0.078 0.162 0.584 0.261 0.125 1MC Dropout [2] 0.811 0.065 0.134 0.512 0.245 0.108 30 Deep Ensemble 0.826 0.048 0.098 0.442 0.218 0.089 5Evidential + Concat 0.792 0.089 0.182 0.624 0.272 0.138 1
+> EMT-DS (Ours) 0.843 0.042 0.082 0.412 0.198 0.071 1
+
+y where yk = 1 for the true class and yℓ = 0 otherwise, the sum of squared errors is: 
+
+> K
+
+∑
+
+> j=1
+
+(yj − E[pj ]) 2 =
+
+(
+
+1 − 1
+
+K
+
+)2
+
++ ∑ 
+
+> j̸=k
+
+(
+
+0 − 1
+
+K
+
+)2
+
+=
+
+( K − 1
+
+K
+
+)2
+
++ ( K − 1) · 1
+
+K2
+
+= (K − 1) 2 + ( K − 1) 
+
+K2 = (K − 1) KK2 = K − 1
+
+K
+
+This lower bound is strictly positive for K ≥ 2, preventing convergence to e = 0 when training on labeled data. II. D ETAILED IMPLEMENTATION AND REPRODUCIBILITY 
+
+The complete preprocessing, alignment, encoder, and train-ing details are given in Section IV of the main manuscript and are not repeated here. This supplement collects the extended ablations and additional analyses referenced from the main text. III. E XTENDED ABLATIONS AND SENSITIVITY ANALYSES 
+
+A. Comparison with Uncertainty Quantification Methods 
+
+To position EMT-DS against established uncertainty quan-tification techniques, Table I compares it on IEMOCAP against a softmax point estimate, post-hoc temperature scaling [1], Monte Carlo dropout [2] with 30 stochastic forward passes, a deep ensemble of five independently trained models, and an evidential model without Dempster-Shafer fusion (evidential heads with concatenation). All methods share the same frozen encoders. Deep ensembles attain competitive calibration and negative log-likelihood, but require five separate training and inference cycles, and MC dropout incurs a thirtyfold inference overhead. EMT-DS attains the lowest Expected Calibration Error (0.042) and the best risk-coverage area (AURC 0.071) at a single forward pass, while also being the most accurate. This shows that the quality of the uncertainty arises from the evidential and conflict-aware formulation rather than from sampling or ensembling cost. 
+
+B. Backbone-Agnostic Ablation 
+
+The proposed evidential head and Dempster-Shafer fusion operate on modality feature vectors and are therefore indepen-dent of the encoder architecture. To verify that the gains are not an artifact of strong pretrained transformers, we replace the Wav2Vec2 and BERT encoders on IEMOCAP with a IEEE TRANSACTIONS ON AFFECTIVE COMPUTING (SUPPLEMENTARY MATERIAL) 3
+
+TABLE II: Backbone-agnostic ablation on IEMOCAP. The ev-idential Dempster-Shafer framework improves calibration and noise robustness under both transformer and non-transformer encoders. Best per backbone in bold.                             
+
+> Backbone Method Acc. F1 ECE Acc. ( σ=0.5) Acc. ( σ=1.0)
+> Transformer Softmax Attn. 0.803 0.786 0.147 0.682 0.453
+> EMT-DS 0.843 0.827 0.042 0.804 0.712
+> CNN-LSTM/BiLSTM Softmax Attn. 0.741 0.724 0.178 0.615 0.384
+> EMT-DS 0.778 0.761 0.054 0.742 0.668
+
+TABLE III: Sensitivity of the conflict threshold τ on IEMO-CAP. The error-detection rate is the fraction of errors found by reviewing the top 20% highest-conflict samples. Best in bold. 
+
+τ Acc. F1 ECE Conflict Err. Detect. 
+
+0.3 0.831 0.815 0.051 0.098 0.724 0.4 0.838 0.821 0.045 0.112 0.768 
+
+0.5 0.843 0.827 0.042 0.126 0.802 
+
+0.6 0.841 0.825 0.044 0.145 0.782 0.7 0.836 0.820 0.048 0.168 0.751 
+
+CNN-LSTM audio encoder and a BiLSTM text encoder, and compare a softmax attention-fusion model against EMT-DS under both backbone families. Table II shows that, although absolute accuracy is lower with the simpler encoders, the evi-dential framework delivers the same qualitative benefits: with the CNN-LSTM and BiLSTM backbone it reduces ECE from 0.178 to 0.054 and improves the noise-corrupted accuracy at σ = 1 .0 from 38.4% to 66.8%. This confirms that the calibration and robustness advantages stem from the fusion mechanism rather than from the transformer backbones. 
+
+C. Conflict-Loss and Numerical Sensitivity 
+
+We provide explicit sweeps that justify the conflict-loss design choices. Table III sweeps the conflict threshold τ from 0.3 to 0.7. Accuracy and the selective-review error-detection rate both peak at τ = 0 .5, the midpoint of the conflict range, and performance is stable in a broad neighborhood. Table IV sweeps the conflict weight λc from 0 to 0.3; the chosen value of 0.10 lies in a stable region, and setting λc = 0 (no conflict loss) reduces accuracy to 82.8% and worsens calibration. Table V varies the numerical clipping constant used in the normalization factor. Accuracy and ECE are invariant from 0.99 to 0.9999, and the clip activates on at most 0.02% of fusion operations, confirming that it is a float-precision guard rather than a tuned hyperparameter. IV. A DDITIONAL ANALYSES 
+
+A. Cross-Dataset Generalization 
+
+To assess generalization capability, we train EMT-DS on one dataset and evaluate on others without fine-tuning (zero-shot transfer). Table VI presents results. As expected, direct transfer exhibits a performance drop compared to within-domain training (e.g., IEMOCAP accuracy 84.3% → 62.3% on KEMDy20), attributable to domain shifts in acoustic environ-ments, speaker demographics, and emotion taxonomies. The critical safety requirement, however, is not to maintain perfect TABLE IV: Sensitivity of the conflict regularization weight λc
+
+on IEMOCAP. Best in bold. 
+
+λc Acc. F1 ECE Conflict 
+
+0.00 0.828 0.811 0.058 0.143 0.05 0.836 0.820 0.049 0.134 
+
+0.10 0.843 0.827 0.042 0.126 0.15 0.841 0.825 0.043 0.121 0.20 0.838 0.822 0.045 0.114 0.30 0.831 0.814 0.052 0.102 
+
+TABLE V: Sensitivity of the conflict clipping constant on IEMOCAP. Accuracy and ECE are invariant; the clip rarely activates.             
+
+> Clip Constant Acc. ECE Activation Rate
+> 0.9900 0.8428 0.0422 0.0002 0.9990 0.8430 0.0420 0.0000 0.9999 0.8430 0.0420 0.0000
+
+accuracy under shift but to know when the model is failing. Figure 1 presents the rejection-accuracy curve for the IEMO-CAP → KEMDy20 transfer: as samples are progressively rejected by predicted uncertainty, accuracy on the retained data rises steeply, exceeding 90% when retaining the most confident 50% of samples. The conflict values rise markedly under shift (0.342 and 0.468 for the two transfers from IEMOCAP, versus 0.126 in-domain), so the model effectively flags its own ignorance rather than failing silently. 
+
+B. Scalability 
+
+Figure 2 shows training time per epoch and inference throughput as the number of modalities varies from 2 to 6. Training time scales approximately linearly with M (R2 =0.993 ), confirming the O(M ) complexity, and inference throughput remains above 95 samples per second even with 6 modalities, in contrast to the quadratic scaling of pairwise attention. 
+
+C. End-to-End Cost Profiling 
+
+Table VII reports the full end-to-end cost on IEMOCAP, including total wall-clock training time, the number of epochs to convergence under our early-stopping rule, per-sample inference latency, peak VRAM, and parameter count. Because the pretrained encoders are frozen, their features are extracted once and cached, so the per-sample feature-extraction cost during training is amortized to a negligible value. EMT-DS converges in 26 epochs and 1.4 hours, close to the concate-nation baseline (1.2 hours) and more than three times faster than CAG-MoE (4.5 hours), while its 8.7 GB peak memory remains suitable for commodity and edge GPUs. 
+
+D. Per-Class Calibration Error Correlation 
+
+Table VIII reports, for each IEMOCAP class, the correlation 
+
+ρ between the audio and text calibration errors and the IEEE TRANSACTIONS ON AFFECTIVE COMPUTING (SUPPLEMENTARY MATERIAL) 4
+
+TABLE VI: Zero-Shot Cross-Dataset Transfer Performance. 
+
+Train → Test Acc. (%) F1 (%) Conf. 
+
+IEMOCAP → KEMDy20 62.3 57.8 0.342 IEMOCAP → DEAP 51.2 48.6 0.468 KEMDy20 → IEMOCAP 58.7 55.2 0.389 DEAP → IEMOCAP 49.8 46.3 0.501 0 20 40 60 80 100  
+
+> Rejection Rate (%)
+> 50 60 70 80 90 100
+> Accuracy on Unseen Domain (%)
+> High Uncertainty Error
+> EMT-DS (Ours) Softmax Entropy
+
+Fig. 1: Rejection-accuracy curve for zero-shot transfer (IEMO-CAP → KEMDy20). As high-uncertainty samples are rejected, accuracy on the remaining data improves, demonstrating that EMT-DS aligns uncertainty with error likelihood even under domain shift. empirically measured fused ECE. The correlation is highest for the high-arousal Angry class ( ρ = 0 .28 ) and lowest for low-arousal Neutral and Sad ( ρ = 0 .08 and 0.11 ). The fused ECE remains low for every class, including the most correlated one, indicating that the conditional-independence assumption underlying Theorem III.2 is adequate in practice and that the residual cross-modal dependence does not materially degrade calibration. 
+
+E. Fusion Strategy Comparison 
+
+Table IX compares five fusion paradigms on IEMOCAP: early fusion (feature concatenation), late fusion (softmax aver-aging), attention-based fusion, mixture-of-experts with gating, and our Dempster-Shafer fusion. D-S fusion achieves the best accuracy (84.3%) and the lowest conflict (0.126), whereas attention-based fusion exhibits 87% higher conflict (0.235). This complements the fusion-rule comparison under identical evidence reported in the main manuscript. V. R OBUSTNESS AND INTERPRETABILITY DETAILS 
+
+A. Gradient Vanishing under Corruption 
+
+Figure 3 empirically verifies Lemma III.2: as input noise increases ( σ → 1, out-of-distribution), the gradient norm 
+
+∥∇ θ LKL ∥ of EMT-DS collapses to zero, preventing weight updates from corrupted data, whereas the softmax baseline continues to propagate gradients and fit the noise. 2.0 2.5 3.0 3.5 4.0 4.5 5.0 5.5 6.0 
+
+> Number of Modalities
+> 810 12 14 16 18 20 22
+> Train Time (s/epoch)
+> Fit: 3.7x + 0.8 100 110 120 130 140 150 160
+> Inference Throughput (samples/s)
+
+Fig. 2: Scalability analysis: (left) training time per epoch in seconds and (right) inference throughput in samples per second, as a function of the number of modalities. EMT-DS exhibits linear scaling. TABLE VII: End-to-end cost profiling on IEMOCAP (NVIDIA RTX 5090, mixed precision). Feature extraction is amortized via cached frozen-encoder features. Best efficiency among accurate models in bold.                               
+
+> Method Train (h) Epochs Feat. (ms) Infer. (ms) VRAM (GB) Params (M)
+> Baseline Concat 1.2 24 ∼06.5 8.2 87.2 Attention Fusion 1.8 28 ∼08.9 12.3 94.6 CAG-MoE 4.5 35 ∼012.3 11.2 112.8
+> EMT-DS (Ours) 1.4 26 ∼07.0 8.7 89.7
+
+B. Modality Contribution Analysis 
+
+Figure 4 shows the average belief mass each modality assigns to the four IEMOCAP emotion classes. Text dominates for Neutral (0.35), reflecting descriptive language, while audio dominates for Happy (0.34), Sad (0.34), and Angry (0.36), capturing paralinguistic affective cues such as pitch and loud-ness. 
+
+C. Qualitative Failure Cases 
+
+Table X lists representative IEMOCAP test cases spanning the four conflict-by-correctness quadrants, illustrating that conflict and fused uncertainty carry interpretable, actionable meaning. VI. A RCHITECTURE SCHEMATICS 
+
+Figures 5 and 6 illustrate the evidential output layer and the Dempster-Shafer fusion module, complementing the equations in Section III of the main manuscript. REFERENCES [1] C. Guo, G. Pleiss, Y. Sun, and K. Q. Weinberger, “On calibration of modern neural networks,” in Proceedings of the 34th International Conference on Machine Learning (ICML) , 2017, pp. 1321–1330. [2] Y. Gal and Z. Ghahramani, “Dropout as a bayesian approximation: Rep-resenting model uncertainty in deep learning,” International Conference on Machine Learning , pp. 1050–1059, 2016. IEEE TRANSACTIONS ON AFFECTIVE COMPUTING (SUPPLEMENTARY MATERIAL) 5
+
+TABLE VIII: Per-class cross-modal calibration error correla-tion ρ (audio versus text) on IEMOCAP, with the empirically measured fused ECE. 
+
+Emotion Class Correlation ρ Empirical ECE 
+
+Neutral 0.08 ± 0.04 0.038 Happy/Excited 0.15 ± 0.06 0.042 Sad 0.11 ± 0.05 0.039 Angry 0.28 ± 0.08 0.049 
+
+TABLE IX: Comparison of fusion strategies on IEMOCAP. 
+
+Fusion Strategy Acc. F1 Conflict 
+
+Early Fusion (Concat) 76.4 74.8 0.287 Late Fusion (Average) 78.1 76.3 0.268 Attention Fusion 80.3 78.6 0.235 Mixture-of-Experts 81.9 80.1 0.204 
+
+D-S Fusion (Ours) 84.3 82.7 0.126 0.0 0.2 0.4 0.6 0.8 1.0 
+
+Noise Standard Deviation ( )
+
+> 0.0 0.2 0.4 0.6 0.8 1.0 1.2 1.4
+> Gradient Norm
+> 0
+> Standard Softmax EMT-DS (Evidential)
+
+Fig. 3: Empirical verification of Lemma III.2 (Gradient Van-ishing). As input noise σ → 1 (OOD), the gradient norm of EMT-DS (green) collapses to zero, demonstrating noise immunity. The softmax baseline (red) continues to propagate gradients, fitting the noise. Neu Hap Sad Ang Audio Text 
+
+0.32 0.34 0.34 0.36 0.35 0.31 0.33 0.32 
+
+> 0.31 0.32 0.33 0.34 0.35 0.36
+> Avg. Belief Mass
+
+Fig. 4: Average belief mass contribution of each modality for different emotions on IEMOCAP. Text dominates for Neutral, while audio dominates for Happy, Sad, and Angry. TABLE X: Qualitative case study of conflict and fused uncer-tainty under different cross-modal scenarios on IEMOCAP. 
+
+True Pred. Conflict Unc. Scenario 
+
+Neutral Neutral 0.08 0.12 Modalities agree, descriptive dialogue Angry Angry 0.62 0.24 Sarcasm: happy text, angry prosody Happy Sad 0.12 0.14 Ambiguous laughing resembling crying Sad Neutral 0.58 0.38 Audio corrupted by background music Evidential Opinion Generation  For all m in {1..M}   
+
+> Linear Proj Softplus
+> +
+> Dirichlet Params Opinion Logits
+> (B x K)
+> Strength Evidence
+
+Fig. 5: Evidential output layer architecture. Feature represen-tation hm ∈ Rd undergoes linear projection Wmhm + bm
+
+followed by softplus activation and an L1 evidence cap to produce the bounded evidence vector em (Eqs. 5–6). Dirichlet parameters αmk = emk + 1 define concentration and strength 
+
+Sm = ∑
+
+k αmk (Eq. 8). Subjective Opinion components are derived as bmk = emk /S m, um = K/S m, and amk = 1 /K 
+
+(Eq. 9), satisfying ∑
+
+k bmk + um = 1 .Dissonance-Aware  
+
+> Dempster-Shafer Fusion
+> Belief & Uncertainty
+> Updates
+> Conflict Calculation &
+> Normalization
+> Calc Conflict Calc Norm
+> Belief Update
+> Uncertainty Update
+
+Fig. 6: Dempster-Shafer fusion for pairwise opinion combina-tion. Given opinions ωi and ωj , conflict cij = (1 − ui)(1 −
+
+uj )−∑
+
+k bikbjk (Eq. 10) quantifies disagreement. Normalization 
+
+nij = 1/(1 − cij ) (Eq. 11) renormalizes by discarding conflicting mass. Fused belief bi⊕jk combines joint agreement 
+
+bikbjk, partial support bikuj + bjkui, weighted by nij (Eq. 12). Fused uncertainty ui⊕j = nij (uiuj ) (Eq. 13) decreases with informative modalities but increases with conflict. For M > 2
+
+modalities, apply iteratively (Algorithm 1).

@@ -1,0 +1,318 @@
+Title: Fear Is Not Always Fear: Variation in Emotion Label Equivalence Across Datasets
+
+URL Source: https://arxiv.org/pdf/2610.12841v1
+
+Published Time: Mon, 12 Oct 2026 00:24:54 GMT
+
+Number of Pages: 15
+
+Markdown Content:
+# Fear Is Not Always Fear: Variation in Emotion Label Equivalence Across Datasets 
+
+Emily Öhman 
+
+Waseda University, Japan 
+
+ohman@waseda.jp 
+
+Anna Koufakou 
+
+Florida Gulf Coast University, USA 
+
+akoufakou@fgcu.edu 
+
+Abstract 
+
+Emotion classifiers are routinely applied be-yond their training data, on the assumption that same-named labels such as fear or sur-prise mean the same thing across resources. We test this assumption for five labels shared by GoEmotions, XED, and BRIGHTER, com-paring models on identical inputs and under cross-corpus transfer. On the same texts, one 
+
+fear classifier flags 71% as fearful and another 8%, yet the two largely agree on how the texts rank. Across 30 resource–label comparisons, training-label prevalence explains about half of this kind of scale mismatch, and a fitted intercept removes most of it. What recalibra-tion cannot repair is larger: transferred models lose 55% of native discrimination in aggregate, agreement in ranking between classifiers is only weakly related to that loss, and for surprise the resources disagree about which texts express the emotion. The choice of training resource can therefore change conclusions: on two exter-nal tweet collections, BRIGHTER- and XED-trained classifiers give opposite answers about which shows more surprise , even after rank normalization, with intervals excluding zero in both directions. A shared emotion label name does not establish an interchangeable measure-ment target. 
+
+1 Introduction 
+
+Emotion classifiers are increasingly used as mea-surement instruments: to track fear during a pan-demic, compare joy across communities, or detect sadness in clinical text (see e.g. Kleinberg et al., 2020; Guo et al., 2024; Liu et al., 2024; Chu et al., 2025). A model fine-tuned on GoEmotions (Dem-szky et al., 2020) or XED (Öhman et al., 2020) is applied to new data, and its fear scores are read as measurements of fear. This practice rests on an assumption that is rarely tested: that a label such as 
+
+fear refers to approximately the same target across datasets. This assumption does not always hold, and the ways in which it fails have different implications for calibration fixes. We test it by training one model with a separate output head for each resource and comparing the heads on the same held-out texts. On the same 2,765 BRIGHTER test texts, the BRIGHTER fear head classifies 70.8% as fearful, averaged over three seeds, while the GoEmotions 
+
+fear head classifies only 7.6%, a more than nine-fold difference, using development-selected thresh-olds. Our prevalence analysis attributes much of this scale mismatch to base-rate differences, and the two heads largely agree on the rank ordering 
+
+of the texts by predicted fear (ρ = .897 ): a study’s absolute estimate of fear can change dramatically with the training resource even when the models preserve nearly the same ranking of texts. For 
+
+surprise , by contrast, the XED and BRIGHTER heads disagree substantially about the ranking itself. The same headline observation, “cross-resource dis-agreement”, therefore hides qualitatively different problems that require different remedies. Emotion resources differ in theoretical ground-ing (fine-grained taxonomies versus Plutchik-style basic emotions; Plutchik 1980), inventory size, an-notation guidelines, aggregation rules, and text do-main: a label called fear in a 28-category scheme competes with nervousness , while in an eight-category scheme it does not. Such differences could move the category boundary, change how confidently a model predicts the label, or alter which texts are judged most representative of the emotion. Existing work establishes that cross-corpus emo-tion classification is difficult (Bostan and Klinger, 2018) and that merging corpora into a unified in-ventory helps for some datasets but not others (Ko-ufakou et al., 2024). What it does not establish is what form these cross-resource differences take. “Poor transfer” can arise from several distinct mis-matches with very different practical consequences. 1arXiv:2610.12841v1 [cs.CL] 9 Oct 2026 A difference consistent with prior shift may in prin-ciple be corrected without target labels; a differ-ence in probability scale can be corrected with a small number of them; a disagreement about which texts express the emotion cannot be fixed by any order-preserving recalibration. This paper asks which of these mismatches ac-tually occur between same-named emotion labels, focusing on anger , fear , joy , sadness , and surprise .We make three contributions: 1. A framework for label equivalence compris-ing four progressively weaker relationships: intercept, positive affine, and nonlinear mono-tonic equivalence, and ordering divergence. 2. A controlled same-input comparison. Ashared encoder with dataset-specific heads scores identical texts, yielding a 30-unit empir-ical map of cross-resource compatibility (five shared labels × six directed resource pairs). 3. An empirical characterization of portabil-ity and repairability using independent cross-corpus transfer, progressive recalibration, a decomposition of probabilistic transfer error into miscalibration and discrimination loss, and corpus-level comparisons testing whether resource choice changes measurement conclu-sions. Same-named heads usually preserve substantial rank agreement while differing strongly in proba-bility scale, and training-label prevalence explains much of that scale mismatch; transferred models nevertheless lose 55.3% of native discrimination in aggregate, and surprise shows ordering disagree-ment that no monotonic correction removes. These differences can change substantive conclusions: the direction of corpus-level comparisons depends on which resource the classifier was trained on, in-cluding for surprise between two tweet collections external to all three training resources. We there-fore argue that shared label names should be treated as hypotheses about equivalence, and that the rele-vant question is not whether two labels match but what form of equivalence they exhibit. 1
+
+2 Related Work 
+
+Emotion labels are shaped by the annotation scheme used to elicit them as well as by the un- 
+
+> 1The code is available anonymously here: https:// anonymous.4open.science/r/label_harmony-7E4A/
+
+derlying affective phenomenon. Annotations dif-fer with the perspective annotators adopt (Buechel and Hahn, 2017), are entangled with intensity and annotator confidence (Troiano et al., 2021), and depend on which aspect of an event is represented (Oberländer et al., 2020); corpora also differ in domain, scheme, and label inventory, and models trained on one do not transfer cleanly to another (Bostan and Klinger, 2018). More broadly, anno-tation design is increasingly treated as part of the task definition rather than a neutral mechanism for recovering a pre-existing label: prescriptive and descriptive paradigms legitimately yield different label distributions (Röttger et al., 2022), aggrega-tion can obscure systematic variation in interpreta-tion (Prabhakaran et al., 2021; Mostafazadeh Da-vani et al., 2022), and divergent emotion judgments are often legitimate rather than noise (Uma et al., 2021; Plank, 2022; Ohman and Koufakou, 2026). A dataset label is thus an operationalization of a con-struct, not evidence that the construct is measured consistently across resources (Bean et al., 2026). We make this distinction empirically testable for emotion labels by asking which forms of apparent equivalence (prevalence, probability scale, order-ing) survive a change of annotation resource. Koufakou et al. (2024) map heterogeneous emo-tion corpora into a common inventory and show that unified training has uneven effects across datasets. We take the complementary route: rather than collapsing resource differences, we retain each resource’s own label function and ask which as-pects of a nominally shared label are equivalent, and whether the differences are large enough to change corpus-level comparisons. Relative judgments are more reliable than abso-lute rating scales in affect annotation (Kiritchenko and Mohammad, 2017; Mohammad and Bravo-Marquez, 2017; Bagdon et al., 2024), so agreement in relative ordering need not imply agreement on an absolute scale; we extend this distinction from annotators to resource-level model behavior. Psy-chometrics draws a related distinction, under the heading of measurement invariance, between in-struments that rank respondents alike and those that also share thresholds (Van de Schoot et al., 2012); our analysis is operational, and we neither fit latent-variable models nor make formal invari-ance claims. Platt scaling (Platt, 1999) and isotonic regres-sion (Zadrozny and Elkan, 2002) are standard post-hoc calibrators. Miscalibration under distribution 2shift is well documented (Guo et al., 2017; Ovadia et al., 2019). EM-based prior adjustment (Saerens et al., 2002) corrects prevalence changes under the assumption that class-conditional distributions re-main unchanged.We use these methods to study 
+
+repairability , i.e., how much transfer error progres-sively more flexible target-side correction removes, and the CORP score decomposition (Dimitriadis et al., 2021) to separate Brier-score differences into miscalibration and discrimination components. 
+
+3 Levels of Label Equivalence 
+
+Let pA(y | x) and pB (y | x) be the probabilities that two resources’ models assign to a same-named binary label y for text x, and let ℓ(·) denote the logit. We distinguish four operational relationships between two such prediction functions. For the first three, the hierarchy is nested when the affine slope is positive and the nonlinear map is monotone increasing: 
+
+L1: Intercept equivalence. ℓ(pB ) = ℓ(pA) + b.The two prediction functions differ only by a constant shift in log-odds. This relationship is consistent with a pure prior shift under the usual label-shift assumptions, but an intercept relationship alone does not establish that those assumptions hold. 
+
+L2: Positive affine equivalence. ℓ(pB ) =
+
+a ℓ (pA) + b with a > 0. The resources preserve text ordering but differ in probability scale or boundary sharpness. 
+
+L3: Nonlinear monotonic equivalence. pB =
+
+g(pA) for monotone-increasing g (equiva-lently on logits). Ordering is preserved, but the probability scales are related nonlinearly. 
+
+L4: Ordering divergence. No monotone-increasing g adequately relates the two prediction functions: the resources disagree about which texts receive relatively higher scores for the emotion. These relationships represent progressively weaker forms of equivalence; we use them as refer-ence relationships rather than assigning each empir-ical comparison to a discrete level. L1–L3 preserve the ordering of texts and differ only in how the two prediction scales are related, so rank agreement provides a complementary diagnostic; L4 permits the ordering itself to differ. Because an intercept relationship may arise from label-prevalence dif-ferences, we also compare the fitted L1 mapping with the log-odds shift implied by training-label prevalences. Target-side recalibration against gold labels (Section 4.4) addresses a different question, repairability, and does not by itself assign a transfer unit to a level: residual error after isotonic recali-bration is interpreted jointly with rank agreement, since residual error alone may also contain estima-tion noise. 
+
+4 Experimental Setup 
+
+4.1 Data 
+
+We use the three English resources in Table 1. The main analyses are restricted to the five la-bels that all three share ( anger , fear , joy , sad-ness , surprise ). Multi-label items are retained as multi-label: each shared emotion is modeled as an independent binary target, so an item may be positive for more than one shared label. Only un-ambiguous aliases (e.g. happiness →joy ) are nor-malized. Labels that a resource does not annotate are masked rather than treated as negatives. We preserve the released train/development/test parti-tions for GoEmotions and BRIGHTER. Because the English XED data did not provide equivalent partitions, we create a deterministic 80/10/10 split by SHA-256 hash of normalized text, ensuring that duplicate normalized texts remain in the same partition. The training/development/test partitions contain 43,410/5,426/5,427 examples for GoEmo-tions, 21,761/2,810/2,631 for English XED, and 2,763/115/2,765 for English BRIGHTER. 
+
+External collections. For the external measure-ment comparison, we use the English emotion-classification (E-c) data from SemEval-2018 Task 1 (Mohammad et al., 2018). The 2016 collection is the official training partition; the 2017 collection pools the official development and gold-labeled test partitions. Neither is used to fit or calibrate our models. After NFKC normalization, case fold-ing, and whitespace normalization, we remove one text overlapping our models’ training data and one within-collection duplicate, leaving 6,837 and 4,144 texts; no normalized texts are shared across the two collections. We compare these sampled collections rather than interpreting them as repre-sentative of year-to-year population change. 3Resource Items Source data Label scheme GoEmotions (Demszky et al., 2020) 54,263 Reddit comments 27 emotions + neutral, multi-label XED (English) (Öhman et al., 2020) 27,202 Movie subtitles 8 Plutchik emotions + neutral BRIGHTER (English) (Muhammad et al., 2025) 5,643 Social media multi-label; intensity recoverable SemEval-2018 E-c (Mohammad et al., 2018) 10,981 English tweets 11 emotions; external evaluation only      
+
+> Table 1: Training resources and external evaluation data. The cross-resource analyses focus on the five labels shared by all three: anger ,fear ,joy ,sadness ,surprise .
+
+4.2 Two model sources 
+
+A standard transfer experiment confounds input domain, representation, prevalence, boundary, and semantics. We therefore use two complementary setups built from different models. 
+
+Compatibility (same-input comparison). A sin-gle encoder is trained jointly with one output head per resource, and every text is scored by all three heads, so the evaluation input and encoder repre-sentation are held fixed when same-named heads are compared. Remaining differences reflect heads learned under different supervision and training distributions; they should not be interpreted as iso-lating annotation semantics alone. We report Spear-man correlation (ordering agreement) and mean absolute probability difference (MAE; scale agree-ment). 
+
+Portability (independent transfer). Separately, we train one native specialist per resource and apply each to the other two test sets, giving six directed transfers × five labels = 30 transfer units. We re-port AUROC, average precision (AP; several target labels are sparse), F1, Brier score, and log loss. Ex-cess error is measured relative to the native target specialist evaluated under the same procedure. Because compatibility and portability come from different models, agreement between them is not an artifact of scoring a single model twice. 
+
+Implementation. All models use 
+
+FacebookAI/roberta-base (Liu et al., 2019) as the pretrained encoder. Training uses AdamW with a learning rate of 2 × 10 −5, weight decay 0.01 , a linear learning-rate schedule with a warmup ratio of 0.06 , maximum sequence length 192, training batch size 16, and evaluation batch size 32. Models are trained for at most three epochs with early stopping (patience 1) and gradient clipping at a maximum norm of 1.0. Multi-label predictions use sigmoid outputs and binary cross-entropy over labels observed for the corresponding resource; labels not annotated by a resource are masked from the loss. The shared-encoder model uses natural sampling, with each training item seen once per epoch. All reported model results are averaged over three random seeds (13, 42, and 87). 
+
+Compute and software. The RoBERTa-base models contain approximately 125 million param-eters each; the shared-encoder model with three classification heads contains approximately 126 million. Experiments used NVIDIA GH200 GPUs with 120 GB of GPU memory. We estimate approx-imately 10 GPU-hours across training, exploratory runs, and evaluation, based on allocation records. 
+
+4.3 Direct same-input mapping 
+
+For each of the 30 directed resource–label com-parisons, we fit L1–L3 mappings between same-named heads on identical target-domain develop-ment texts and evaluate them on held-out target-domain test texts, without using gold emotion la-bels. L1 fits an intercept-only logit mapping, L2 a positive affine logit mapping, and L3 a mono-tone isotonic mapping; all minimize squared error in probability space. The source-to-target training-prevalence log-odds shift serves as a parameter-free L1 baseline. We report held-out MAE and Spear-man’s ρ. To distinguish systematic disagreement from training variation, residual MAE is normal-ized by the larger of the source- and target-head same-head cross-seed MAEs, a conservative seed-stability reference. 
+
+4.4 Recalibration ladder 
+
+For each transfer unit, we fit target-side correc-tions on target development data and evaluate them on target test data: (i) intercept-only logistic re-calibration; (ii) label-free prior-shift EM (Saerens et al., 2002), applied both to raw outputs and to outputs first calibrated on source development data; (iii) Platt scaling; and (iv) isotonic regression. The native target model receives the same target-development calibration in each condition, so ex-cess error compares transferred and native models 4Mapping Mean MAE Median MAE Raw .193 .184 Prevalence intercept .096 .070 L1: fitted intercept .076 .058 L2: affine .072 .048 L3: monotonic .069 .046 
+
+> Table 2: Held-out same-input mapping results across 30 directed resource–label comparisons. The prevalence-derived intercept uses only source and target training-label prevalences; L1–L3 are fitted on target-domain development predictions without gold emotion labels.
+
+under equivalent treatment. For thresholded evalu-ation, we select a separate label-specific threshold for each transferred and native model by maximiz-ing F1 over all unique score cut-points on the target development set. We additionally decompose raw Brier scores us-ing the Consistent, Optimally binned, and Repro-ducible (CORP) decomposition (Dimitriadis et al., 2021) into miscalibration (MCB), discrimination (DSC), and uncertainty (UNC) components. Be-cause transferred and native models are evaluated against the same target outcomes, the uncertainty term cancels, leaving excess miscalibration and loss of discrimination. We report discrimination loss both in absolute terms and relative to the na-tive target model’s discrimination, since absolute DSC is constrained by target prevalence. The PAV/isotonic fit used by CORP is estimated on the evaluation sample for diagnostic decomposition only; it is not a held-out recalibration procedure. 
+
+5 Same Labels, Different Operational Behavior 
+
+Same-named heads (heads for the same-named la-bel across resources) mostly agree on ordering and disagree on scale. Figure 1a shows rank agree-ment for each directed resource–label compari-son; across these 30 comparisons, mean agree-ment is ρ = .756 (median .805 ), and only three fall below .50 . Table 2 summarizes probability-space mapping errors. A shift computed only from training-label prevalences cuts mean held-out MAE from .193 to .096 and improves 26 of 30 units; a development-fitted intercept reduces it further to 
+
+.076 , improving on the prevalence shift in 20 of 30. Base rates therefore account for much, but not all, of the scale relationship. Affine and monotonic mappings add little on average. Figure 1b shows the residual after monotonic mapping relative to the conservative seed-stability reference; these ratios average 1.21 (median 1.13). 
+
+Fear illustrates a predominantly scale-based mis-match. On BRIGHTER texts, the BRIGHTER and GoEmotions heads preserve high rank agree-ment ( ρ = .897 ) despite a large probability-scale difference. The converse comparison on GoE-motions texts has more moderate rank agreement (ρ = .609 ), but its raw MAE of .377 falls to .012 af-ter monotonic mapping, within conservative same-head seed variation. Combining GoEmotions’ ner-vousness category with fear does not explain the mismatch with BRIGHTER: MAE stays at .517 under max pooling ( .517 ) and reduces it only to 
+
+.507 under noisy-OR, while slightly lowering rank agreement. For surprise , ordering itself diverges more strongly (Figure 1). The weakest comparison is XED →BRIGHTER, with ρ = .329 ; its mono-tonic residual remains 2.97 times the conservative same-head seed-stability reference. The reverse BRIGHTER →XED comparison also has weak rank agreement ( ρ = .368 ), although its post-monotonic residual falls within same-head seed variation. This ordering divergence is consistent with L4-type incompatibility: an increasing mono-tonic mapping cannot reconcile different rankings. 
+
+Joy and anger in XED →BRIGHTER likewise re-tain substantial residual disagreement after mono-tonic mapping (2.41 and 2.03 times the conserva-tive reference, respectively). Same-named labels therefore do not share a single form of equivalence: probability-scale mismatch is widespread, while a smaller set of comparisons also exhibits substan-tial ordering divergence. A supplementary union-training comparison is reported in Appendix A. 
+
+6 Cross-Corpus Portability 
+
+6.1 Agreement vs. discrimination 
+
+Table 3 summarizes cross-corpus ranking and thresholded performance. With its own decision threshold, the XED specialist reaches an F1 of .023 on BRIGHTER. With a threshold chosen on target development data, it reaches .562, against .702 for the native model, so much of the apparent zero-shot failure in this direction is an operating-point mismatch. Ranking ability transfers better than decisions: mean AUROC across directions is .710– .855. Threshold selection is not sufficient every-where: for XED →GoEmotions, mean F1 changes only from .171 to .169 and remains .399 below the 5(a) Same-input rank agreement (b) Residual disagreement after monotonic mapping 
+
+> Figure 1: Compatibility across the 30 directed resource–label comparisons. Panel (a) shows held-out same-input Spearman rank agreement. Panel (b) shows residual MAE after monotonic mapping, normalized by the larger of the source- and target-head same-head cross-seed MAEs. Values above 1 indicate residual disagreement larger than this conservative seed-stability reference.
+
+native model. The weaker XED →BRIGHTER results are not purely a property of difficult BRIGHTER labels. For example, BRIGHTER surprise is well discrim-inated natively (AUROC = .884 ), yet AUROC falls to .641 from GoEmotions and .659 from XED. At the same time, XED →BRIGHTER is broadly weaker for several labels, especially anger . The 
+
+surprise result therefore combines a label-specific portability problem with a direction-level effect. Heads can agree closely with each other and still fail to recover what target annotators marked. Of the 23 units with same-input rank agreement of at least .70 , 15 still lose at least half of native discrimination, and across all 30 units rank agree-ment is only weakly related to discrimination loss (ρ = −.275 ; AUROC loss ρ = −.215 ). 
+
+6.2 Probabilistic transfer error 
+
+Probability-scale disagreement between compati-bility heads closely tracks the excess Brier error of independently trained transferred models across the 30 units (Spearman ρ = .973 ). This correspon-dence is partly structural (Appendix C), so we treat it as convergent evidence that the scale disagree-ment seen in the same-input comparison reappears as probabilistic transfer error, rather than as an in-dependent predictive result. The CORP decomposition shows that most ex-cess probabilistic error is associated with miscali-bration, but discrimination loss is also substantial. Averaged across the 30 transfer units, excess Brier score is .112 : .088 is excess miscalibration and 
+
+.024 is loss of discrimination. Relative to the native target model’s discrimination, transferred models lose 55.3% in aggregate (median unit: 63.0%); 22 of 30 transfers lose at least half. The loss is espe-cially pronounced for surprise , for which 81.7% of native discrimination is lost across transfers. The native reference models are also not ob-viously limited by fixable training-label errors: LLM-assisted revision of flagged training labels yielded no consistent native improvement across three seeds (Appendix H). 
+
+7 Recalibration Repair 
+
+About half of probabilistic transfer error is a base-rate problem. A shift computed only from training-label prevalences halves mean excess Brier ( .112 
+
+to .055 ) and improves 28 of 30 units (Table 4); a target-supervised intercept removes about 72% of the raw excess ( .031 ). Platt scaling provides a small additional reduction to .029 , while isotonic regression reaches .023 . Label-free EM correc-tion instead worsens aggregate portability ( .122 
+
+and .125 ). Its failure does not mean prevalence is unimportant: the direct prevalence shift helps substantially, though it does not close the transfer gap. Directions nevertheless differ. For BRIGHTER →GoEmotions, an intercept ad-justment removes nearly all excess Brier error 6Direction AUROC AUROC gap AP AP gap F1 source thr. F1 target-dev thr. Native F1 F1 gap BRIGHTER →GoEmotions .855 (.0019) .095 (.0040) .170 (.0092) .425 (.0130) .115 (.0044) .243 (.0101) .569 (.0105) .325 (.0202) BRIGHTER →XED .786 (.0017) .126 (.0020) .338 (.0028) .244 (.0050) .319 (.0076) .391 (.0092) .555 (.0008) .164 (.0098) GoEmotions →BRIGHTER .773 (.0118) .115 (.0099) .632 (.0104) .160 (.0099) .253 (.0020) .582 (.0188) .702 (.0141) .120 (.0259) GoEmotions →XED .753 (.0075) .159 (.0073) .337 (.0035) .245 (.0088) .210 (.0032) .363 (.0060) .555 (.0008) .192 (.0067) XED →BRIGHTER .753 (.0098) .135 (.0116) .501 (.0126) .290 (.0126) .023 (.0023) .562 (.0095) .702 (.0141) .140 (.0108) XED →GoEmotions .710 (.0034) .240 (.0032) .111 (.0100) .484 (.0175) .171 (.0128) .169 (.0162) .569 (.0105) .399 (.0240) 
+
+Table 3: Cross-corpus transfer averaged over five labels and three seeds. Parentheses give sample SD across seed-level five-label means. AP is average precision. Target-development and native F1 use target-development threshold selection; source-threshold F1 retains the source operating point. Gaps are native minus transferred performance.         
+
+> Correction Mean excess Brier (SD) None (raw) .112 (.0020) Prevalence-derived shift .055 (.0004) Label-free prior-shift EM .122 (.0077) Source-calibrated prior-shift EM .125 (.0036) Intercept-only .031 (.0002) Platt .029 (.0003) Isotonic .023 (.0009)
+
+Table 4: Mean excess Brier over 30 directed label-transfer units; parentheses give the SD of these means across three training seeds. The prevalence-derived shift uses training-label prevalences. The native target model receives the corresponding correction. 
+
+(raw .172 , intercept .008 , Platt .008 , isotonic .008 ). For XED →BRIGHTER, substantial residual mismatch remains (raw .191 , intercept .081 , Platt 
+
+.080 , isotonic .047 ). Thus, the effectiveness of an intercept varies considerably across resource pairs. The number of target annotations needed is also target-dependent (Appendix D): about 50 ran-dom annotations approach full-development perfor-mance for XED, sparse GoEmotions labels require more because small samples often contain no posi-tives, and for BRIGHTER residual error changes little with sample size, indicating that its remaining gap is not a small-sample calibration problem. 
+
+7.1 What remains after recalibration? 
+
+XED →BRIGHTER carries the largest residual er-ror, and its labels show that the residual is not of one kind (Table 5). fear combines strong ordering agreement ( ρ = .799 ) and a threshold-tuned F1 gap of only .033 with the largest raw excess Brier in the study ( .404 ). An intercept adjustment removes most of this error ( .094 ); Platt scaling does not im-       
+
+> Excess Brier Label Same-input ρRaw Intercept Platt Isotonic F1 gap
+> fear .799 .404 (.0012) .094 (.0009) .098 (.0017) .039 (.0136) .033 (.0617)
+> joy .445 .143 (.0012) .080 (.0026) .080 (.0027) .047 (.0103) .122 (.0528)
+> surprise .329 .166 (.0017) .097 (.0025) .089 (.0015) .073 (.0019) .206 (.0234)
+
+Table 5: XED →BRIGHTER: shared-head same-input rank agreement and excess Brier relative to the equally recalibrated native BRIGHTER model. The F1 gap uses exact target-development threshold selection. Parenthe-ses give sample SD across three seeds for excess Brier and F1 gap. 
+
+prove it further ( .098 ), while isotonic regression reduces the residual to .039 .
+
+surprise shows the strongest ordering divergence in this direction. Same-input agreement is low (ρ = .329 ): “My eye is black, my head hurts, but I’m happy, I won.” falls near the 77th percentile of the XED surprise ranking but the 5th of the BRIGHTER ranking, while “After we moved, they stopped immediately.” falls near the 89th percentile under BRIGHTER and the 16th under XED. Even isotonic regression leaves substantial excess error (.073 ) and a threshold-tuned F1 gap of .206 . The XED head’s ordering on BRIGHTER surprise texts is substantially more stable across seeds (mean 
+
+ρ = .848 , range .837 –.864 ) than its agreement with the BRIGHTER head, and BRIGHTER sur-prise is not intrinsically difficult: its native AU-ROC is .884 . Ranking each head separately on the same texts (seed-averaged predictions), 66 of 103 BRIGHTER test items in the top BRIGHTER and 7bottom XED surprise quartiles are positive under the BRIGHTER gold labels (64.1%); in the reverse group, only 1 of 28 is positive (3.6%), compared with 28.9% overall. The ordering disagreement therefore includes target-supported cases. Information lost when BRIGHTER annotations are aggregated does not independently explain the divergence: an initial association with transfer error disappears after matching items on their complete released five-label configuration (Appendix E). 
+
+8 Resource Choice Can Reverse Corpus Comparisons 
+
+To test whether these differences matter for down-stream measurement, we compared mean emotion scores between each pair of held-out corpora under each of the three heads. The direction of the corpus comparison depends on the head in 8 of 15 corpus-pair–label comparisons. Five of these reversals disappear after converting each head’s scores to pooled percentile ranks, indicating that they arise from probability-scale differences; three remain (Appendix F). Because these corpora are also the domains from which the models were learned, this analysis shows that measurements depend on the training resource, not how often such reversals would occur on arbitrary external corpora. To examine whether reversals extend beyond the heads’ training domains, we compared the ex-ternal SemEval-2018 collections defined in Sec-tion 4.1. Table 6 reports all five labels under all three heads. For surprise , the mean pooled-rank difference (2016 minus 2017) is positive under the BRIGHTER head ( +.024 , 95% item-bootstrap in-terval [+ .012 , +.036] ) but negative under the XED head ( −.015 , [−.026 , −.004] ); both signs hold in all three seeds. The GoEmotions estimate is close to zero ( −.003 , [−.014 , +.009] ). Thus, a rever-sal occurs between collections external to all three training resources. Across the five labels, raw mean differences have the same sign under all three heads. After rank normalization, sadness and surprise have opposing signs, but only surprise has opposite-direction inter-vals that both exclude zero; all heads rank the 2017 collection higher for joy, anger is close to zero, and fear is positive under all heads but clearly separated from zero only under BRIGHTER. Gold surprise prevalence differs by only +.003 ([−.005 , +.012] ), so the annotations do not establish which head gives the correct direction. The pointwise intervals                   
+
+> Label BRIGHTER GoEmotions XED
+> anger +0.011 +0.012 +0.001
+> fear +0.038 +0.009 +0.006
+> joy -0.036 -0.046 -0.050
+> sadness +0.005 -0.000 -0.008
+> surprise +0.024 -0.003 -0.015
+> Table 6: External collection differences in mean pooled percentile rank (SemEval-2018 E-c; 2016 minus 2017), using seed-averaged predictions. All five shared labels and all three heads are shown. Full intervals and seed ranges appear in Appendix G.
+
+quantify item-sampling uncertainty conditional on the fitted, seed-averaged predictions; they do not incorporate training variability or adjustment for multiple comparisons (Appendix G). 
+
+9 Discussion and Conclusion 
+
+Prevalence and calibration account for most of how same-named emotion labels differ in level, but not for how they differ in ranking, and ranking differ-ences are what survive the corrections a careful user would apply: they appear as lost discrimina-tion after transfer and as a reversed comparison af-ter rank normalization. A shared label name should therefore be treated as a hypothesis of operational equivalence, not evidence of it. 
+
+Practical recommendations. (1) Check whether training-prevalence differences explain an apparent scale mismatch before attributing it to deeper con-struct differences. (2) When target labels are avail-able, begin with intercept-only recalibration; Platt scaling adds only modest average improvement, and required sample sizes are target-dependent, par-ticularly for sparse labels. (3) Check both rank agreement on shared inputs and discrimination against target annotations: low rank agreement warns of ordering differences that monotonic recal-ibration cannot repair, while high agreement alone does not establish target-label validity. (4) Test whether substantive conclusions are robust to the choice of training resource. 
+
+Future work. A formal measurement-invariance analysis with latent-variable models is a natural ex-tension. BRIGHTER also annotates 28 languages under a single scheme, so the same-input design can test whether label equivalence holds across lan-guages when guidelines and label inventory are held fixed. 8Limitations 
+
+We study three English resources, five labels, and one encoder family (RoBERTa-base); the pattern of relationships may differ for other languages, resources, or architectures. Our unit of analysis is small (30 directed label-transfer units drawn from three undirected dataset pairs), so correla-tions over these units are descriptive, and our ro-bustness evidence rests mainly on per-seed replica-tion and leave-one-out analyses. The same-input comparison holds evaluation texts and the shared encoder fixed, but the resource-specific heads are learned from different supervision and training dis-tributions; it therefore shows that the heads dif-fer, not whether the cause is annotation guidelines, label semantics, or domain. The L1–L4 frame-work characterizes relationships between predic-tion functions, while target-side calibration probes repairability and does not itself assign a transfer unit to a level. We analyze the five shared labels in-dependently rather than modeling their multilabel structure jointly. The BRIGHTER compression analysis (see Appendix E) is observational; its ini-tial association with transfer error disappears after matching on the released five-label configuration. 
+
+Ethical Considerations 
+
+This study is a secondary analysis of existing text annotations; we recruited no participants and col-lected no new personal data. We did not conduct an additional systematic audit for personal iden-tifiers or offensive content, and do not claim that the source texts are anonymized or screened. Our planned release contains analysis code and aggre-gate results; source texts and item-level predictions are excluded, and users are directed to the original data providers. Emotion predictions describe model responses to text under a particular annotation scheme. They should not be interpreted as individual psycholog-ical assessments or used for consequential deci-sions about individuals without separate validation. Dataset and model licenses are documented in Ap-pendix B. 
+
+References 
+
+Christopher Bagdon, Prathamesh Karmalkar, Harsha Gurulingappa, and Roman Klinger. 2024. “you are an expert annotator”: Automatic best–worst-scaling annotations for emotion intensity modeling. In Pro-ceedings of the 2024 Conference of the North Amer-ican Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers) , pages 7924–7936, Mexico City, Mexico. Association for Computational Linguistics. Andrew M Bean, Ryan Othniel Kearns, Angelika Ro-manou, Franziska Sofia Hafner, Harry Mayne, Jan Batzner, Negar Foroutan Eghlidi, Chris Schmitz, Karolina Korgul, Hunar Batra, and 1 others. 2026. Measuring what matters: Construct validity in large language model benchmarks. Advances in Neural Information Processing Systems , 38. Laura-Ana-Maria Bostan and Roman Klinger. 2018. An analysis of annotated corpora for emotion clas-sification in text. In Proceedings of the 27th Inter-national Conference on Computational Linguistics ,pages 2104–2119, Santa Fe, New Mexico, USA. As-sociation for Computational Linguistics. Sven Buechel and Udo Hahn. 2017. Readers vs. writers vs. texts: Coping with different perspectives of text understanding in emotion annotation. In Proceedings of the 11th Linguistic Annotation Workshop , pages 1– 12, Valencia, Spain. Association for Computational Linguistics. Minh Duc Chu, Patrick Gerard, Kshitij Pawar, Charles Bickham, and Kristina Lerman. 2025. Illusions of intimacy: Emotional attachment and emerging psy-chological risks in human-ai relationships. arXiv preprint arXiv:2505.11649 , 1(1):19. Dorottya Demszky, Dana Movshovitz-Attias, Jeongwoo Ko, Alan Cowen, Gaurav Nemade, and Sujith Ravi. 2020. GoEmotions: A dataset of fine-grained emo-tions. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics , pages 4040–4054, Online. Association for Computational Linguistics. Timo Dimitriadis, Tilmann Gneiting, and Alexander I Jordan. 2021. Stable reliability diagrams for prob-abilistic classifiers. Proceedings of the National Academy of Sciences , 118(8):e2016191118. Chuan Guo, Geoff Pleiss, Yu Sun, and Kilian Q Wein-berger. 2017. On calibration of modern neural net-works. In International conference on machine learn-ing , pages 1321–1330. PMLR. Zhijun Guo, Alvina Lai, Johan H Thygesen, Joseph Far-rington, Thomas Keen, and Kezhi Li. 2024. Large language models for mental health applications: sys-tematic review. JMIR mental health , 11(1):e57400. Svetlana Kiritchenko and Saif Mohammad. 2017. Best-worst scaling more reliable than rating scales: A case study on sentiment intensity annotation. In Proceed-ings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 2: Short Papers) ,pages 465–470, Vancouver, Canada. Association for Computational Linguistics. Bennett Kleinberg, Isabelle van der Vegt, and Maxi-milian Mozes. 2020. Measuring Emotions in the 
+
+9COVID-19 Real World Worry Dataset. In Proceed-ings of the 1st Workshop on NLP for COVID-19 at ACL 2020 , Online. Association for Computational Linguistics. Anna Koufakou, Elijah Nieves, and John Peller. 2024. Towards a new benchmark for emotion detection in NLP: A unifying framework of recent corpora. In 
+
+Proceedings of the 2nd GenBench Workshop on Gen-eralisation (Benchmarking) in NLP , pages 196–206, Miami, Florida, USA. Association for Computational Linguistics. Yinhan Liu, Myle Ott, Naman Goyal, Jingfei Du, Man-dar Joshi, Danqi Chen, Omer Levy, Mike Lewis, Luke Zettlemoyer, and Veselin Stoyanov. 2019. Roberta: A robustly optimized bert pretraining ap-proach. arXiv preprint arXiv:1907.11692 .Zhiwei Liu, Tianlin Zhang, Kailai Yang, Paul Thomp-son, Zeping Yu, and Sophia Ananiadou. 2024. Emo-tion detection for misinformation: A review. Infor-mation Fusion , 107:102300. Saif Mohammad and Felipe Bravo-Marquez. 2017. WASSA-2017 shared task on emotion intensity. In 
+
+Proceedings of the 8th Workshop on Computational Approaches to Subjectivity, Sentiment and Social Me-dia Analysis , pages 34–49, Copenhagen, Denmark. Association for Computational Linguistics. Saif Mohammad, Felipe Bravo-Marquez, Mohammad Salameh, and Svetlana Kiritchenko. 2018. SemEval-2018 task 1: Affect in tweets. In Proceedings of the 12th International Workshop on Semantic Evaluation ,pages 1–17, New Orleans, Louisiana. Association for Computational Linguistics. Aida Mostafazadeh Davani, Mark Díaz, and Vinodku-mar Prabhakaran. 2022. Dealing with disagreements: Looking beyond the majority vote in subjective an-notations. Transactions of the Association for Com-putational Linguistics , 10:92–110. Shamsuddeen Hassan Muhammad, Nedjma Ousid-houm, Idris Abdulmumin, Jan Philip Wahle, Terry Ruas, Meriem Beloucif, Christine de Kock, Nirmal Surange, Daniela Teodorescu, Ibrahim Said Ahmad, David Ifeoluwa Adelani, Alham Fikri Aji, Felermino D. M. A. Ali, Ilseyar Alimova, Vladimir Araujo, Nikolay Babakov, Naomi Baes, Ana-Maria Bucur, Andiswa Bukula, and 29 others. 2025. BRIGHTER: BRIdging the gap in human-annotated textual emo-tion recognition datasets for 28 languages. In Pro-ceedings of the 63rd Annual Meeting of the Associa-tion for Computational Linguistics (Volume 1: Long Papers) , pages 8895–8916, Vienna, Austria. Associa-tion for Computational Linguistics. Laura Ana Maria Oberländer, Kevin Reich, and Ro-man Klinger. 2020. Experiencers, stimuli, or targets: Which semantic roles enable machine learning to infer the emotions? In Proceedings of the Third Workshop on Computational Modeling of People’s Opinions, Personality, and Emotion’s in Social Me-dia , pages 119–128, Barcelona, Spain (Online). As-sociation for Computational Linguistics. Emily Öhman, Marc Pàmies, Kaisla Kajava, and Jörg Tiedemann. 2020. XED: A multilingual dataset for sentiment analysis and emotion detection. In 
+
+Proceedings of the 28th International Conference on Computational Linguistics , pages 6542–6552, Barcelona, Spain (Online). International Committee on Computational Linguistics. Emily Sofi Ohman and Anna Koufakou. 2026. Quality and agreement in multilabel emotion annotation: A case study and evaluation framework. In Proceedings of Computational Affective Science (CAS) @ LREC 2026 , pages 1–15, Palma, Mallorca (Spain). ELRA Language Resources Association (ELRA). Yaniv Ovadia, Emily Fertig, Jie Ren, Zachary Nado, David Sculley, Sebastian Nowozin, Joshua Dillon, Balaji Lakshminarayanan, and Jasper Snoek. 2019. Can you trust your model’s uncertainty? evaluating predictive uncertainty under dataset shift. Advances in neural information processing systems , 32. Barbara Plank. 2022. The “problem” of human label variation: On ground truth in data, modeling and evaluation. In Proceedings of the 2022 Conference on Empirical Methods in Natural Language Process-ing , pages 10671–10682, Abu Dhabi, United Arab Emirates. Association for Computational Linguistics. John Platt. 1999. Probabilistic outputs for support vec-tor machines and comparisons to regularized likeli-hood methods. Advances in large margin classifiers ,10(3):61–74. Robert Plutchik. 1980. A general psychoevolutionary theory of emotion. In Theories of Emotion , pages 3–33. Academic Press. Vinodkumar Prabhakaran, Aida Mostafazadeh Davani, and Mark Diaz. 2021. On releasing annotator-level labels and information in datasets. In Proceedings of the Joint 15th Linguistic Annotation Workshop (LAW) and 3rd Designing Meaning Representations (DMR) Workshop , pages 133–138, Punta Cana, Dominican Republic. Association for Computational Linguistics. Paul Röttger, Bertie Vidgen, Dirk Hovy, and Janet Pier-rehumbert. 2022. Two contrasting data annotation paradigms for subjective NLP tasks. In Proceedings of the 2022 Conference of the North American Chap-ter of the Association for Computational Linguis-tics: Human Language Technologies , pages 175–190, Seattle, United States. Association for Computational Linguistics. Marco Saerens, Patrice Latinne, and Christine De-caestecker. 2002. Adjusting the outputs of a classi-fier to new a priori probabilities: a simple procedure. 
+
+Neural computation , 14(1):21–41. Enrica Troiano, Sebastian Padó, and Roman Klinger. 2021. Emotion ratings: How intensity, annotation 
+
+10 confidence and agreements are entangled. In Pro-ceedings of the Eleventh Workshop on Computational Approaches to Subjectivity, Sentiment and Social Me-dia Analysis , pages 40–49, Online. Association for Computational Linguistics. Alexandra Uma, Tommaso Fornaciari, Anca Dumi-trache, Tristan Miller, Jon Chamberlain, Barbara Plank, Edwin Simpson, and Massimo Poesio. 2021. SemEval-2021 task 12: Learning with disagreements. In Proceedings of the 15th International Workshop on Semantic Evaluation (SemEval-2021) , pages 338– 347, Online. Association for Computational Linguis-tics. Rens Van de Schoot, Peter Lugtig, and Joop Hox. 2012. A checklist for testing measurement invariance. Euro-pean journal of developmental psychology , 9(4):486– 492. Bianca Zadrozny and Charles Elkan. 2002. Transform-ing classifier scores into accurate multiclass proba-bility estimates. In Proceedings of the eighth ACM SIGKDD international conference on Knowledge dis-covery and data mining , pages 694–699. 
+
+Acknowledgments 
+
+This work was supported by JSPS KAKENHI Grant Number 24K21058. Computational resources were provided by CSC – IT Center for Science, Finland, through the Roihu computing environment. 
+
+A Shared-Label Union Training 
+
+If same-named labels are not fully operationally equivalent, forcing them onto a single output may reduce native performance. Table 7 shows this pattern for BRIGHTER ( −.041 ) and GoEmotions (−.050 ), while the difference for XED is negligible (−.007 ). Giving each resource its own head on a shared encoder recovers the BRIGHTER result and part of the GoEmotions loss. Because union train-ing also changes the data mixture and loss balance, these results do not isolate label incompatibility, but they are consistent with the direct same-input and transfer analyses above. 
+
+B Resource versions and terms of use 
+
+We use the filtered, agreement-based GoEmo-tions release with its official partitions, the En-glish XED data with the text-hash partitions de-scribed in Section 4.1, and the English BRIGHTER emotion-category data. GoEmotions, XED, and the BRIGHTER emotion-category release are dis-tributed under Creative Commons Attribution 4.0 (CC BY 4.0). 2
+
+The external evaluation uses the English emotion-classification (E-c) files from SemEval-2018 Task 1: the official training file forms the 2016 collection, and the development and gold test files form the 2017 collection. The NRC terms per-mit research use with attribution, require contacting the provider for commercial use, and prohibit re-distribution of the source data. 3
+
+The pretrained checkpoint 
+
+FacebookAI/roberta-base is distributed under the MIT license. 4 The supplementary re-source manifest records the downloaded revisions, source filenames, and SHA-256 checksums. The reproduction environment, checked using the python-pytorch/2.13 module, comprised Python 3.12.14, PyTorch 2.13.0+cu130, Trans-formers 5.16.1, NumPy 2.5.2, pandas 2.3.3, SciPy 1.18.1, scikit-learn 1.9.0, datasets 5.0.1, and tok-enizers 0.23.1. 
+
+C Structural Relationship Between Scale Disagreement and Excess Brier Error 
+
+Section 6.2 reports that probability-scale disagree-ment between compatibility heads closely tracks the excess Brier error of independently trained transferred models across the 30 units (Spearman 
+
+ρ = .973 ; per seed .964 –.967 ). This correspon-dence is partly structural. For source and target probabilities ps, p t,
+
+(ps−y)2−(pt−y)2 = ( ps−pt)2+2( ps−pt)( pt−y).
+
+(1) If pt(x) equals the target conditional probability 
+
+E[Y | X = x], the cross-term has zero conditional expectation; ordinary marginal calibration alone is not sufficient for this cancellation. We there-fore treat the observed correlation as convergent evidence that the probability-scale disagreement seen in the controlled same-input comparison reap-pears as probabilistic transfer error, rather than as an independent predictive result. The relationship remains strong when leaving out any label ( ρ = .964 –.981 ) or dataset pair   
+
+> 2https://github.com/google-research/ google-research ;https://github.com/Helsinki-NLP/ XED ;https://huggingface.co/datasets/ brighter-dataset/BRIGHTER-emotion-categories
+> 3https://saifmohammad.com/WebPages/ SentimentEmotionLabeledData.html
+> 4https://huggingface.co/FacebookAI/ roberta-base
+
+11 Training condition BRIGHTER GoEmotions XED Native specialist .713 .468 .598 Naive union (shared label heads) .672 .418 .591 Shared encoder + dataset-specific heads .715 .432 .595                    
+
+> Table 7: Macro-F1 over each dataset’s native label inventory, averaged over three seeds; each dataset is evaluated with its own development-set thresholds.
+> Target n= 25 n= 50 n= 100 Full BRIGHTER .063/.057 .063/.059 .062/.060 .062/.060 GoEmotions .059/.057 .039/.034 .019/.016 .011/.008 XED .025/.021 .022/.019 .021/.019 .021/.019
+> Table 8: Mean excess Brier under random few-shot recalibration. Entries are intercept/Platt.
+
+(.940 –.962 ), for log loss ( ρ = .902 ), and after con-trolling for training-prevalence difference (partial 
+
+ρ = .941 ). 
+
+D Few-Shot Recalibration 
+
+We repeat both intercept-only and Platt recalibra-tion using target-development samples of 25, 50, and 100 items, together with the full development set, capped at the available development-set size. Random samples containing only one class fall back to the uncalibrated model; we additionally use a label-stratified diagnostic condition that guar-antees both classes. Because sample requirements differ substantially by target dataset, results are reported by target rather than only as an aggregate. Few-shot requirements differ sharply by target (Table 8). For XED, about 50 random target an-notations approach full-development performance. Sparse GoEmotions labels require larger random samples because small samples often contain no positives. When both classes are guaranteed, how-ever, 25 GoEmotions examples already approach full-development performance, showing that class coverage drives much of the sample requirement. For BRIGHTER, residual excess error changes lit-tle as the calibration sample grows, indicating that its remaining transfer gap is not primarily a small-sample calibration problem. Intercept-only recali-bration follows the same qualitative pattern as Platt scaling. 
+
+E BRIGHTER Annotation-Compression Robustness Analysis 
+
+We examined whether information lost when indi-vidual BRIGHTER annotations are projected into the released label space could explain the compara-tively large transfer discrepancies into BRIGHTER. Individual annotations were recovered for 5,623 of 5,643 English items (mean 8.5 raters per item). Among the recovered items, 49.0% show at least one diametric affect pattern in the raw annotation space, compared with 38.2% in the released repre-sentation. Mean pairwise label-set Jaccard agree-ment increases from 0.572 to 0.594 after projection. In total, 608 items (10.8%) contain diametric struc-ture in the raw annotations that is absent from the released representation; we refer to these as raw-only-diametric items. 
+
+Unadjusted association. On the BRIGHTER test set, 296 of 2,765 items are raw-only-diametric. Table 9 compares their item-level excess trans-fer error with the remaining test items. Before recalibration, raw-only items show greater ex-cess error for both GoEmotions →BRIGHTER and XED →BRIGHTER. The difference is no longer evident after Platt or isotonic calibration. 
+
+Controlling for released label structure. Raw-only-diametric items are not distributed randomly across the released label space, so the unadjusted as-sociation may reflect the final label configurations in which these items occur. We therefore performed two robustness analyses. First, we estimated the raw-only effect while controlling for the presence of the focal target label, the number of other pos-itive released labels, emotion-label fixed effects, and, in pooled models, source fixed effects. Stan-dard errors were clustered by BRIGHTER item. Second, we used only within-stratum comparisons between items with exactly the same complete re-leased five-label pattern. This exact-pattern anal-ysis observed 28 released patterns, of which 15 contained both raw-only and comparison items. It retained 2,087 test items, including all 296 raw-only-diametric cases and 1,791 comparison items. The controlled analyses do not support an inde-pendent compression effect (Table 10; Figure 2). For the raw predictions, the pooled coefficient after adjustment for released label density is +0 .0009 [-12 Source Raw Platt Isotonic GoEmotions →BRIGHTER +0 .0346 [+0.0138, +0.0547] +0 .0039 [-0.0067, +0.0144] +0 .0001 [-0.0116, +0.0112] XED →BRIGHTER +0 .0453 [+0.0225, +0.0683] −0.0034 [-0.0152, +0.0078] −0.0037 [-0.0155, +0.0080] 
+
+Table 9: Difference in item-level excess squared error between raw-only-diametric and other BRIGHTER test items (raw-only minus other), averaged over the five shared labels. Brackets give 95% bootstrap confidence intervals. Positive values indicate greater transfer error on the raw-only subset.                                           
+
+> Control Method GoEmotions →BRIGHTER XED →BRIGHTER Pooled Label density / target presence Raw −0.0022 [-0.0136, +0.0091] +0 .0040 [-0.0076, +0.0156] +0 .0009 [-0.0098, +0.0115] Platt −0.0021 [-0.0122, +0.0080] −0.0112 [-0.0221, -0.0003] −0.0066 [-0.0161, +0.0028] Isotonic −0.0051 [-0.0161, +0.0060] −0.0087 [-0.0202, +0.0028] −0.0069 [-0.0169, +0.0032] Exact released five-label pattern Raw +0 .0028 [-0.0079, +0.0135] −0.0004 [-0.0112, +0.0105] +0 .0012 [-0.0087, +0.0111] Platt +0 .0049 [-0.0051, +0.0148] +0 .0004 [-0.0104, +0.0112] +0 .0026 [-0.0067, +0.0119] Isotonic +0 .0033 [-0.0072, +0.0138] −0.0046 [-0.0162, +0.0069] −0.0006 [-0.0104, +0.0091]
+
+Table 10: Adjusted raw-only-diametric effects on excess transfer error. Entries are coefficient estimates with 95% cluster-robust confidence intervals. The first analysis controls for released-label density and focal target-label presence; the second compares only observations with the same complete released five-label pattern. 
+
+0.0098, +0.0115], and the pooled exact-pattern co-efficient is +0 .0012 [-0.0087, +0.0111]. Effects af-ter Platt and isotonic calibration are likewise close to zero. The initial association therefore appears to reflect the released label configurations in which raw-only diametric cases occur rather than infor-mation loss from annotation compression itself. This analysis also does not account for the residual XED–BRIGHTER surprise divergence. For surprise , raw-only items show no addi-tional residual error after recalibration: the Platt differences are +0 .0063 [-0.0193, +0.0312] for GoEmotions →BRIGHTER and −0.0104 [-0.0367, +0.0156] for XED →BRIGHTER, with similarly null isotonic differences ( +0 .0054 [-0.0248, +0.0353] and −0.0151 [-0.0432, +0.0132], respectively). We therefore treat annotation com-pression as a tested but unsupported explanation for the ordering divergence reported in the main text. 
+
+F In-Domain Corpus Comparisons 
+
+Table 11 gives the three corpus-pair–label compar-isons from Section 8 whose direction still depends on the head after rank normalization. Because the compared corpora are also the heads’ training do-mains, these reversals show that measurements de-pend on the training resource, not how often rever-sals occur on external corpora. 
+
+Comparison BRIGHTER GoEmotions XED BR–XED fear +.082 +.069 -.051 BR–XED sadness +.043 +.109 -.026 GE–XED joy +.021 +.018 -.015 
+
+Table 11: Descriptive rank-normalized corpus differ-ences under each head, averaged across three seeds; item-sampling intervals are not estimated here. Positive values indicate that the first corpus has the higher mean pooled percentile rank; negative values indicate the re-verse. 
+
+G Complete External Collection Comparison 
+
+Table 12 reports the complete external comparison, with differences defined as 2016 minus 2017. We use 1,000 item-bootstrap resamples within each collection, sharing draws across heads and recom-puting pooled ranks in each resample. Brackets in the interval columns give the resulting pointwise 95% intervals, which quantify item-sampling un-certainty conditional on the fitted, seed-averaged predictions; seed ranges are minimum and maxi-mum differences across seeds 13, 42, and 87. These are distinct sources of variability. 
+
+H Exploratory LLM-Assisted Annotation Revision 
+
+We tested whether revising suspicious training an-notations improved native-specialist performance. An exploratory audit used gpt-5.6-sol to assess 240 items, comprising 180 flagged candidates and 60 unflagged controls, with 80 items per resource. Candidates were selected using annotation and 13 Figure 2: Raw-only-diametric effect on uncalibrated excess transfer error under progressively stricter controls. Error bars are 95% confidence intervals. The positive unadjusted association disappears after adjustment for released label structure and under exact five-label-pattern matching.                                                                                                                 
+
+> Label Head Raw 95% interval Seed range Rank 95% interval Seed range
+> anger BRIGHTER +0.013 [+0.001, +0.024] [+0.010, +0.014] +0.011 [-0.000, +0.021] [+0.004, +0.016]
+> anger GoEmotions +0.005 [+0.001, +0.009] [+0.005, +0.005] +0.012 [-0.000, +0.023] [+0.007, +0.015]
+> anger XED +0.003 [-0.000, +0.006] [+0.003, +0.004] +0.001 [-0.010, +0.011] [-0.003, +0.003]
+> fear BRIGHTER +0.043 [+0.030, +0.056] [+0.037, +0.048] +0.038 [+0.026, +0.050] [+0.034, +0.041]
+> fear GoEmotions +0.005 [+0.000, +0.009] [+0.003, +0.006] +0.009 [-0.003, +0.020] [+0.005, +0.010]
+> fear XED +0.005 [+0.001, +0.009] [+0.002, +0.006] +0.006 [-0.005, +0.018] [-0.005, +0.009]
+> joy BRIGHTER -0.052 [-0.067, -0.037] [-0.057, -0.046] -0.036 [-0.048, -0.025] [-0.038, -0.033]
+> joy GoEmotions -0.013 [-0.019, -0.007] [-0.018, -0.009] -0.046 [-0.058, -0.034] [-0.048, -0.041]
+> joy XED -0.021 [-0.027, -0.015] [-0.028, -0.014] -0.050 [-0.062, -0.038] [-0.053, -0.042]
+> sadness BRIGHTER -0.001 [-0.014, +0.010] [-0.002, -0.000] +0.005 [-0.006, +0.016] [+0.001, +0.007]
+> sadness GoEmotions -0.006 [-0.013, +0.000] [-0.007, -0.006] -0.000 [-0.011, +0.010] [-0.002, +0.000]
+> sadness XED -0.004 [-0.009, +0.000] [-0.006, -0.003] -0.008 [-0.019, +0.003] [-0.012, -0.005]
+> surprise BRIGHTER +0.023 [+0.013, +0.034] [+0.019, +0.025] +0.024 [+0.012, +0.036] [+0.020, +0.027]
+> surprise GoEmotions +0.001 [-0.002, +0.004] [+0.001, +0.001] -0.003 [-0.014, +0.009] [-0.006, -0.002]
+> surprise XED +0.001 [-0.001, +0.003] [-0.000, +0.002] -0.015 [-0.026, -0.004] [-0.024, -0.002]
+
+Table 12: Complete external comparison under all three heads. 
+
+model-based audit signals. The sample was de-liberately enriched for suspicious cases and is not representative of annotation-error prevalence. The LLM received each item’s text, assigned labels, and available label inventory, but not its dataset identity, audit scores, or model predic-tions. It identified unsupported assigned labels and strongly plausible missing labels. For this ex-periment, we revised only flagged training items, excluding judgments marked as having insufficient context. Unsupported labels were removed and suggested missing labels were added within the resource’s observed inventory. Development and test annotations remained unchanged. The revision changed 10 training items in BRIGHTER, 31 in GoEmotions, and 21 in XED, involving 13, 64, and 47 binary label changes, respectively. We retrained the three native specialists using the original training recipe and seeds 13, 42, and 
+
+Resource ∆ Macro-F1 ∆ Micro-F1 ∆ Brier BRIGHTER -.00690 (.02156) -.00772 (.01980) +.000236 (.000549) GoEmotions +.00230 (.00125) +.00365 (.00547) -.000025 (.000043) XED -.00143 (.00550) +.00135 (.00231) +.000171 (.000177) 
+
+Table 13: Native test-set changes after LLM-assisted revision of flagged training annotations. Changes are revised minus original; parentheses give sample SD of paired changes across three seeds. Positive F1 and negative Brier changes indicate improvement. 
+
+87. Thresholds were selected on the unchanged de-velopment sets, and evaluation used the unchanged test sets. Table 13 reports paired changes relative to the original specialists. Changes were small and mixed. GoEmotions improved slightly on all three metrics, whereas BRIGHTER worsened and XED showed mixed F1 14 changes with slightly worse Brier. This pilot there-fore yielded no consistent benefit across resources. It does not establish that the original annotations were correct, rule out benefits from more exten-sive revision, or test an LLM used directly as an emotion predictor. 15

@@ -1,16 +1,304 @@
 {
   "mode": "standard",
-  "generated_at": "2026-10-15T03:57:13.916688+00:00",
+  "generated_at": "2026-10-15T05:40:04.979588+00:00",
   "stats": {
     "mode": "standard",
-    "tag_count": 0,
-    "deep_divecandidates": 0,
-    "deep_cap": null,
-    "deep_selected": 0,
-    "quick_candidates": 0,
-    "quick_skim_target": 10,
-    "quick_selected": 0
+    "tag_count": 3,
+    "deep_divecandidates": 3,
+    "deep_cap": 8,
+    "deep_selected": 3,
+    "quick_candidates": 4,
+    "quick_skim_target": 13,
+    "quick_selected": 4
   },
-  "deep_dive": [],
-  "quick_skim": []
+  "deep_dive": [
+    {
+      "id": "2610.12841v1",
+      "source": "arxiv",
+      "title": "Fear Is Not Always Fear: Variation in Emotion Label Equivalence Across Datasets",
+      "abstract": "Emotion classifiers are routinely applied beyond their training data, on the assumption that same-named labels such as fear or surprise mean the same thing across resources. We test this assumption for five labels shared by GoEmotions, XED, and BRIGHTER, comparing models on identical inputs and under cross-corpus transfer. On the same texts, one fear classifier flags 71% as fearful and another 8%, yet the two largely agree on how the texts rank. Across 30 resource-label comparisons, training-label prevalence explains about half of this kind of scale mismatch, and a fitted intercept removes most of it. What recalibration cannot repair is larger: transferred models lose 55% of native discrimination in aggregate, agreement in ranking between classifiers is only weakly related to that loss, and for surprise the resources disagree about which texts express the emotion. The choice of training resource can therefore change conclusions: on two external tweet collections, BRIGHTER- and XED-trained classifiers give opposite answers about which shows more surprise, even after rank normalization, with intervals excluding zero in both directions. A shared emotion label name does not establish an interchangeable measurement target.",
+      "authors": [
+        "Emily Öhman",
+        "Anna Koufakou"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-10-09T00:55:54+00:00",
+      "link": "https://arxiv.org/pdf/2610.12841v1",
+      "tags": [
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:ea"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "variation in emotion label equivalence across datasets",
+      "llm_evidence_cn": "跨数据集情感标签等价性差异",
+      "llm_evidence": "跨数据集情感标签等价性差异",
+      "canonical_evidence": "跨数据集情感标签等价性差异",
+      "llm_tldr_en": "Emotion classifiers assume same-named labels mean the same across resources. Testing five shared labels across GoEmotions, XED and BRIGHTER, the authors find large scale mismatches and 55% loss of transferred discrimination, showing label equivalence fails.",
+      "llm_tldr_cn": "情感分类器常被跨数据集使用，默认同名标签如恐惧或惊讶在不同语料中含义一致，但该假设未经检验。作者在GoEmotions、XED与BRIGHTER共有的五个标签上，用相同输入和跨语料迁移比较模型，并分析标签流行度与重校准作用。结果显示同一批文本被不同恐惧分类器标记的比例高达71%与8%，流行度解释约一半尺度偏差，迁移模型整体损失55%的区分度。研究表明标签等价假设不成立，跨资源迁移需重新校准并谨慎处理标签不一致。",
+      "llm_tldr": "情感分类器常被跨数据集使用，默认同名标签如恐惧或惊讶在不同语料中含义一致，但该假设未经检验。作者在GoEmotions、XED与BRIGHTER共有的五个标签上，用相同输入和跨语料迁移比较模型，并分析标签流行度与重校准作用。结果显示同一批文本被不同恐惧分类器标记的比例高达71%与8%，流行度解释约一半尺度偏差，迁移模型整体损失55%的区分度。研究表明标签等价假设不成立，跨资源迁移需重新校准并谨慎处理标签不一致。",
+      "llm_tags": [
+        "query:ea"
+      ],
+      "matched_query_tag": "query:ea",
+      "matched_query_text": "emotion label inconsistency",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.15977v1",
+      "source": "arxiv",
+      "title": "Mixed Feelings, Single Polarity",
+      "abstract": "Emotion datasets are routinely mapped onto positive and negative valence, by assigning each emotion category one polarity. We test where this works and where it fails, using SemEval-2018 Affect in Tweets (English, Arabic, Spanish), Affective Text aligned with EmoBank, raw GoEmotions annotations, naturalistic hashtag corpora, and a controlled annotation study. Fixed projection works well when a text carries labels of one valence. It fails on a subset identifiable from the labels alone: tweets whose emotion labels point in opposite directions. These are 9.0% of polar SemEval test tweets but cause 54.8% of the polarity errors of a learned projection, are more than twice as likely to receive a neutral-or-mixed gold label, and are not rescued by modeling the full label set. Annotators produce such configurations routinely: 16.3% of multilabel GoEmotions judgments combine emotions from the dataset's own positive and negative parents. In a controlled study holding word and reader constant, context changes the coarse valence judgment in 56.8% of cases, against 19.9% for controls. We recommend projecting label configurations rather than labels, abstaining or keeping a mixed class where labels conflict, and reporting coverage alongside accuracy.",
+      "authors": [
+        "Emily Öhman",
+        "Saif Mohammad"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-10-11T23:25:56+00:00",
+      "link": "https://arxiv.org/pdf/2610.15977v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:ea"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "mixed emotion labels break fixed valence polarity mapping",
+      "llm_evidence_cn": "混合情感标签破坏固定极性映射",
+      "llm_evidence": "混合情感标签破坏固定极性映射",
+      "canonical_evidence": "混合情感标签破坏固定极性映射",
+      "llm_tldr_en": "Mapping each emotion category to one valence works only when a text carries one-valence labels. Opposite-direction labels, just 9% of tweets, cause 54.8% of polarity errors, revealing mixed feelings as the main failure of polarity projection.",
+      "llm_tldr_cn": "情感数据集通常把每个情绪类别固定映射为正负极性，但该做法在何处失效尚不清楚。作者使用SemEval-2018推文情感、EmoBank、GoEmotions及受控标注实验，检验固定极性投影的失效边界。结果显示当文本标签指向相反极性时投影失效，这类样本仅占测试推文的9%却造成54.8%的极性错误，且更易被标注为中性或混合。研究说明混合情感与标签不一致是极性投影的主要误差来源，对情感计算中的标签建模具警示意义。",
+      "llm_tldr": "情感数据集通常把每个情绪类别固定映射为正负极性，但该做法在何处失效尚不清楚。作者使用SemEval-2018推文情感、EmoBank、GoEmotions及受控标注实验，检验固定极性投影的失效边界。结果显示当文本标签指向相反极性时投影失效，这类样本仅占测试推文的9%却造成54.8%的极性错误，且更易被标注为中性或混合。研究说明混合情感与标签不一致是极性投影的主要误差来源，对情感计算中的标签建模具警示意义。",
+      "llm_tags": [
+        "query:ea"
+      ],
+      "matched_query_tag": "query:ea",
+      "matched_query_text": "inconsistent or ambiguous emotion labels in affective computing",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.14497v1",
+      "source": "arxiv",
+      "title": "DEFT: Disentanglement-Enhanced Fine-Tuning for EEG Foundation Models",
+      "abstract": "EEG foundation models (EFMs) have improved EEG representation learning by transferring knowledge from large-scale multi-subject pretraining to downstream tasks. However, their pretrained embeddings often retain substantial subject-related variation, placing an additional burden on the downstream classifier, especially in cross-subject settings. To address this issue, we propose Disentangled EFM Fine-Tuning (DEFT), a plug-and-play adapter for EFM fine-tuning. DEFT encourages branch disentanglement of pretrained tokens into task-oriented content and subject-consistent style, then performs downstream prediction from the content branch. It instantiates this factorize-before-classify design with recursive Gaussian refinement, temporal-variance regularization, subject-aware contrastive learning, and reconstruction. Experiments across multiple EEG datasets and four EFM backbones show that DEFT improves matched fine-tuning baselines. Further ablations and analyses support the intended content/style branch organization.",
+      "authors": [
+        "Yuqiu Deng",
+        "Muyun Jiang",
+        "Zongpeng Zhang",
+        "Mingqing Xiao",
+        "Yansen Wang",
+        "Peiliang Gong",
+        "Xinliang Zhou",
+        "Yi Ding",
+        "Ziyu Jia",
+        "Cuntai Guan",
+        "Chenyu Liu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-10-10T02:54:09+00:00",
+      "link": "https://arxiv.org/pdf/2610.14497v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "disentangles subject style from task content for cross-subject EEG",
+      "llm_evidence_cn": "为跨被试EEG解耦被试风格与任务内容",
+      "llm_evidence": "为跨被试EEG解耦被试风格与任务内容",
+      "canonical_evidence": "为跨被试EEG解耦被试风格与任务内容",
+      "llm_tldr_en": "DEFT is a plug-and-play fine-tuning adapter that disentangles EEG foundation model tokens into task content and subject style, predicting from the content branch to reduce subject variation in cross-subject settings.",
+      "llm_tldr_cn": "针对EEG基础模型预训练表征仍保留大量被试相关变异、在跨被试场景中加重下游分类负担的问题，本文提出即插即用的解耦增强微调适配器DEFT，将预训练令牌分解为面向任务的内容分支与被试一致的风格分支，并仅由内容分支完成下游预测。方法通过递归高斯精化与时间方差正则实现先分解后分类。该设计在跨被试设置下有效缓解被试差异带来的干扰。DEFT可直接迁移到EEG情感识别的跨被试泛化任务，具有较强方法学价值。",
+      "llm_tldr": "针对EEG基础模型预训练表征仍保留大量被试相关变异、在跨被试场景中加重下游分类负担的问题，本文提出即插即用的解耦增强微调适配器DEFT，将预训练令牌分解为面向任务的内容分支与被试一致的风格分支，并仅由内容分支完成下游预测。方法通过递归高斯精化与时间方差正则实现先分解后分类。该设计在跨被试设置下有效缓解被试差异带来的干扰。DEFT可直接迁移到EEG情感识别的跨被试泛化任务，具有较强方法学价值。",
+      "llm_tags": [
+        "query:csg"
+      ],
+      "matched_query_tag": "query:csg",
+      "matched_query_text": "domain generalization EEG",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2610.10318v1",
+      "source": "arxiv",
+      "title": "Nobody Truly Agrees on Sentiment: Humans, Bespoke Tools, and LLMs Struggle with Social Media Texts",
+      "abstract": "Social media is a rich source of real-time public sentiment, but widely used sentiment analysis tools are often applied without understanding their limitations. In this study, we evaluate the inter-rater reliability of three bespoke sentiment analysis tools (TextBlob, VADER, and Twitter-roBERTa-base) and three large language models (LLMs: Qwen3-32B, GPT-OSS-120B, Llama-4-Maverick-17B) against six human raters across 100 tweets. We measured agreement using two statistical measures: Cohen's kappa for pairwise comparisons and Fleiss' kappa for multiple raters. Even among the human raters, our results showed only fair agreement, highlighting the subjectivity of sentiment analysis. Higher agreement was observed under the binary sentiment classification (negative vs. non-negative and positive vs. non-positive) than under the three-class classification across both humans and automated tools. The Twitter-roBERTa-base model showed the strongest alignment with human ratings, outperforming both bespoke sentiment tools and LLMs, particularly in distinguishing negative versus non-negative sentiment. LLMs showed substantial agreement among themselves and moderate to substantial alignment with humans, performing better in positive vs. non-positive classifications. Our findings underscore that domain-specific fine-tuning remains crucial for reliable social media sentiment analysis, and human-centered evaluation remains essential for establishing gold-standard labels.",
+      "authors": [
+        "Himarsha R. Jayanetti",
+        "Sivakanesan Dhanushkanda",
+        "Shuai Hao",
+        "Michael L. Nelson",
+        "Michele C. Weigle"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-10-07T16:11:12+00:00",
+      "link": "https://arxiv.org/pdf/2610.10318v1",
+      "tags": [
+        "keyword:ea"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "human and model disagreement on sentiment labels",
+      "llm_evidence_cn": "情感标签上的人与模型标注不一致",
+      "llm_evidence": "情感标签上的人与模型标注不一致",
+      "canonical_evidence": "情感标签上的人与模型标注不一致",
+      "llm_tldr_en": "Comparing three sentiment tools, three LLMs and six human raters on 100 tweets, the study finds only fair inter-rater agreement, even among humans, quantifying label subjectivity in affective computing.",
+      "llm_tldr_cn": "针对情感分析工具被广泛使用却缺乏可靠性评估的问题，本文以100条推文为样本，比较三种定制情感分析工具、三种大语言模型与六名人工标注者的一致性，并用Cohen与Fleiss kappa量化。结果显示即便在人工标注者之间也仅达到中等一致，二元情感设定下一致性相对更高。该研究以实证方式揭示了情感标注的主观性与标签不一致，对情感计算中的标签噪声研究具有参考价值。",
+      "llm_tldr": "针对情感分析工具被广泛使用却缺乏可靠性评估的问题，本文以100条推文为样本，比较三种定制情感分析工具、三种大语言模型与六名人工标注者的一致性，并用Cohen与Fleiss kappa量化。结果显示即便在人工标注者之间也仅达到中等一致，二元情感设定下一致性相对更高。该研究以实证方式揭示了情感标注的主观性与标签不一致，对情感计算中的标签噪声研究具有参考价值。",
+      "llm_tags": [
+        "query:ea"
+      ],
+      "matched_query_tag": "query:ea",
+      "matched_query_text": "inconsistent or ambiguous emotion labels in affective computing",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.11155v1",
+      "source": "arxiv",
+      "title": "Social Pain Disrupts Emotion-Action Brain-State Dynamics in Adolescents with Non-Suicidal Self-Injury",
+      "abstract": "Non-suicidal self-injury (NSSI) is prevalent among adolescents with depression, but the rapid brain-state dynamics linking social distress to maladaptive behavior remain unclear. We combine an experimental pain paradigm, electroencephalography (EEG) microstate analysis, and interpretable deep sequence modeling to investigate NSSI-related neurodynamics in 106 adolescents with depression, including 67 with NSSI (DN+) and 39 without NSSI (DN-), during social pain, physical pain, and resting-state conditions. A model integrating disease-specific, domain-adversarial, consistency, and contrastive learning captures higher-order dependencies in microstate sequences. Social pain yields the strongest NSSI discrimination, with 68.55% accuracy, outperforming the best baseline by 8.94% points. Model interpretation and conventional microstate analyses reveal weakened bidirectional transitions between MS3 and MS5 in DN+ adolescents during social pain. Source reconstruction associates MS3 with emotional/interoceptive processing and MS5 with action preparation, suggesting disrupted emotion-action coupling. Time-resolved analyses show greater early-to-middle action-state recruitment and later emotion-state recruitment in DN+ adolescents. In DN- adolescents, MS5-to-MS3 dynamics mediate associations between social-evaluation sensitivity and affective outcomes, whereas this mediation is absent in DN+; conversely, MS3-to-MS5 transitions are associated with greater negative affect in DN+. Together, these findings identify disrupted emotion-action coupling as a key neurodynamic mechanism underlying altered social pain processing in adolescents with NSSI, providing a mechanistically interpretable neural signature for objective identification of NSSI.",
+      "authors": [
+        "Ying Xu",
+        "Xiaojun Liang",
+        "Li Zhang",
+        "Yixuan Yuan",
+        "Gan Huang",
+        "Yongjie Zhou",
+        "Zhen Liang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-10-08T03:16:45+00:00",
+      "link": "https://arxiv.org/pdf/2610.11155v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "EEG emotion-action brain-state decoding with domain-adversarial learning",
+      "llm_evidence_cn": "结合域对抗学习的EEG情感-动作脑状态解码",
+      "llm_evidence": "结合域对抗学习的EEG情感-动作脑状态解码",
+      "canonical_evidence": "结合域对抗学习的EEG情感-动作脑状态解码",
+      "llm_tldr_en": "Combining an experimental pain paradigm, EEG microstate analysis and interpretable deep sequence models with domain-adversarial learning, the study identifies social-pain-related brain-state dynamics distinguishing adolescents with NSSI.",
+      "llm_tldr_cn": "针对抑郁青少年中非自杀性自伤相关的快速脑状态动态不清的问题，本文结合疼痛实验范式、EEG微状态分析与可解释深度序列建模，采集106名抑郁青少年在社会疼痛、躯体疼痛与静息态下的数据。模型融合疾病特异、域对抗、一致性与对比学习以刻画微状态序列的高阶依赖。结果显示社会疼痛条件下对自伤组的判别效果最强，准确率达68.55%。该工作将EEG情感-动作状态解码与域对抗方法结合，为情感相关脑状态识别提供参考。",
+      "llm_tldr": "针对抑郁青少年中非自杀性自伤相关的快速脑状态动态不清的问题，本文结合疼痛实验范式、EEG微状态分析与可解释深度序列建模，采集106名抑郁青少年在社会疼痛、躯体疼痛与静息态下的数据。模型融合疾病特异、域对抗、一致性与对比学习以刻画微状态序列的高阶依赖。结果显示社会疼痛条件下对自伤组的判别效果最强，准确率达68.55%。该工作将EEG情感-动作状态解码与域对抗方法结合，为情感相关脑状态识别提供参考。",
+      "llm_tags": [
+        "query:ab"
+      ],
+      "matched_query_tag": "query:ab",
+      "matched_query_text": "EEG emotion recognition",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.13013v1",
+      "source": "arxiv",
+      "title": "Evidential Multimodal Transformers with Dempster-Shafer Fusion for Emotion Recognition",
+      "abstract": "Softmax-based multimodal emotion recognition methods often assign high confidence even when sensor data are corrupted or contradictory, for example when facial expressions suggest positive valence while vocal prosody indicates negative arousal. We present an Evidential Multimodal Transformer with Dempster-Shafer Fusion (EMT-DS) that addresses this problem through formal uncertainty quantification. EMT-DS models predictions as Subjective Opinions (Dirichlet distributions), separating epistemic uncertainty (lack of evidence) from aleatoric uncertainty (sensor noise). Modality-specific transformer encoders produce belief mass distributions that are fused with Dempster's Rule of Combination, which normalizes the joint belief mass by a conflict coefficient 1/(1-c), so that contradictory evidence is explicitly quantified as conflict and the fused prediction becomes diffuse rather than being forced into an unjustified consensus. Under subject-independent and speaker-independent evaluation on four benchmarks, EMT-DS achieves 84.3% accuracy on IEMOCAP versus 81.7% for the best baseline (p < 0.01), 82.4% on DEAP under leave-one-subject-out evaluation versus 78.1%, and 96.8% on the highly imbalanced KEMDy20, and it improves accuracy on CMU-MOSEI by 2.4 points over the strongest evidential baseline. In controlled ablation, it reduces Expected Calibration Error from 0.153 (softmax transformer) to 0.042. It maintains 71.2% accuracy under severe Gaussian noise on audio features (sigma = 1.0), where attention baselines drop to 45.3%, and degrades gracefully when entire modalities are absent. The fusion step has O(MK^2) complexity, compared with O(M^2 d^2) for cross-modal attention. The learned conflict metric also flags likely errors: reviewing 20% of samples captures 80% of misclassifications, which supports selective prediction in clinical and safety-critical systems.",
+      "authors": [
+        "Muhammad Usama",
+        "Yeoreum Jung"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-10-09T05:16:44+00:00",
+      "link": "https://arxiv.org/pdf/2610.13013v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "uncertainty quantification for contradictory or corrupted emotion signals, addressing ambiguous emotion evidence",
+      "llm_evidence_cn": "对矛盾或受损情感信号进行不确定性量化，处理模糊情感证据",
+      "llm_evidence": "对矛盾或受损情感信号进行不确定性量化，处理模糊情感证据",
+      "canonical_evidence": "对矛盾或受损情感信号进行不确定性量化，处理模糊情感证据",
+      "llm_tldr_en": "EMT-DS is an evidential multimodal transformer that models predictions as subjective opinions and fuses modality beliefs via Dempster-Shafer, handling contradictory or noisy emotional signals.",
+      "llm_tldr_cn": "现有多模态情感识别方法基于softmax，即便传感器数据受损或模态间矛盾（如面部表情为正面而语音韵律为负面）仍给出高置信预测。本文提出证据式多模态Transformer与Dempster-Shafer融合（EMT-DS），将预测建模为主观意见（Dirichlet分布），分离认知不确定性与偶然不确定性，并用Dempster组合规则融合各模态信念质量。该方法能对矛盾与噪声数据给出更可靠的不确定性量化，提升情感识别的可信度与稳健性。",
+      "llm_tldr": "现有多模态情感识别方法基于softmax，即便传感器数据受损或模态间矛盾（如面部表情为正面而语音韵律为负面）仍给出高置信预测。本文提出证据式多模态Transformer与Dempster-Shafer融合（EMT-DS），将预测建模为主观意见（Dirichlet分布），分离认知不确定性与偶然不确定性，并用Dempster组合规则融合各模态信念质量。该方法能对矛盾与噪声数据给出更可靠的不确定性量化，提升情感识别的可信度与稳健性。",
+      "llm_tags": [
+        "query:ea"
+      ],
+      "matched_query_tag": "query:ea",
+      "matched_query_text": "inconsistent or ambiguous emotion labels in affective computing",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.16589v1",
+      "source": "arxiv",
+      "title": "HyBRA-EEG: Hyperbolic Global-Local Brain-Region Aggregation for Self-Supervised EEG Representation Learning",
+      "abstract": "Electroencephalography (EEG) representation learning is challenged by noisy signals, inter-subject variability, and heterogeneous electrode montages in different datasets and recording settings. Recent self-supervised EEG pretraining methods improve transferability by converting heterogeneous recordings into unified token or sequence representations, but channel-aware designs may still encode montage- or dataset-specific regularities. We propose HyBRA, a self-supervised framework based on hyperbolic global-local brain-region aggregation. HyBRA maps heterogeneous channel observations into a fixed regional token space by combining electrode coordinates, region priors, and feature-dependent hyperbolic distances. A channel-evidence injection branch preserves fine-grained discriminative cues during aggregation. The resulting tokens are processed by a Region-Time Transformer and pretrained with masked reconstruction of latent features and region-level signals. HyBRA outperforms the compared methods in average balanced accuracy on six benchmark datasets. Under a controlled six-fold evaluation on OpenBMI-MI, HyBRA matches CSBrain in balanced accuracy, improves AUROC by 1.84 percentage points and AUPRC by 5.23 percentage points, and uses 96.8\\% fewer parameters. Matched comparisons on TUAB and TUEV show higher balanced accuracy for hyperbolic matching than for Euclidean distance or cosine similarity.",
+      "authors": [
+        "Xin Liu",
+        "Feng Lu",
+        "Wei Li"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-10-12T11:10:32+00:00",
+      "link": "https://arxiv.org/pdf/2610.16589v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "self-supervised EEG representation learning handling inter-subject variability and heterogeneous montages for transferability",
+      "llm_evidence_cn": "面向跨被试差异与异构蒙太奇的自监督EEG表征学习",
+      "llm_evidence": "面向跨被试差异与异构蒙太奇的自监督EEG表征学习",
+      "canonical_evidence": "面向跨被试差异与异构蒙太奇的自监督EEG表征学习",
+      "llm_tldr_en": "HyBRA is a self-supervised EEG framework using hyperbolic global-local brain-region aggregation to map heterogeneous channels into a fixed regional token space, improving cross-subject and cross-dataset transferability.",
+      "llm_tldr_cn": "EEG表征学习面临噪声、跨被试差异和电极蒙太奇异构问题，现有自监督预训练方法仍可能编码蒙太奇或数据集特异的规律。本文提出HyBRA自监督框架，通过结合电极坐标、脑区先验与特征相关的双曲距离，将异构通道观测映射到固定的区域token空间，实现全局-局部的双曲脑区聚合。该设计提升了跨数据集与跨被试的表征迁移能力，为异构EEG场景下的通用表征学习提供了新思路。",
+      "llm_tldr": "EEG表征学习面临噪声、跨被试差异和电极蒙太奇异构问题，现有自监督预训练方法仍可能编码蒙太奇或数据集特异的规律。本文提出HyBRA自监督框架，通过结合电极坐标、脑区先验与特征相关的双曲距离，将异构通道观测映射到固定的区域token空间，实现全局-局部的双曲脑区聚合。该设计提升了跨数据集与跨被试的表征迁移能力，为异构EEG场景下的通用表征学习提供了新思路。",
+      "llm_tags": [
+        "query:csg"
+      ],
+      "matched_query_tag": "query:csg",
+      "matched_query_text": "domain generalization EEG",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
 }

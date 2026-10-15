@@ -1,6 +1,22 @@
 {
-  "generated_at": "2026-10-15T03:57:13.916980+00:00",
+  "generated_at": "2026-10-15T05:40:04.980712+00:00",
   "updated_date": "20261006-20261015",
   "carryover_days": 9,
-  "tag_states": {}
+  "tag_states": {
+    "ab": {
+      "updated_date": "20261006-20261015",
+      "carryover_days": 9,
+      "items": []
+    },
+    "ea": {
+      "updated_date": "20261006-20261015",
+      "carryover_days": 9,
+      "items": []
+    },
+    "csg": {
+      "updated_date": "20261006-20261015",
+      "carryover_days": 9,
+      "items": []
+    }
+  }
 }

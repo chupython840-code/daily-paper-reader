@@ -1,0 +1,877 @@
+Title: Social Pain Disrupts Emotion-Action Brain-State Dynamics in Adolescents with Non-Suicidal Self-Injury
+
+URL Source: https://arxiv.org/pdf/2610.11155v1
+
+Published Time: Fri, 09 Oct 2026 00:52:54 GMT
+
+Number of Pages: 19
+
+Markdown Content:
+# Social Pain Disrupts Emotion-Action Brain-State Dynamics in Adolescents with Non-Suicidal Self-Injury 
+
+Ying Xu 1,2 , Xiaojun Liang 3, Li Zhang 1,2 , Yixuan Yuan 4, Gan Huang 1,2 , Yongjie Zhou 5* , and Zhen Liang 1,2* 1School of Biomedical Engineering, Medical School, Shenzhen University, Shenzhen, China. 
+
+> 2
+
+Guangdong Provincial Key Laboratory of Biomedical Measurements and Ultrasound Imaging, Shenzhen, China. 
+
+> 3
+
+Pengcheng Laboratory, Shenzhen, China. 
+
+> 4
+
+Department of Electronic Engineering, The Chinese University of Hong Kong, Hong Kong, China. 
+
+> 5
+
+Department of Child Health, Shenzhen Maternity and Child Healthcare Hospital, Shenzhen, China. 
+
+> *
+
+Address correspondence to: qingzhu1108@126.com and janezliang@szu.edu.cn 
+
+Abstract 
+
+Non-suicidal self-injury (NSSI) is highly prevalent among adolescents with depression, yet the rapid neurodynamic processes through which socially salient distress is translated into maladaptive behavioral tendencies remain poorly understood. Here, we integrate an experimental pain paradigm, electroencephalography (EEG) microstate analysis, and interpretable deep sequence modeling to characterize millisecond-scale brain-state dynamics associated with NSSI. EEG was recorded from 106 adolescents with depression, including 67 with NSSI (DN +) and 39 without NSSI (DN −), during social pain, physical pain, and resting-state conditions. A neurodynamic modeling framework is developed to capture higher-order dependencies within microstate sequences through joint disease-specific, domain-adversarial, consistency, and contrastive learning. Among the three conditions, social pain elicits the most discriminative NSSI-related neural dynamics. The proposed framework achieves a classification accuracy of 68.55%, outperforming the best- performing baseline model by 8.94 percentage points. Importantly, model interpretation converges with con-ventionalmicrostate analyses to reveal disrupted bidirectional transitions between MS3 and MS5 in DN + adolescents duringsocial pain. Source reconstruction links MS3 to emotional/interoceptive processing and MS5 to action prepa-ration, indicating impaired emotion-action coupling. Time-resolved analyses further reveal enhanced recruitment of action-preparation states during early-to-middle stages of social pain processing, followed by increased engagement of emotion-related states at later stages in DN + adolescents. Moreover, MS5-to-MS3 dynamics mediate social-evaluation sensitivity and affective outcomes in DN − but not DN +, whereas MS3-to-MS5 transitions are associated with greater negative affect in DN+. Together, these findings identify disrupted emotion–action coupling as a key neurodynamic mechanism underlying altered social pain processing in adolescents with NSSI, providing a mechanistically inter-pretable neural signature for objective identification of NSSI. 
+
+Keywords: Non-suicidal self-injury; Social pain; EEG microstates; Emotion-action coupling; Neurodynamic modeling 
+
+# Introduction 
+
+Non-suicidal self-injury (NSSI) is a major mental health concern among adolescents, particularly those with de-pression. Large-scale epidemiological studies have esti-mated a lifetime prevalence of approximately 17.7% in the general adolescent population, with substantially higher rates among adolescents with depression, more than half of whom may report a history of self-injurious behaviors[1, 2]. Beyond its high prevalence, NSSI is associated with greater clinical severity and represents an important prospective risk factor for subsequent suicidal behavior[3, 4]. However, the neurobiological processes through which distressing ex-periences are dynamically transformed into maladaptive behavioral tendencies remain poorly understood. Clini-cal identification of NSSI also continues to rely largely on self-report and clinical interviews, underscoring the need for objective neurophysiological measures that can comple-ment conventional assessment[5]. Characterizing the neu-ral dynamics associated with NSSI may therefore provide important mechanistic insights into this clinically hetero-geneous behavior and facilitate its objective identification in adolescents with depression. Pain processing provides a particularly relevant frame-work for understanding the neurobiology of NSSI. The In-terpersonal Psychological Theory of Suicide (IPTS) em-phasizes the roles of adverse interpersonal experiences and 1arXiv:2610.11155v1 [cs.AI] 8 Oct 2026 altered pain-related processes in the development of self-injurious and suicidal behaviors[6, 7]. Consistent with this framework, individuals with NSSI frequently exhibit atypical physical pain processing, including elevated pain thresholds and reduced subjective pain sensitivity[8]. Neu-roimaging studies have further identified altered responses in pain-related regions, particularly the anterior cingulate cortex and insula, which contribute to the sensory, affec-tive, and interoceptive dimensions of pain[9–11]. Impor-tantly, NSSI is also closely associated with adverse inter-personal experiences, making social pain particularly rele-vant to its neurobiology. Social rejection and physical pain engage partially overlapping neural systems[12], suggest-ing that altered responses to social distress in NSSI may involve disrupted coordination among emotional, intero-ceptive, and action-related processes. Yet most previous studies have focused on regional activation or static neural measures. How the brain dynamically transitions between these functional processes as social distress unfolds, and whether such temporal organization is disrupted in ado-lescents with NSSI remains largely unknown. Electroencephalography (EEG) microstates provide a powerful approach for addressing this question. EEG mi-crostates are transient, quasi-stable scalp potential to-pographies that persist for tens to hundreds of millisec-onds and are thought to represent rapidly changing func-tional configurations of large-scale brain networks[13]. Un-like conventional time–frequency analyses that primarily characterize local spectral properties, microstate analysis captures the temporal organization of whole-brain elec-trophysiological activity, providing a systems-level repre-sentation of rapidly evolving brain states[14]. EEG mi-crostates have been increasingly investigated in psychi-atric and neurological disorders and provide a potential bridge between electrophysiological dynamics and large-scale functional brain networks[15–18]. Altered microstate properties have also been reported in depression. Murphy 
+
+et al . [18] identified abnormalities in microstate tempo-ral properties in patients with major depressive disorder (MDD), whereas Zhao et al . [19] reported altered du-ration, occurrence, and coverage of multiple microstate classes in drug-naive adolescents with first-episode depres-sion. Neuroimaging studies further suggest that canonical microstates are associated with intrinsic functional net-works involved in salience processing, attention, sensory processing, and internally oriented cognition[20]. More-over, abnormal microstate dynamics in MDD have been associated with cognitive dysfunction[21]. Together, these findings suggest that microstate dynamics may provide a temporally resolved window into the large-scale neural al-terations associated with psychopathology. However, conventional microstate studies typically sum-marize brain dynamics using aggregate measures such as duration, occurrence, coverage, and pairwise transition probabilities. Although informative, these measures com-press the temporal organization of microstate sequences and may therefore miss higher-order dependencies among rapidly evolving brain states. This limitation is particu-larly relevant to NSSI, in which pathological responses to socially salient distress may emerge not from abnormalities in a single brain state, but from disrupted transitions and coordination between states supporting emotional process-ing and behavioral preparation. Sequence-based machine learning provides a means to model these higher-order temporal dependencies directly[22]. More broadly, EEG-based machine-learning approaches have demonstrated the feasibility of identifying depression-related neural patterns from spectral, connectivity, and end-to-end representa-tions[23, 24]. Liang et al . [25], for example, devel-oped a semi-supervised multi-concept framework for EEG-based identification of NSSI, whereas microstate-based approaches have achieved promising classification perfor-mance in MDD using conventional temporal parameters and sequence complexity[19, 26]. Nevertheless, these ap-proaches have predominantly treated microstate proper-ties as aggregated features rather than modeling the mi-crostate sequence itself. Consequently, the higher-order brain-state transitions that may distinguish adolescents with and without NSSI, particularly during socially salient distress, remain insufficiently characterized. Here, we integrate an experimental pain paradigm, EEG microstate analysis, and interpretable deep sequence mod-eling to investigate the neurodynamic mechanisms asso-ciated with NSSI in adolescents with depression (Fig. 1). We examine brain-state dynamics across social pain, phys-ical pain, and resting-state conditions to determine which context most strongly exposes NSSI-related neural alter-ations. Rather than using microstates solely as static sum-mary features, we directly model their sequential organiza-tion to capture higher-order transition dependencies and identify discriminative neurodynamic patterns. We fur-ther combine model interpretation with conventional mi-crostate analysis, source-level reconstruction, functional decoding, time-resolved analysis, and mediation analysis to characterize the functional and behavioral relevance of the identified transitions. We hypothesize that social pain preferentially reveals disrupted transitions between brain states supporting emotional/interoceptive processing and action preparation in adolescents with NSSI. By linking millisecond-scale brain-state dynamics to individual-level identification, this framework aims to provide a mecha-nistically interpretable account of altered emotion–action coupling in NSSI. 
+
+# Results 
+
+To characterize the neurodynamic alterations associated with NSSI, we analyze EEG microstate sequences acquired from adolescents with depression during social pain, phys-ical pain, and resting-state conditions. We first examine whether different pain-related contexts differentially ex-posed NSSI-related neural dynamics and then identify the microstate transitions contributing to these differences. Source-level reconstruction and functional decoding are subsequently used to characterize the neurobiological sub-21 2 3 4 3
+
+MS 1  MS 2 
+
+MS 3  MS 4 
+
+time 
+
+DN+ 
+
+DN-
+
+…
+
+…
+
+…
+
+Trial 1 
+
+Trial 2 
+
+Trial n    
+
+> …
+> …
+> …
+> …
+> Patch1 Patch2 Patch3 Patch50
+
+…
+
+…
+
+…
+
+> …
+> …
+> …
+> …
+
+…
+
+…
+
+…
+
+> …
+> …
+> …
+> …
+
+Original MS sequence  Weak Permute Bank  Strong Permute Bank 
+
+> Original
+> Strong
+> 1
+> 0
+> Original
+> Weak
+> Strong
+
+## S
+
+Source cls Patch  Target cls Patch 
+
+## T
+
+Linear 
+
+classifier 
+
+Domain 
+
+discriminator 
+
+LSTM LSTM      
+
+> Context Vector Positive Pair Negative Pair 1Pseudo label Autoregressive Function
+> MS  Temporal
+> Reorganization
+> Neural Represen -
+> tation Learning
+> Dynamic Stability
+> Learning
+
+EEG signal  
+
+> Encoder
+> Decoder
+> cls Patch
+> Linear  Linear  Linear
+> Scaled Dot-Product Attention
+> Add & Norm
+> Feed Forward
+> Add & Norm
+> Positional Encoding
+> Embeding mapping
+
+Modeling  
+
+> Step Window length
+
+Patch segmetation 
+
+> Output features
+
+Input datas 
+
+ℒDis  ℒAdv 
+
+ℒCT Figure 1: Overview of the proposed model framework. The model consists of four main components.(1) Mi-crostate sequence construction. Preprocessed EEG signals are subjected to a two-step microstate clustering procedure using the k-means algorithm to obtain optimal microstate templates. These templates are then back-fitted to each data segment to generate corresponding microstate time series. (2) MS temporal reorganization. The microstate sequences are segmented into patches using sliding windows (window length = 50, step size = 50). Two shuffling strategies (weak permutation and strong permutation) are further applied to enhance the diversity of temporal patterns and improve model robustness. (3) Neural representation learning. A PatchTST architecture is employed to capture dynamic transition patterns within the microstate sequences and map them into high-dimensional representations. A dedicated CLS patch is introduced to facilitate the integration of local segment-level characteristics and global sequence-level structure. (4) Dynamic stability learning. The model is jointly optimized using multiple objectives, including a disease-specific loss, domain adversarial loss, consistency loss, and contrastive learning loss. This joint optimization enables the model to anchor disease-relevant pathological microstate transition patterns associated with NSSI, thereby samplifying subtle differences between patient subgroups. strates of the identified transitions, while time-resolved and mediation analyses examine their temporal and be-havioral relevance. Finally, we evaluate whether these neu-rodynamic patterns support individual-level identification of NSSI and assess the robustness and generalizability of the proposed modeling framework. 
+
+Social pain preferentially reveals NSSI-related neurodynamic alterations 
+
+We first examine whether NSSI-related neurodynamic dif-ferences varied across social pain, physical pain, and resting-state conditions. Under identical evaluation set-3tings, decoding performance shows a consistent condition-dependent gradient, with social pain yielding the highest performance (Accuracy = 68.55%, Precision = 69.49%, Recall = 67.37%, F1-score = 68.08%, AUC = 68.06%), followed by physical pain (Accuracy = 66.45%) and rest-ing state (Accuracy = 61.84%) (Table 1). These results indicate that NSSI-related neural differences are most dis-criminative during social pain processing. This pattern is consistent with the high self-relevance and affective salience of socially adverse experiences, which engage neural systems involved in emotional processing, interoception, and behavioral regulation[9, 12, 27]. By comparison, physical pain more directly engages nocicep-tive and somatosensory processes[28, 29], whereas the rest-ing state lacks an explicit affective challenge[30, 31]. Thus, rather than indicating a generalized alteration across brain states, the observed performance gradient suggests that so-cially salient distress preferentially exposes neurodynamic differences associated with NSSI. To further examine condition-dependent neural-stimulus correspondence, we use CLIP[32] to extract visual representations of the social and physical pain stimuli and quantify their cosine similarity with model-derived EEG representations. A two-way mixed ANOVA is performed with pain type as the within-subject factor and group as the between-subject factor. As shown in Fig. 2, EEG-stimulus representational similarity differs between social and physical pain conditions in DN+ (p = 0.02, t = 2.38). No significant between-group differences are detected within either pain condition, indicating that the effect is primarily condition dependent rather than reflecting a global difference in representational similarity between DN + and DN − adolescents. Together with the decoding results, these findings further support social pain as a particularly informative context for revealing NSSI-related neurodynamic alterations. 
+
+Disrupted MS3-MS5 transitions character-ize social pain processing in NSSI 
+
+Given that social pain most strongly differentiated DN +
+
+from DN − adolescents, we next investigate the neurody-namic patterns underlying this effect. Directed temporal dependencies between consecutive microstates are quan-tified from the attention weights of the trained model and aggregate into microstate transition attention matri-ces. Group-specific matrices are then examined to identify transitions that contributed most strongly to the discrim-ination of NSSI status. During social pain processing, group differences are observed primarily for transitions involving MS2 ↔MS8, MS3 ↔MS5, and MS3 →MS6 (Fig. 3). Among these tran-sitions, MS3 ↔MS5 shows the most consistent group dif-ference. Importantly, this pattern converges with conven-tional microstate analyses based on occurrence, duration, coverage, and transition probability, which independently implicate MS3 and MS5 in differentiating DN + from DN −
+
+adolescents. DN + adolescents exhibit weaker bidirectional MS3 ↔MS5 transition strength than DN − adolescents, in-dicating attenuated dynamic coupling between these two brain states during social pain processing. We additionally examine whether these transition pat-terns are strongly influenced by sex. In contrast to the clinical-group effects, sex-related differences are lim-ited, with a significant difference observed only for the MS6 →MS7 transition. Details of the statistical analysis can be found in the supplementary materials Appendix I. These findings suggest that the prominent MS3 ↔MS5 al-teration is more closely associated with NSSI status than with sex-related variation. 
+
+MS3-MS5 dynamics link emotional-interoceptive processing to action prepara-tion 
+
+To characterize the functional significance of the disrupted MS3 ↔MS5 dynamics, we project microstate topographies into source space using the TESS framework[33] and per-form meta-analytic functional decoding using Neurosynth. Source reconstruction reveal partially distinct spatial dis-tributions for MS3 and MS5 (Fig. 4). MS3 is predom-inantly associated with cingulate and medial frontal re-gions implicated in emotional and interoceptive process-ing, whereas MS5 shows stronger involvement of the pre-central gyrus and adjacent premotor regions associated with action preparation. These spatial and functional profiles suggest that MS3 ↔MS5 transitions index dynamic coordination be-tween emotional/interoceptive processing and action-preparatory systems. The reduce bidirectional MS3 ↔MS5 transitions observed in DN + adolescents therefore point to disrupted emotion-action coupling during the process-ing of socially salient distress. Rather than reflecting an abnormality confined to a single neural state, NSSI is char-acterized by altered coordination between brain states in-volved in evaluating affective information and preparing behavioral responses. 
+
+Time-resolved dynamics reveal an early action-preparation bias followed by late emotional recruitment 
+
+To determine how the identified emotion–action alter-ations unfold over time, we perform a time-resolved anal-ysis of microstate dynamics during social pain processing. EEG responses are segmented using a sliding window of 300 ms with a 50-ms step, and the proportion of each microstate within each window is quantified. Microstates with identical spatial topographies but opposite polarities are treated as the same state. Individual-level estimates are subsequently averaged to generate time-resolved state-occurrence curves for DN + and DN − adolescents (Fig. 5). Distinct temporal differences emerge between groups. During the early-to-middle stages of social pain processing (0–400 ms, 950–1450 ms, and 2250–2600 ms), DN + ado-lescents show greater recruitment of the state associated with motor and action preparation than DN − adolescents. In contrast, during a later interval (4400–4850 ms), DN +
+
+4Table 1: Model performance across social pain, physical pain, and resting-state conditions State Accuracy(%) Precision(%) Recall(%) F1-score(%) AUC(%) Resting 61.84 ±01.39 62.26 ±03.10 62.11 ±10.00 61.60 ±04.13 60.50 ±02.64 Physical Pain 66.45 ±04.31 67.07 ±05.49 66.58 ±11.31 66.12 ±05.98 66.00 ±05.73 Social Pain 68.55 ±03.07 69.49 ±04.60 67.37 ±06.70 68.08 ±03.41 68.06 ±04.57 0.04   
+
+> 0.06
+> 0.08
+> 0.1
+> 0.12
+> 0.14
+> 0.16
+> 0.18
+> 0.04
+> 0.06
+> 0.08
+> 0.1
+> 0.12
+> 0.14
+> 0.16
+> 0.18
+> Cos-Sim Cos-Sim
+> Social Pain Physical Pain
+> DN+ DN-
+
+DN+ vs DN-
+
+SP vs PP                   
+
+> 00.05 0.1 0.15 0.2 00.05 0.1 0.15 0.2
+> 00.05 0.1 0.15 0.2 00.05 0.1 0.15 0.2
+
+*
+
+> nas
+
+DN-
+
+DN+ 
+
+DN-
+
+DN+ 
+
+PP 
+
+SP 
+
+PP 
+
+SP 
+
+> ns
+
+Social Pain: DN+ vs DN- Physical Pain: DN+ vs DN-
+
+DN+: Social Pain vs Physical Pain  DN-: Social Pain vs Physical Pain     
+
+> ns
+> *
+> ns
+> (a) (b) (c)
+> (d) (e) (f)
+
+Figure 2: Cosine similarity between model-derived EEG representations and stimulus representations across pain conditions. (a) Group-level comparison of cosine similarity between model-derived EEG features and stimulus image features under social pain (SP) and physical pain (PP) conditions. (b-c) Within-group comparisons of SP versus PP for DN + and DN − adolescents, respectively. (d) Between-group comparison of cosine similarity across conditions. (e-f) Post hoc comparisons between DN + and DN − groups under SP and PP conditions, respectively. *p <0.05. adolescents show greater recruitment of the state associ-ated with emotional processing. These results reveal a temporally structured alteration in social pain processing in NSSI, characterized by en-hanced engagement of action-preparatory systems during early-to-middle processing followed by increased recruit-ment of emotion-related systems at later stages. This temporal organization is consistent with the abnormal MS3 ↔MS5 transitions identified above and provides com-plementary evidence that altered emotion-action coupling in NSSI unfolds dynamically over the course of social pain processing[34–36]. 
+
+MS5-to-MS3 dynamics differentially link social evaluation to affective outcomes 
+
+We next examine whether the identified emotion-action dynamics are associated with individual differences in sen-sitivity to the social environment. Given the established relevance of peer interaction and social evaluation to ado-lescent NSSI[37, 38], mediation analyses are performed separately in DN − and DN + adolescents. Environmen-tal variables include parent-child relationship factors, aca-demic stress, and sensitivity to teachers’ and peers’ evalu-ations, while clinical and affective outcomes include PHQ-9[39], GAD-7[40], and subjective negative affect following 50
+
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> 0
+> 0.01
+> 0.02
+> 0.03
+> 0.04
+> 0.05
+> 0.06
+> 0.07
+> 0
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> 0.025
+> 0
+> 0.005
+> 0.010
+> 0.015
+> 0.020
+> 0.025
+
+Differences in microstate transition 
+
+> -3
+> -2
+> -1
+> 0
+> 1
+> 2
+> 3
+> -3
+> -2
+> -1
+> 0
+> 1
+> 2
+> 3
+> Attention Weight
+
+DN- Subgroup 
+
+> Attention Weight
+
+DN+ Subgroup 
+
+> Attention Weight
+> Attention Weight
+
+Female Subgroup  Differences in microstate transition 
+
+> t-value t-value
+> Current microstate
+
+Next microstate 
+
+> Current microstate
+
+Next microstate 
+
+> Current microstate
+
+Next microstate 
+
+> Current microstate
+
+Next microstate 
+
+> Current microstate
+
+Next microstate 
+
+> Current microstate
+
+Next microstate 
+
+* ** 
+
+*
+
+*
+
+*
+
+*
+
+(b) (a)  (c) 
+
+(e) (d)  (f)                                                                                                                                                                                                 
+
+> 0.04 0.03 0.04 0.02 0.01 0.05 0.03
+> 0.04 0.06 0.04 0.04 0.06 0.05 0.03
+> 0.06 0.02 0.02 0.03 0.02 0.03 0.03
+> 0.06 0.03 0.02 0.02 0.02 0.03 0.03
+> 0.04 0.03 0.03 0.03 0.01 0.02 0.04
+> 0.02 0.02 0.01 0.04 0.02 0.02 0.03
+> 0.07 0.03 0.02 0.02 0.03 0.02 0.02
+> 0.03 0.04 0.04 0.03 0.03 0.03 0.02
+> 0.04 0.03 0.03 0.03 0.03 0.08 0.03
+> 0.05 0.04 0.04 0.04 0.08 0.04 0.05
+> 0.06 0.03 0.02 0.01 0.02 0.02 0.03
+> 0.05 0.04 0.02 0.03 0.03 0.03 0.03
+> 0.02 0.04 0.01 0.03 0.02 0.02 0.03
+> 0.03 0.03 0.04 0.04 0.02 0.02 0.03
+> 0.06 0.02 0.03 0.02 0.01 0.02 0.01
+> 0.04 0.06 0.03 0.03 0.03 0.02 0.02
+> 0.02 0.02 0.03 0.01 0.02 0.02 0.01
+> 0.02 0.02 0.02 0.03 0.05 0.02 0.01
+> 0.02 0.02 0.02 0.02 0.02 0.02 0.01
+> 0.03 0.02 0.02 0.02 0.03 0.03 0.01
+> 0.01 0.01 0.02 0.01 0.03 0.03 0.01
+> 0.02 0.04 0.02 0.01 0.04 0.02 0.02
+> 0.02 0.01 0.03 0.02 0.03 0.04 0.02
+> 0.02 0.02 0.01 0.01 0.01 0.05 0.01
+> 0.01 0.02 0.01 0.03 0.02 0.01 0.01
+> 0.02 0.03 0.01 0.03 0.02 0.02 0.02
+> 0.06 0.02 0.03 0.02 0.01 0.01 0.01
+> 0.02 0.02 0.02 0.04 0.01 0.02 0.01
+> 0.02 0.02 0.01 0.01 0.01 0.01 0.01
+> 0.02 0.02 0.03 0.01 0.01 0.01 0.01
+> 0.04 0.02 0.03 0.01 0.02 0.01 0.02
+> 0.03 0.02 0.02 0.01 0.04 0.01 0.01
+
+Male Subgroup Figure 3: Microstate transition attention patterns across clinical and sex subgroups. (a-b) Mean microstate transition attention matrices for DN + and DN − adolescents, averaged across ten-fold cross-validation. (c) Statistical comparison of transition attention weights between clinical groups. (d-e) Mean transition attention matrices for male and female subgroups. (f) Statistical comparison between sex subgroups. Asterisks indicate transitions showing significant group differences. *p <0.05. social pain. In DN − adolescents, sensitivity to social evaluation is positively associated with MS5 →MS3 transition strength (a = 0 .451 ). Greater MS5 →MS3 transition strength is, in turn, negatively associated with PHQ-9 scores ( b =
+
+−0.480 ) and subjective emotional ratings ( b = −0.493 ). Bootstrap mediation analyses showed significant indi-rect associations between social-evaluation sensitivity and PHQ-9 scores (indirect effect = −0.206 ), as well as be-tween social-evaluation sensitivity and subjective emo-tional ratings (indirect effect = −0.232 ). The correspond-ing direct effects remained significant, consistent with par-tial statistical mediation. This pattern is absent in DN + adolescents. Although sensitivity to social evaluation show direct associations with PHQ-9 scores and subjective emotional ratings, its association with MS5 →MS3 transition strength is not sig-nificant ( a = 0.082 ), nor are the associations between MS5 →MS3 dynamics and PHQ-9 ( b = −0.090 ) or subjec-tive emotional ratings ( b = −0.140 ). Consequently, no sig-nificant indirect effects through MS5 →MS3 are observed. Notably, the reverse MS3 →MS5 transition shows a sig-nificant association with subjective negative affect in DN +
+
+adolescents. Together, these findings reveal a direction-dependent alteration in emotion-action brain-state dy-namics: whereas action-to-emotion transitions are associ-ated with social-evaluation sensitivity and affective out-comes in adolescents without NSSI, this relationship is disrupted in adolescents with NSSI, in whom stronger emotion-to-action dynamics are instead associated with greater negative affect. 
+
+Neurodynamic modeling enables individual -level identification of NSSI 
+
+Having identified disrupted emotion–action dynamics dur-ing social pain, we next evaluate whether the sequential organization of microstates provides sufficient informa-tion for individual-level identification of NSSI. The pro-posed model is compared with four conventional machine-learning methods[41–44], four neural sequence models[45– 48], five domain-adaptation approaches[49–52], and two contrastive-learning methods[53, 54] using identical inputs (Table 2). Conventional machine-learning methods show relatively limited discrimination, with accuracies ranging from 46.45% to 53.55%. Neural sequence models yield modest improvements, with the Transformer achieving the highest accuracy among the baseline methods (59.61%). Domain-adaptation and contrastive-learning approaches produce comparable performance, with DDC reaching a precision 6-2.5 
+
+> 2.5
+> 0
+
+MS 1  
+
+> Precentral Gyrus
+> (Frontal Lobe)
+> LR
+> -2.5
+> 2.5
+> 0
+
+MS 2 
+
+> Postcentral Gyrus
+> (Parietal Lobe)
+> -2.5
+> 2.5
+> 0
+
+MS 3 
+
+> Cingulate Gyrus
+> (Limbic Lobe)
+> -2.5
+> 2.5
+> 0
+
+MS 4 
+
+> Anterior Cingulate
+> (Limbic Lobe)
+
+MS 8 
+
+> Anterior Cingulate
+> (Limbic Lobe)
+
+MS 7 
+
+> Cingulate Gyrus
+> (Limbic Lobe)
+
+MS 6 
+
+> Postcentral Gyrus
+> (Parietal Lobe)
+
+MS 5        
+
+> Precentral Gyrus
+> (Frontal Lobe)
+> LR
+> -2.5
+> 2.5
+> 0
+> -2.5
+> 2.5
+> 0
+> -2.5
+> 2.5
+> 0
+> -2.5
+> 2.5
+> 0
+> LR
+> LRLR
+> LR
+> L
+> LR
+
+Motor Preparation  
+
+> LR
+
+Sensory Processing 
+
+Emotional  Regulation 
+
+Conflict monitoring Figure 4: Source-level reconstruction and functional annotation of EEG microstates. Source-level activation patterns of the eight microstate templates are shown together with their meta-analytic functional annotations derived from Neurosynth. For each template, word clouds display the top 15 positively and negatively associated functional terms based on correlation coefficients, excluding anatomical terms. The cortical region showing the strongest source activity for each template is indicated below the corresponding map. of 65.17% and SimCLR an accuracy of 59.47%. In compar-ison, the proposed neurodynamic model achieves an accu-racy of 68.55%, precision of 69.49%, recall of 67.37%, F1-score of 68.08%, and AUC of 68.06%. Its accuracy exceeds that of the best-performing baseline model by 8.94 per-centage points, indicating that explicitly modeling higher-order dependencies within microstate sequences improves the identification of NSSI-related neurodynamic patterns. 
+
+# Discussion 
+
+The present study suggests that NSSI in adolescents with depression is characterized by altered coordination be-tween emotional/interoceptive and action-related brain states during socially salient distress. These findings ex-tend previous accounts of NSSI from abnormalities in in-dividual regions or networks toward a dynamic systems perspective, in which vulnerability may arise from how rapidly evolving neural states interact over time. 
+
+Social pain as a context for revealing NSSI-related vulnerability 
+
+Interpersonal experiences are particularly salient during adolescence, when sensitivity to peer acceptance, rejection, and social evaluation increases substantially. This devel-opmental context may help explain why socially painful experiences provide an informative window into NSSI-related neural dysfunction. The Interpersonal Psycho-logical Theory of Suicide emphasizes adverse interper-7DN+ 
+
+> DN −
+> Frequence (%) Frequence (%) Frequence (%) Frequence (%)
+
+MS1 MS5  Motor Preparation  Network MS1 MS5  Motor Preparation  Network 
+
+MS2 MS6  Sensory Processing Network MS2 MS6 Sensory Processing Network 
+
+MS3 MS7  Emotional Regulation Network MS3 MS7 Emotional Regulation Network 
+
+MS4 MS8  Conflict monitoring Network MS4 MS8 Conflict monitoring Network                                             
+
+> LR
+> LR
+> LR
+> LR
+> 0.22
+> 0.24
+> 0.26
+> 0.28
+> 0.2
+> 0.22
+> 0.24
+> 0.26
+> 0.21
+> 0.22
+> 0.23
+> 0.24
+> 0.25
+> 00.5 11.5 22.5 33.5 44.5 5
+> Time (s)
+> 0.26
+> 0.28
+> 0.3
+> 0.32
+> 00.5 11.5 22.5 33.5 44.5 5
+> 00.5 11.5 22.5 33.5 44.5 5
+> 00.5 11.5 22.5 33.5 44.5 5
+
+Figure 5: Time-resolved validation of microstate dynamics during social pain processing. A sliding-window approach (window length = 300 ms; step size = 50 ms) is used to quantify the temporal occurrence of each microstate. Microstate templates with identical spatial topographies but opposite polarity were treated as the same state. Solid lines represent adolescents with depression and NSSI (DN +), whereas dashed lines represent adolescents with depression without NSSI (DN −). Shaded regions indicate time intervals showing significant between-group differences. Corresponding source-level activation patterns are displayed for each microstate. sonal experiences and altered pain-related processes in self-injurious and suicidal behaviors[6, 7]. Although NSSI is distinct from suicidal behavior, this framework highlights the potential importance of interactions between interper-sonal distress and pain-related processing. Physical and social pain recruit partially overlapping neural systems involved in affective salience and intero-ception[9–11]. Social pain, however, additionally carries information about rejection, belonging, and self-relevance, placing greater demands on emotional appraisal and be-havioral regulation. Social pain may therefore provide an experimental context that amplifies underlying vulnera-bilities in processing socially salient distress, rather than representing a specific causal factor for NSSI. 
+
+Emotion-action decoupling as a neurody-namic mechanism of NSSI 
+
+A central implication of the present findings is that NSSI-related dysfunction may involve impaired coordination between systems supporting emotional/interoceptive pro-cessing and those supporting action preparation. The cin-gulate cortex occupies an important position at the in-terface of affect, interoception, cognitive control, and ac-tion[27, 55, 56], whereas precentral and premotor systems contribute to the preparation and organization of behav-ioral responses. Flexible interaction between these sys-tems may therefore be necessary for translating emotional information into context-appropriate behavior. Previous neuroimaging studies of adolescent NSSI and depression have identified abnormalities across salience, default-mode, attention, and sensorimotor networks[57, 58]. Our findings extend these observations by suggest-ing that the relevant dysfunction may lie not only within individual systems but also in their temporal coordination. Inefficient switching between emotional and action-related states could impair the flexible transformation of socially salient information into adaptive behavioral responses. This dynamic perspective may be particularly relevant 8MS5 -> MS3                          
+
+> evaluation PHQ-9 (DN-) evaluation emotion (DN-)
+> evaluation evaluation
+> a: 0.451 b: -0.480
+> c: 0.194
+> a: 0.451 b: -0.493
+> c: 0.429
+> a:0.082 b: -0.090 a:0.082 b:-0.140
+> c:0.172 c:0.396
+> MS5 -> MS3
+> MS5 -> MS3 MS5 -> MS3
+> PHQ-9 (DN+) emotion (DN+) 123456789
+> 0.08
+> 0.1
+> 0.12
+> 0.14
+> 0.16
+> 0.18
+> 0.2
+> 0.22
+> 0.24
+> 0.26
+> 0.28
+> DN- : r=0.21, p=0.229
+> DN+: r=0.30, p=0.015
+> P(MS3 -> MS5)
+
+Negative emotion score 
+
+(a) 
+
+(b) 
+
+(c) 
+
+(d) 
+
+(e) Figure 6: Associations among social evaluation, microstate dynamics, and affective outcomes. (a-b) Sta-tistical mediation analyses examining MS5 →MS3 dynamics in the association between sensitivity to social evaluation and depressive symptoms (PHQ-9 scores) in DN − and DN + adolescents. (c-d) Corresponding analyses for subjective negative emotional ratings following pain-related stimuli. (e) Association between MS3 →MS5 transition probability and subjective negative emotional ratings across groups. Solid red lines indicate statistically significant paths, whereas dashed black lines indicate non-significant paths. Path coefficients are shown alongside each path. DN +, depression with NSSI; DN −, depression without NSSI. Table 2: Performance comparison with conventional machine-learning, neural sequence, domain-adaptation, and contrastive-learning methods. Method Accuracy(%) Precision(%) Recall(%) F1-score(%) AUC(%) KNN[41] 53.55 ±04.47 53.15 ±03.87 61.58 ±07.87 56.86 ±04.77 47.47 ±05.78 Decision tree[42] 47.50 ±04.62 47.30 ±04.60 49.21 ±11.84 47.84 ±07.62 48.33 ±04.00 SVM[43] 46.45 ±04.96 46.34 ±05.25 46.84 ±08.02 46.48 ±06.23 55.37 ±06.17 Random forest[44] 52.24 ±06.30 52.23 ±06.07 52.89 ±08.08 52.44 ±06.63 52.47 ±06.91 RNN[45] 58.03 ±05.80 64.11 ±10.92 49.74 ±26.82 50.72 ±15.13 56.11 ±09.70 LSTM[46] 56.45 ±04.09 65.08 ±10.70 38.95 ±24.46 44.27 ±11.79 53.36 ±05.40 GRU[47] 56.18 ±03.46 64.96 ±10.27 35.53 ±21.39 42.13 ±11.89 52.91 ±05.05 Transformer[48] 59.61 ±06.02 60.13 ±25.02 50.79 ±31.51 49.79 ±24.57 54.92 ±13.01 DDC[49] 57.24 ±03.63 65.17 ±10.66 47.89 ±27.29 49.54 ±12.26 56.48 ±04.82 DAN[50] 56.18 ±04.07 55.42 ±21.78 44.21 ±31.18 44.16 ±22.20 53.42 ±06.75 DANN[51] 55.13 ±04.58 58.50 ±09.68 59.74 ±25.49 55.01 ±09.30 55.78 ±06.64 CORAL[52] 48.68 ±05.34 48.66 ±05.02 46.84 ±09.35 47.39 ±06.84 48.20 ±03.39 DCORAL[52] 56.05 ±03.78 60.03 ±25.64 36.32 ±24.24 40.78 ±18.85 52.70 ±07.93 MoCo[53] 55.53 ±05.26 61.15 ±09.77 35.79 ±08.61 44.24 ±05.91 53.97 ±07.97 SimCLR[54] 59.47 ±03.50 64.31 ±13.00 51.84 ±14.99 54.94 ±09.24 54.76 ±06.26 
+
+Our model 68.55 ±03.07 69.49 ±04.60 67.37 ±06.70 68.08 ±03.41 68.06 ±04.57 
+
+to NSSI, which has frequently been conceptualized as a maladaptive strategy for regulating intense negative af-fect[59]. The observed temporal organization further sug-gests that action-related processing and emotional process-ing are abnormally coordinated as social distress unfolds. Rather than indicating a direct neural pathway to self-injury, these findings point to altered emotion–action in-tegration as a broader mechanism through which distress may become more closely linked to behavioral readiness. 
+
+Directionality may distinguish emotional integration from behavioral readiness 
+
+The directional organization of brain-state transitions suggests that emotion-action coupling is not a unitary process. Transitions from action-related toward emo-tional/interoceptive states may reflect incorporation of ex-ternally oriented information into internal affective ap-praisal, whereas transitions in the opposite direction may reflect transformation of emotional states toward behav-ioral preparation. Such reciprocal coordination is important for adaptive 9emotion regulation, which requires continuous updating of internal states according to environmental demands and flexible selection of behavioral responses[60, 61]. Disrup-tion of this exchange could therefore reduce the flexibility with which socially salient experiences are processed. Within this framework, the distinct behavioral associ-ations of the two transition directions suggest an altered balance between emotional integration and action readi-ness in NSSI. Importantly, this interpretation does not imply that an individual transition directly represents self-injurious behavior. Rather, it suggests that negative af-fect may become more closely coupled to action-oriented neural configurations, providing a potential neurodynamic bridge between emotional dysregulation and maladaptive behavioral tendencies. 
+
+Multidimensional analyses support model robustness 
+
+Beyond its mechanistic interpretation, the proposed framework showed stable performance across complemen-tary validation analyses. The ablation analysis (Supple-mentary Appendix II) indicates that the disease-specific, domain-adversarial, consistency, and contrastive objec-tives make complementary contributions to the learned representation. In particular, the performance reductions observed after removing individual objectives suggest that the model benefits from jointly preserving disease-relevant information, reducing inter-individual domain variation, and maintaining discriminative temporal structure. Additional supplementary analyses further support the reliability of the proposed framework. The loss curves of the individual optimization objectives exhibit stable con-vergence throughout training, indicating that the multi-objective optimization strategy does not introduce con-flicting optimization dynamics (Supplementary Appendix III). Permutation testing confirms that the observed clas-sification performance remains significantly above chance level ( p = 0 .03 ), while repeated experiments under differ-ent random sampling strategies demonstrate the robust-ness of the framework to sampling variability (Supplemen-tary Appendix IV). Furthermore, comparisons of different PatchTST classification heads consistently favor the pro-posed design, suggesting that the performance improve-ment arises from the overall neurofunctional framework rather than architectural choices alone (Supplementary Appendix V). Hyperparameter analyses further demonstrate the sta-bility of the proposed framework. Across different loss weighting schemes and permutation ratios, the model maintains consistently competitive performance, with the optimal configuration achieving the best balance between representation learning and classification accuracy (Sup-plementary Appendix VI). These findings indicate that the framework is not overly sensitive to hyperparameter selection, supporting its robustness and potential for fu-ture clinical translation. 
+
+Sex-related stability of neurodynamic rep-resentations 
+
+Given the sex imbalance commonly observed in adolescent NSSI cohorts, we further examine whether the learned representations are strongly dependent on sex. As sum-marized in Table 3 and supplementary Appendix VII, within-sex and cross-sex analyses show broadly compa-rable discrimination, suggesting that the major neuro-dynamic information captured by the framework is not restricted to one sex. Under gender-consistent settings, performance decreases slightly but remains stable, with Accuracy/F1-score of 67.63%/66.87% in the female sub-group and 65.79%/65.00% in the male subgroup. In cross-gender evaluations, performance declines further, with rel-atively balanced results in the Female-to-Male condition (F1-score: 65.30%), while the Male-to-Female condition shows high Precision (72.51%) but markedly reduced Re-call (53.68%), leading to a lower F1-score (61.37%). Over-all, the model maintains good discriminative ability across single-gender and cross-gender settings, effectively distin-guishing DN + and DN − patients. 
+
+Independent datasets distinguish general-izability from disease specificity 
+
+To further validate the decoding capability of the proposed model, we conduct additional evaluations on two indepen-dent public EEG datasets of MDD. First, we perform bi-nary classification under both eyes-open(EO) and eyes-closed(EC) conditions using the dataset from Hospital Universiti Sains Malaysia (HUSM) ( https://figshare. com/articles/EEGDataNew/4244171 ) [62]. Following the same preprocessing pipeline, participants with poor sig-nal quality are excluded, resulting in a final sample of 31 MDD patients and 21 healthy controls. The model achieve superior performance under the EC condition (Accuracy = 82.17% ±9.67%, F1-score = 82.82% ±10.38%), com-pared to the EO condition (Accuracy = 75.98% ±9.73%, F1-score = 76.49% ±10.92%). We further evaluate the model on the MODMA dataset using the same prepro-cessing pipiline, yielding 24 MDD patients and 29 healthy controls (https://modma.lzu.edu.cn/data/index )[63]. Consistently, the model demonstrated robust classifica-tion performance (Accuracy = 68.59% ±7.18%, F1-score = 70.50% ±10.98%). As summarized in Table 4, the pro-posed model outperform existing machine learning and deep learning approaches, with Transformer-based models ranking second. Overall, these cross-dataset validation re-sults provide strong evidence for the robustness and gener-alizability of the proposed model across different datasets and experimental conditions. We further examine the microstate transition patterns captured by the model across independent MDD datasets. No significant group differences are observed under the EO condition, whereas the EC condition reveals altered bidirectional MS1 ↔MS3 transitions[64–67]. These transi-tions have been associated with switching between inter-nally oriented self-referential and externally oriented per-10 Table 3: Sex-specific and cross-sex validation of the proposed framework. Train set Test set Accuracy(%) Precision(%) Recall(%) F1-score(%) Entire data Entire data 68.55 ±03.07 69.49 ±04.60 67.37 ±06.70 68.08 ±03.41 Female subgroup Female subgroup 67.63 ±06.62 67.76 ±04.90 67.89 ±17.59 66.87 ±09.82 Female subgroup Male subgroup 65.79 ±02.79 66.48 ±04.36 65.26 ±10.43 65.30 ±04.74 Male subgroup Male subgroup 65.79 ±02.46 67.35 ±06.00 65.79 ±16.95 65.00 ±06.41 Male subgroup Female subgroup 66.32 ±02.00 72.51 ±05.64 53.68 ±05.46 61.37 ±02.23 ceptual processing, suggesting disrupted coordination be-tween these functional modes in MDD. Similar MS1 ↔MS3 alterations are observed in the MODMA dataset, pro-viding convergent evidence that the framework captures clinically relevant disturbances in brain-state organization across independent cohorts. 
+
+# Materials and Methods 
+
+Participants 
+
+This study recruited a total of 106 adolescents with de-pression (age: 13–18 years; 77 females; years of education 
+
+≥ 5) as participants. The experiment is conducted at the Neuromodulation and Psychiatric Rehabilitation Labora-tory of Shenzhen Kangning Hospital, with ethical approval from the hospital’s Research Ethics Committee (Approval No.: 2020-K021-04-1). All participants were diagnosed with MDD by psychiatrists based on DSM-5 criteria, and other psychiatric disorders were excluded through screen-ing with the Mini International Neuropsychiatric Interview (MINI). Exclusion criteria included severe physical illness, neurological disorders, and high suicide risk. Informed consent was obtained from all participants and their fam-ilies. This study divide the depressed adolescents into two groups: depression without NSSI (DN −) and depression with NSSI (DN +). The DN − group includes 39 partic-ipants (age: 15.8 ±2.3 years; 20 females), and the DN +
+
+group includes 67 participants (age: 14.5 ±3.0 years; 57 females). After EEG preprocessing and exclusion of poor-quality signals, the final sample comprises 34 participants in the DN − group (age: 16.0 ±1.39 years; 15 females) and 67 participants in the DN + group (age: 14.52 ±1.75 years; 57 females). 
+
+Data Acquisition and Preprocessing 
+
+In this experiment, we use two types of emotion-inducing stimuli to effectively elicit negative emotions in adoles-cents: images of physical pain and images of social pain, with 35 images selected for each category. The physical pain images depict real injuries or skin damage, such as knife wounds, cuts, lacerations, and abrasions. The social pain images present scenarios of rejection, where an indi-vidual is visibly excluded by a group, illustrating social rejection, unfriendliness, or indifference—for example, be-ing left out of activities, ignored, or disregarded by others. We conduct the entire procedure using E-Prime 2.0 soft-ware. As shown in Fig 8, the paradigm consists of five min-utes of resting-state EEG recording followed by two task conditions: physical pain and social pain, each presented randomly across 35 trials. Each trial is divided into four segments: resting state, image stimulus, emotional assess-ment, and a black screen. Participants first focus on a central cross for 2 s to relax, followed by a 5 s image stim-ulus presenting either a social exclusion or physical pain image. During the subsequent 5 s emotional assessment, participants rate the intensity of their negative emotion on a scale from 1 (no negative emotion) to 9 (strongest neg-ative emotion) using the keyboard and confirm the rating by pressing a key. Finally, a 1 s black screen is displayed to allow relaxation between trials. EEG signals are recorded using a 64-channel Ag/AgCl electrode cap (10–20 system) with a BrainAmp ampli-fier and BrainVision Recorder software at a sampling rate of 500 Hz. Offline preprocessing was performed in Letswave[68], an open-source toolbox running in MAT-LAB. Preprocessing steps include segmenting task related epochs from continuous recordings, removing unnecessary IO channels, and applying a common average reference to reduce random noise. Data are filtered with a 1–45 Hz bandpass and a 50 Hz notch filter to attenuate ocular and muscle artifacts. Independent component analysis (ICA) is used to further remove ocular artifacts. EEG segments corresponding to the image stimulation phase (5 s) are ex-tracted, and bad channels are interpolated to ensure data quality. 
+
+Microstate-Based Representation of Global Brain Dynamics 
+
+For the preprocessed EEG data, we perform microstate analysis using the open-source toolbox MST 1.0 imple-mented in EEGLAB to extract microstate time sequences. As illustrated in Fig 1, we first compute the Global Field Power (GFP) at each time point, defined as the standard deviation of potentials across all electrodes. The EEG topographic maps corresponding to the GFP peaks, rep-resenting moments of maximal field stability and highest signal-to-noise ratio, are then selected for subsequent mi-crostate clustering. 
+
+GF P (t) = 
+
+r 1
+
+N
+
+X(Vi(t) − ¯V (t)) 2 (1) Where Vi(t) denotes the potential of the i − th electrode 11 Table 4: External validation on independent depression datasets. Data Model Accuracy(%) Precision(%) Recall(%) F1-score(%) AUC(%) HUSM (EO) KNN 53.80 ±10.48 62.90 ±28.52 27.17 ±14.28 36.05 ±15.48 56.54 ±18.95 Decision tree 53.48 ±11.06 55.20 ±13.84 54.57 ±12.49 54.03 ±09.47 53.94 ±11.48 SVM 49.13 ±04.31 49.02 ±05.73 40.43 ±07.19 44.07 ±06.03 48.31 ±04.43 Random forest 61.96 ±19.70 61.12 ±21.72 76.96 ±23.44 66.75 ±19.43 60.07 ±24.39 RNN 63.37 ±06.91 58.58 ±22.33 64.13 ±28.22 59.69 ±21.86 60.78 ±07.92 LSTM 62.61 ±06.57 62.02 ±08.99 74.57 ±12.76 66.50 ±04.52 60.56 ±11.43 GRU 71.96 ±09.83 69.45 ±12.70 86.09 ±15.92 75.29 ±09.55 69.57 ±17.17 Transformer 74.57 ±16.61 72.65 ±16.78 80.65 ±21.92 75.55 ±17.19 78.01 ±15.73 DDC 59.24 ±07.72 60.84 ±12.64 65.00 ±23.71 59.76 ±12.84 56.17 ±09.42 DAN 56.52 ±06.66 50.27 ±28.60 43.70 ±32.78 43.10 ±25.90 56.20 ±10.42 DANN 59.24 ±06.84 60.17 ±09.49 68.04 ±20.29 61.49 ±08.52 57.52 ±10.92 CORAL 55.11 ±21.21 54.05 ±16.32 82.17 ±22.02 64.77 ±17.43 45.15 ±26.28 DCORAL 59.24 ±06.97 59.39 ±09.44 68.91 ±19.28 62.08 ±08.17 56.50 ±10.50 MoCo 59.67 ±07.68 59.59 ±08.50 66.96 ±12.95 62.25 ±06.53 57.94 ±10.15 SimCLR 61.52 ±07.10 61.87 ±08.56 64.78 ±09.10 62.71 ±06.12 60.10 ±10.29 
+
+Our model 75.98 ±09.73 75.32 ±10.85 80.22 ±15.59 76.49 ±10.92 78.67 ±10.79 
+
+HUSM (EC) KNN 67.17 ±12.23 75.36 ±17.31 55.00 ±27.00 59.92 ±18.65 71.81 ±11.76 Decision tree 58.15 ±06.36 58.32 ±06.65 56.74 ±18.03 56.44 ±10.59 60.13 ±07.54 SVM 45.87 ±08.02 47.18 ±06.44 58.48 ±17.82 50.89 ±09.60 51.15 ±10.65 Random forest 64.35 ±09.62 66.00 ±12.44 67.17 ±21.48 64.45 ±10.54 74.22 ±15.94 RNN 62.61 ±10.37 65.39 ±09.96 61.96 ±23.69 60.48 ±14.74 60.14 ±15.04 LSTM 64.02 ±06.47 65.40 ±10.60 68.91 ±18.73 64.92 ±07.36 59.88 ±12.73 GRU 72.61 ±11.40 78.92 ±15.41 68.91 ±19.12 71.00 ±11.70 70.96 ±21.74 Transformer 78.80 ±08.68 78.48 ±14.34 87.83 ±18.98 80.17 ±09.27 76.37 ±17.19 DDC 64.02 ±07.02 66.05 ±08.92 64.78 ±18.72 63.31 ±08.77 59.81 ±10.69 DAN 60.11 ±09.63 60.52 ±08.81 62.17 ±21.11 59.68 ±12.50 62.13 ±07.79 DANN 62.07 ±06.09 60.09 ±04.82 76.74 ±14.05 66.64 ±05.14 56.89 ±12.28 CORAL 56.74 ±08.31 61.22 ±16.28 50.65 ±26.53 51.30 ±14.50 66.43 ±13.98 DCORAL 63.91 ±07.90 66.05 ±11.47 66.52 ±18.87 63.66 ±10.95 60.39 ±16.22 MoCo 61.63 ±07.99 60.14 ±06.49 71.96 ±12.78 64.98 ±07.26 61.54 ±12.57 SimCLR 66.74 ±07.99 67.49 ±09.07 66.30 ±16.91 65.88 ±09.92 66.89 ±16.92 
+
+Our model 82.17 ±09.67 81.73 ±11.66 85.22 ±15.05 82.82 ±10.38 85.80 ±10.53 
+
+MODMA (EC) KNN 42.83 ±08.42 37.37 ±12.87 35.00 ±27.56 34.05 ±18.98 38.01 ±08.96 Decision tree 49.89 ±07.66 50.10 ±07.09 49.13 ±08.40 49.44 ±07.28 48.86 ±08.96 SVM 49.89 ±06.45 50.20 ±06.71 50.87 ±06.81 50.37 ±05.84 42.92 ±04.88 Random forest 53.04 ±14.44 52.01 ±17.46 50.65 ±25.48 49.56 ±20.57 54.19 ±20.70 RNN 56.41 ±03.88 56.43 ±03.92 64.13 ±20.88 58.09 ±09.37 54.02 ±05.18 LSTM 54.46 ±03.30 55.57 ±05.02 56.96 ±22.75 53.78 ±09.36 51.10 ±06.42 GRU 54.56 ±03.30 55.57 ±05.02 56.96 ±22.75 53.78 ±09.36 50.65 ±06.42 Transformer 65.11 ±10.39 74.74 ±15.36 52.61 ±27.91 55.93 ±22.12 70.09 ±20.20 DDC 51.41 ±03.08 42.74 ±23.22 66.52 ±44.67 48.56 ±27.53 50.43 ±04.96 DAN 53.26 ±03.69 44.28 ±24.01 54.78 ±38.63 46.02 ±25.86 53.21 ±05.84 DANN 55.22 ±04.34 54.92 ±04.46 69.13 ±23.09 59.26 ±08.77 52.59 ±03.33 CORAL 52.72 ±13.96 52.12 ±16.14 51.09 ±17.82 51.32 ±16.64 41.89 ±11.81 DCORAL 54.23 ±04.11 50.17 ±18.48 50.00 ±31.03 47.77 ±19.54 51.00 ±05.18 MoCo 54.02 ±06.48 55.31 ±07.80 47.61 ±17.16 49.42 ±11.77 48.70 ±08.94 SimCLR 57.50 ±03.68 59.59 ±04.19 48.04 ±12.40 52.17 ±09.32 54.29 ±06.06 
+
+Our model 68.59 ±07.18 71.33 ±11.44 66.52 ±09.51 67.90 ±06.36 70.50 ±10.98 
+
+12 0.04  0.10  0.18                                                 
+
+> 0.06 0.04 0.05
+> 0.11 0.03 0.09
+> 0.13 0.08 0.11
+> 0
+> 0.04
+> 0.08
+> 0.12
+> 0.16 0.08 0.10 0.13
+> 0.08 0.03 0.04
+> 0.10 0.04 0.07
+> 0.11 0.03 0.08
+> 0
+> 0.02
+> 0.04
+> 0.06
+> 0.08
+> 0.10
+> 0.12
+> 0.09 0.09 0.06
+> 0.07 0.07 0.03
+> 0.09 0.05 0.08
+> 0.07 0.03 0.08
+> 0
+> 0.02
+> 0.04
+> 0.06
+> 0.08 0.07 0.16 0.08
+> 0.06 0.06 0.03
+> 0.17 0.05 0.08
+> 0.08 0.03 0.08
+> 0
+> 0.04
+> 0.08
+> 0.12
+> 0.16
+> 0.21 0.13 0.13
+> 0.19 0.13 0.09
+> 0.13 0.13 0.15
+> 0.11 0.11 0.11
+> 0
+> 0.04
+> 0.08
+> 0.12
+> 0.16
+> 0.20
+> 0.15 0.07 0.12
+> 0.13 0.14 0.09
+> 0.09 0.14 0.14
+> 0.11 0.12 0.12
+> 0
+> 0.05
+> 0.10
+> 0.15
+> Attention Weight Attention Weight Attention Weight
+> Attention Weight Attention Weight Attention Weight
+> t-value t-value t-value
+
+HUSM (EO): MDD Subgroup 
+
+HUSM (EC): MDD Subgroup 
+
+MODMA (EC): MDD Subgroup 
+
+Differences in microstate transition 
+
+Differences in microstate transition 
+
+Differences in microstate transition 
+
+> Current microstate Current microstate Current microstate
+> Current microstate Current microstate Current microstate
+> Current microstate Current microstate Current microstate
+
+Next microstate  Next microstate  Next microstate 
+
+Next microstate  Next microstate  Next microstate 
+
+Next microstate  Next microstate  Next microstate 
+
+(a)  (b)  (c) 
+
+(d)  (e)  (f) 
+
+(g)  (h)  (i) 
+
+HUSM (EO): HC Subgroup 
+
+HUSM (EC): HC Subgroup 
+
+MODMA (EC): HC Subgroup 
+
+> -2
+> -1
+> 0
+> 1
+> 2
+> -3
+> -2
+> -1
+> 0
+> 1
+> 2
+> 3
+
+*
+
+*
+
+> -3
+> -2
+> -1
+> 0
+> 1
+> 2
+> 3
+
+**
+
+*Figure 7: Microstate transition attention weight matrices for MDD and HC in public datasets. (a–c) HUSM under the EO conditions, (d–f) HUSM under the EC conditions, and (g–i) MODMA under the EO conditions, showing averaged ten-fold attention matrices and paired t-test results. *p <0.05. at time t; ¯V (t) represents the mean potential across all electrodes; and N is the total number of electrodes. Subsequently, we perform the first-stage microstate clus-tering at the trial level using the k-means algorithm[69], with the number of clusters K = 2 : 8 , and to ensure robustness and reproducibility, we set 2000 random ini-tializations and 5000 iterations. The optimal number of microstate templates is determined based on high Global Explained Variance (GEV) and low Cross-Validation cri-terion (CV)[70]. The optimal microstate templates ob-tained from all trials and participants in the previous step are subjected to a second-stage clustering using the same k-means procedure, yielding eight group-level microstate templates across participants and trials. Finally, the re-sulting group templates are back-fitted to the preprocessed EEG signals to derive microstate time series for each trial and each participant (each trial duration = 5 s, corre-sponding to 2500 sample points, hence a microstate se-quence length of 2500). 
+
+Multidimensional Data Balancing Strategy 
+
+Based on the collected data, we adopt a multidimensional sampling strategy to balance the dataset across gender dis-tribution, class distribution, and trial count (DN +: M/F = 10/57; DN −: M/F = 19/15). First, 10 male and 10 fe-male participants are randomly selected from each group (DN + and DN −), resulting in a total of 40 participants. During model training, we employ a stratified 10-fold cross-validation approach. In each fold, one participant is selected from each subgroup—male DN +, female DN +,male DN −, and female DN − as the target domain data for model testing (4 participants in total), while the remain-13 Rest  
+
+> (5 mins)
+
+Task 
+
+or       
+
+> 2s 1s
+> preparation stimulation emotion rating blank
+> 5s 5s (end with key)
+
+rest  
+
+> ……
+
+Social Pain 
+
+> Trial 1
+
+rest              
+
+> …Trial 2 Trial 3 Trial 35 …Trial 1 Trial 2 Trial 3 Trial 35
+> Trial 1 Trial 2 Trial 3 Trial 35 Trial 1 Trial 2 Trial 3 Trial 35
+
+Physical Pain  Social Pain 
+
+Physical Pain                       
+
+> negativity
+> □□□□□□□□□
+> 23456789
+> least most
+> 1
+> 2s 1s
+> preparation stimulation emotion rating blank
+> 5s 5s (end with key)
+> negativity
+> □□□□□□□□□
+> 23456789
+> least most
+> 1
+
+Figure 8: Experimental paradigm. The experiment consisted of a 5-minute resting-state session and a task session. The task session included two blocks (social pain and physical pain) presented in a randomized order. Each block comprised 35 trials, and each trial consisted of four phases: (1) Preparation phase (2 s), during which participants fixated on a central cross; (2) Stimulus phase (5 s), in which a task-relevant image is presented and participants passively viewed it; (3) Emotion rating phase (up to 5 s), during which participants rated their subjective negative emotional experience using a keyboard (1 = no negative emotion, 9 = most intense negative emotion), with the phase terminating immediately upon response; and (4) Inter-trial interval (1 s). The order of image presentation within each block was randomized across participants. ing 36 participants are used as the source domain data for model training. Considering that the number of avail-able EEG trials per participant after preprocessing varied (ranging from 19 to 35), we randomly sample 19 trials per participant to standardize the dataset. Consequently, the final model input had dimensions of 40 × 19 × 2500 . This strategy effectively balanced the data distribution across gender, class, and trial dimensions, thereby mitigating po-tential model bias toward specific groups or conditions and enhancing the fairness and stability of the classification performance. 
+
+Blockwise and Randomization Strategies for Disrupting Microstate Temporal Struc-ture 
+
+Previous studies have reported that DN + patients ex-hibit abnormal microstate transition patterns when ex-posed to social pain stimuli[57, 71, 72]. Therefore, to enhance the model’s ability to learn NSSI related patho-logical microstate transition features and to reduce in-terference from redundant information, we apply block-wise segmentation and randomization strategies to disrupt the temporal structure of the microstate sequences before model input. Specifically, the original microstate sequence is seg-mented into 50 patches using a window size of 50 and a step size of 50, as illustrated in Figure 1. Two permu-tation strategies are then employed to disrupt the original microstate transition patterns. 1) Strong Permutation. Randomly shuffling 40–43 patches within the sequence, effectively destroying its specific transition structure. 2) Weak Permutation. Randomly shuffling only 1–3 patches, thereby preserving most of the NSSI-related pathological microstate transition patterns while introducing mild tem-poral perturbations. 
+
+Transformer Architecture Based on Patch-Level Feature Modeling 
+
+Compared with static microstate features (e.g., occur-rence, duration, and coverage), we place greater emphasis on the dynamic transition patterns within microstate se-quences, as more frequent transitions between microstates may reflect faster and more flexible information process-ing[22, 73]. To effectively extract discriminative transition features from these sequences, we employ a patch-level Transformer model [74]. Specifically, long microstate se-quences are segmented into multiple patches, which helps reduce state redundancy and mitigate interference from irrelevant patterns. This design enables a hierarchical “lo-cal–global” modeling strategy, not only allowing the model to simultaneously capture fine-grained temporal dynam-ics within segments and the overall structure of the mi-crostate sequence, but also enables the model to capture the temporal relationships of whole-brain activation state transitions in DN + patients when exposed to social pain stimuli, thereby enhancing the representation of complex 14 EEG dynamics. The overall architecture of the model is illustrated in Figure 1. Inspired by the standard Transformer frame-work[48], we first embed the original patch-level microstate sequences into a high-dimensional continuous space, allow-ing the model to capture the dynamic relationships and semantic structures among EEG microstates through the attention mechanism. Second, a randomly initialized CLS patch is added to the beginning of each sequence to facil-itate the learning of both local and global representations of the microstate sequences. To further preserve and cap-ture the temporal dependencies among tokens within the sequences, we introduce a dual positional encoding strat-egy to enhance the model’s ability to represent temporal structure. Specifically, the first positional encoding is ap-plied before patch segmentation to retain token-level tem-poral dependencies, while the second positional encoding is applied after adding the CLS patch to model patch-level temporal relationships, thereby reinforcing temporal representation at both local and global levels. Finally, the processed sequences are fed into a three-layer Patch-Transformer, where they are transformed into feature vec-tors, and the weighted attention matrices from each layer are retained for subsequent analysis. 
+
+Multi-loss Joint Optimization 
+
+Although conventional Transformer models are easy to train, they often produce low-quality features, limiting their effectiveness for complex tasks. In contrast, or-dered deep modeling of microstate sequences has shown great potential in generating high-quality features from time-series data. To enhance the model’s robustness and accuracy in distinguishing between the two participant groups—particularly in identifying the pathological mi-crostate transition patterns of DN + patients—we incor-porate consistency learning and contrastive learning mod-ules. These components aim to strengthen the model’s ability to capture core pathological features through mech-anisms that enforce both consistency and discriminative representation learning. • Disease Specific Loss. To effectively capture the mi-crostate transition differences between DN + and DN −
+
+participants, we design a disease specific loss. This loss plays a crucial role in enhancing the model’s discrimi-native capability, ensuring that features unique to each condition are accurately identified. The disease-specific loss function is defined as follows: 
+
+LDis = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+(yilog ( ˆ yi) − (1 − yi)log (1 − ˆyi)) (2) Where yi denotes the true label, ˆyi represents the pre-dicted label, and N is the number of samples. • Domain Adversarial Loss. To mitigate the influence of individual differences on the model’s ability to distin-guish between participant groups, we incorporate a do-main adversarial loss. This loss ensures that the model learns domain invariant features, thereby enhancing its generalization capability in cross-domain tasks. The domain-adversarial loss function is defined as follows: 
+
+LAdv = − 12
+
+X
+
+> xs∈D s
+
+log D(Rλ(F (xs))) 
+
+− 12
+
+X
+
+> xt∈D t
+
+log (1 − D(Rλ(F (xt)))) 
+
+(3) where xs and xt denote samples drawn from the source domain Ds and target domain Dt, respectively. F (·) de-notes the feature extractor, D(·) represents the domain discriminator, Rλ(·) is the gradient reversal layer, and λ
+
+denotes the gradient reversal coefficient. • Consistency Learning Loss. Previous studies have shown that DN + participants exhibit abnormal microstate transition patterns in response to pain-related emotional stimuli[57, 71, 72]. To ensure that microstate sequences with pathological transition features are accurately iden-tified, we design a consistency learning module. In this module, a single-layer unidirectional LSTM is first ap-plied to both the original microstate sequences and the strongly permuted microstate sequences. The final hid-den state of each LSTM serves as a context vector, ef-fectively summarizing the patch sequence. During the pseudo-label training phase, the model performs con-sistency learning by distinguishing the context vectors of the original sequences (label = 1) from those of the strongly permuted sequences (label = 0). The time-and-channel patch consistency loss is then defined based on binary cross-entropy. The consistency learning loss func-tion is formulated as follows: 
+
+LCS = − 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+(yi log( ˆ yi) + (1 − yi) log(1 − ˆyi)) (4) Where yi denotes the pseudo label, ˆyi represents the predicted label, and N is the number of samples. • Contrastive Learning Loss. To further amplify subtle differences between microstate sequences of DN + and DN − participants and strengthen classification bound-aries, we employ the InfoNCE loss to construct a more precise feature discrimination mechanism[75]. Similarly, a single-layer unidirectional LSTM is first applied to the original microstate sequences, strongly permuted se-quences, and weakly permuted sequences, with the final hidden state of each LSTM serving as a context vector. In this setup, the original sequence acts as the anchor, the weakly permuted sequence as the positive pair, and the strongly permuted sequence as the negative pair. The contrastive loss over temporal sequences is then de-fined as follows: 
+
+LCT = −log ( exp (sim (co, c w)/τ )
+
+exp (sim (co, c w)/τ ) + exp (sim (co, c s)/τ ) )
+
+(5) 15 Where co,cw and cs denote the context vector of the original sequence, weak permutation, and strong permu-tation sequences, τ is the temperature parameter, and 
+
+sim represents the cosine similarity. • Total Loss Function. The overall loss for multi-loss joint optimization is defined as the direct sum of all individual loss components. In summary, the classifi-cation (disease-specific) loss establishes the model’s ba-sic ability to distinguish between participant groups, the domain-adversarial loss enhances the model’s generaliza-tion capability, the consistency loss ensures the stability of learning meaningful features, and the contrastive loss improves the precision in capturing subtle differences. 
+
+LT otal = αLDis + βLAdv + δLCS + θLCT (6) where α, β, δ and θ are weighting factors for the corre-sponding loss terms. The overall loss function ensures that the model learns robust, multi-dimensional EEG feature representations that are invariant to signal noise, sensitive to gender dif-ferences, adaptable across domains, and effective in clas-sifying NSSI behaviors. By jointly optimizing these ob-jectives, the model is better equipped to handle the com-plexities involved in EEG signal analysis for studies on depression and NSSI. 
+
+Statistical Analysis 
+
+For the cosine similarity between the learned neural rep-resentations and stimulus image features under different pain conditions, statistical comparisons between the two groups are performed using two-way mixed ANOVA. Dif-ferences in microstate transition attention weights between disease and sex subgroups are evaluated using paired t-tests on the attention weight matrices obtained from each cross-validation fold. Behavioral analyses are conducted using correlation and mediation analyses. For the tempo-ral validity analysis, independent two-sample t-tests are performed to compare microstate features between the two groups. Significance is indicated as follows in the figures: 
+
+∗p ≤ 0.05 ; ∗ ∗ p ≤ 0.01 ; ∗ ∗ ∗ p ≤ 0.001 .
+
+# Acknowledgments 
+
+This work was supported by the National Natural Science Foundation of China under Grant 62522608, the Guang-dong Provincial Project (Grant No. 2024TQ08X330), Brain Science and Brain-like Intelligence Technology - National Science and Technology Major Project (2021ZD0200500), Shenzhen-Hong Kong Institute of Brain Science-Shenzhen Fundamental Research Institu-tions (2023SHIBS0003), the Shenzhen Science and Tech-nology Program (No. JCYJ20241202124222027 and JCYJ20241202124209011), and the Key Research and De-velopment Program of Hunan Province (2025QK3008). 
+
+# Author Contributions 
+
+Ying Xu: Conceptualization, Methodology, Formal anal-ysis, Investigation, Writing – original draft. Xiao-jun Liang: Methodology, Validation, Investigation. Li Zhang: Writing – review & editing. Yixuan Yuan: In-vestigation, Writing – review & editing. Gan Huang: 
+
+Data curation, Visualization. Yongjie Zhou: Resources, Investigation, Writing – review & editing. Zhen Liang: 
+
+Conceptualization, Methodology, Supervision, Project ad-ministration, Funding acquisition, Writing – review & editing. 
+
+# Conflicts of Interest 
+
+The authors declare that there is no conflict of interest regarding the publication of this article. 
+
+# Data Availability 
+
+The data that support the findings of this study are avail-able from the corresponding author upon reasonable re-quest. 
+
+# References 
+
+1. Muehlenkamp JJ, Claes L, Havertape L, and Plener PL. International prevalence of adolescent non-suicidal self-injury and deliberate self-harm. Child and adolescent psychiatry and mental health 2012;6:10. 2. Gillies D, Christou MA, Dixon AC, et al. Preva-lence and characteristics of self-harm in adolescents: meta-analyses of community-based studies 1990– 2015. Journal of the American Academy of Child & Adolescent Psychiatry 2018;57:733–41. 3. Klonsky ED, May AM, and Glenn CR. The relation-ship between nonsuicidal self-injury and attempted suicide: converging evidence from four samples. Jour-nal of abnormal psychology 2013;122:231. 4. Ribeiro MT, Singh S, and Guestrin C. Model-agnostic interpretability of machine learning. arXiv preprint arXiv:1606.05386 2016. 5. Hooley JM, Fox KR, and Boccagno C. Nonsuici-dal self-injury: diagnostic challenges and current per-spectives. Neuropsychiatric disease and treatment 2020:101–12. 6. Joiner T. Why people die by suicide. Harvard Uni-versity Press, 2005. 7. Van Orden KA, Witte TK, Cukrowicz KC, Braith-waite SR, Selby EA, and Joiner Jr TE. The in-terpersonal theory of suicide. Psychological review 2010;117:575. 8. Koenig J, Rinnewitz L, Niederbäumer M, et al. Lon-gitudinal development of pain sensitivity in adoles-cent non-suicidal self-injury. Journal of psychiatric research 2017;89:81–4. 16 9. Kross E, Berman MG, Mischel W, Smith EE, and Wager TD. Social rejection shares somatosensory representations with physical pain. Proceedings of the National Academy of Sciences 2011;108:6270–5. 10. Eisenberger NI. The pain of social disconnection: ex-amining the shared neural underpinnings of phys-ical and social pain. Nature reviews neuroscience 2012;13:421–34. 11. Groschwitz RC, Plener PL, Groen G, Bonenberger M, and Abler B. Differential neural processing of so-cial exclusion in adolescents with non-suicidal self-injury: An fMRI study. Psychiatry Research: Neu-roimaging 2016;255:43–9. 12. Eisenberger NI, Lieberman MD, and Williams KD. Does rejection hurt? An fMRI study of social exclu-sion. Science 2003;302:290–2. 13. Lehmann D, Ozaki H, and Pál I. EEG alpha map series: brain micro-states by space-oriented adaptive segmentation. Electroencephalography and clinical neurophysiology 1987;67:271–88. 14. Britz J, Van De Ville D, and Michel CM. BOLD cor-relates of EEG topography reveal rapid resting-state network dynamics. Neuroimage 2010;52:1162–70. 15. Lehmann D, Faber PL, Galderisi S, et al. EEG microstate duration and syntax in acute, medication-naive, first-episode schizophrenia: amulti-center study. Psychiatry Research: Neu-roimaging 2005;138:141–56. 16. Cruz JR da, Favrod O, Roinishvili M, et al. EEG microstates are a candidate endophenotype for schizophrenia. Nature communications 2020;11:3089. 17. Raeisi Z, Bashiri O, EskandariNasab M, Arshadi M, Golkarieh A, and Najafzadeh H. EEG microstate biomarkers for schizophrenia: a novel approach us-ing deep neural networks. Cognitive Neurodynamics 2025;19:68. 18. Murphy M, Whitton AE, Deccy S, et al. Abnormali-ties in electroencephalographic microstates are state and trait markers of major depressive disorder. Neu-ropsychopharmacology 2020;45:2030–7. 19. Zhao Z, Niu Y, Zhao X, et al. EEG microstate in first-episode drug-naive adolescents with depression. Journal of neural engineering 2022;19:056016. 20. Van de Ville D, Britz J, and Michel CM. EEG mi-crostate sequences in healthy humans at rest re-veal scale-free dynamics. Proceedings of the National Academy of Sciences 2010;107:18179–84. 21. Peng RJ, Fan Y, Li J, Zhu F, Tian Q, and Zhang XB. Abnormalities of electroencephalography microstates in patients with depression and their association with cognitive function. World Journal of Psychia-try 2024;14:128. 22. Khanna A, Pascual-Leone A, Michel CM, and Farzan F. Microstates in resting-state EEG: current status and future directions. Neuroscience & Biobehavioral Reviews 2015;49:105–13. 23. Gao S, Calhoun VD, and Sui J. Machine learning in major depression: From classification to treatment outcome prediction. CNS neuroscience & therapeu-tics 2018;24:1037–52. 24. Xia M, Zhang Y, Wu Y, and Wang X. An end-to-end deep learning model for EEG-based major depressive disorder classification. IEEE access 2023;11:41337– 47. 25. Liang Z, Ye W, Liu Q, Zhang L, Huang G, and Zhou Y. NSSI-Net: A multi-concept GAN for non-suicidal self-injury detection using high-dimensional EEG in a semi-supervised framework. IEEE Journal of Biomedical and Health Informatics 2025. 26. Li J, Li N, Shao X, et al. Altered brain dynamics and their ability for major depression detection us-ing EEG microstates analysis. IEEE transactions on affective computing 2021;14:2116–26. 27. Rotge JY, Lemogne C, Hinfray S, et al. A meta-analysis of the anterior cingulate contribution to so-cial pain. Social cognitive and affective neuroscience 2015;10:19–27. 28. Apkarian AV, Bushnell MC, Treede RD, and Zubieta JK. Human brain mechanisms of pain perception and regulation in health and disease. European journal of pain 2005;9:463–84. 29. Tracey I and Mantyh PW. The cerebral signature for pain perception and its modulation. Neuron 2007;55:377–91. 30. Biswal B, Zerrin Yetkin F, Haughton VM, and Hyde JS. Functional connectivity in the motor cortex of resting human brain using echo-planar MRI. Mag-netic resonance in medicine 1995;34:537–41. 31. Raichle ME, MacLeod AM, Snyder AZ, Powers WJ, Gusnard DA, and Shulman GL. A default mode of brain function. Proceedings of the national academy of sciences 2001;98:676–82. 32. Radford A, Kim JW, Hallacy C, et al. Learning trans-ferable visual models from natural language supervi-sion. In: International conference on machine learn-ing . PmLR. 2021:8748–63. 33. Pizzagalli DA et al. Electroencephalography and high-density electrophysiological source localization. Handbook of psychophysiology 2007;3:56–84. 34. Glenn CR and Klonsky ED. Social context during non-suicidal self-injury indicates suicide risk. Person-ality and Individual Differences 2009;46:25–9. 35. Menon V. Large-scale brain networks and psy-chopathology: a unifying triple network model. Trends in cognitive sciences 2011;15:483–506. 17 36. Kaiser RH, Andrews-Hanna JR, Wager TD, and Piz-zagalli DA. Large-scale network dysfunction in ma-jor depressive disorder: a meta-analysis of resting-state functional connectivity. JAMA psychiatry 2015;72:603–11. 37. Nock MK. Why do people hurt themselves? New insights into the nature and functions of self-injury. Current directions in psychological science 2009;18:78–83. 38. Prinstein MJ, Boergers J, and Spirito A. Adolescents’ and their friends’ health-risk behavior: Factors that alter or add to peer influence. Journal of pediatric psychology 2001;26:287–98. 39. Spitzer RL, Kroenke K, Williams JB, Group PHQPCS, et al. Validation and utility of a self-report version of PRIME-MD: the PHQ primary care study. Jama 1999;282:1737–44. 40. Spitzer RL, Kroenke K, Williams JB, and Löwe B. A brief measure for assessing generalized anxiety disorder: the GAD-7. Archives of internal medicine 2006;166:1092–7. 41. Cover T and Hart P. Nearest neighbor pattern clas-sification. IEEE transactions on information theory 1967;13:21–7. 42. Breiman L, Friedman J, Stone CJ, and Olshen RA. Classification and regression trees. CRC press, 1984. 43. Cortes C and Vapnik V. Support-vector networks. Machine learning 1995;20:273–97. 44. Breiman L. Random forests. Machine learning 2001;45:5–32. 45. Rumelhart DE, Hinton GE, and Williams RJ. Learn-ing representations by back-propagating errors. na-ture 1986;323:533–6. 46. Hochreiter S and Schmidhuber J. Long short-term memory. Neural computation 1997;9:1735–80. 47. Cho K, Van Merriënboer B, Gulçehre Ç, et al. Learning phrase representations using RNN encoder– decoder for statistical machine translation. In: Pro-ceedings of the 2014 conference on empirical methods in natural language processing (EMNLP) . 2014:1724– 34. 48. Vaswani A, Shazeer N, Parmar N, et al. Attention is all you need. Advances in neural information pro-cessing systems 2017;30. 49. Tzeng E, Hoffman J, Zhang N, Saenko K, and Darrell T. Deep domain confusion: Maximizing for domain invariance. arXiv preprint arXiv:1412.3474 2014. 50. Long M, Cao Y, Wang J, and Jordan M. Learning transferable features with deep adaptation networks. In: International conference on machine learning .PMLR. 2015:97–105. 51. Ganin Y, Ustinova E, Ajakan H, et al. Domain-adversarial training of neural networks. Journal of machine learning research 2016;17:1–35. 52. Sun B and Saenko K. Deep coral: Correlation align-ment for deep domain adaptation. In: European con-ference on computer vision . Springer. 2016:443–50. 53. He K, Fan H, Wu Y, Xie S, and Girshick R. Mo-mentum contrast for unsupervised visual representa-tion learning. In: Proceedings of the IEEE/CVF con-ference on computer vision and pattern recognition .2020:9729–38. 54. Chen T, Kornblith S, Norouzi M, and Hinton G. A simple framework for contrastive learning of visual representations. In: International conference on ma-chine learning . PmLR. 2020:1597–607. 55. Craig AD. How do you feel—now? The anterior in-sula and human awareness. Nature reviews neuro-science 2009;10:59–70. 56. Shackman AJ, Salomons TV, Slagter HA, Fox AS, Winter JJ, and Davidson RJ. The integration of negative affect, pain and cognitive control in the cingulate cortex. Nature Reviews Neuroscience 2011;12:154–67. 57. Hu Jh, Zhou Dd, Ma Ll, et al. A resting-state elec-troencephalographic microstates study in depressed adolescents with non-suicidal self-injury. Journal of psychiatric research 2023;165:264–72. 58. Tse NY, Ratheesh A, Tian YE, et al. A mega-analysis of functional connectivity and network abnormal-ities in youth depression. Nature Mental Health 2024;2:1169–82. 59. Groschwitz RC and Plener PL. The neurobiology of non-suicidal self-injury (NSSI): A review. Suicidology Online 2012;3:24–32. 60. Etkin A, Büchel C, and Gross JJ. The neural bases of emotion regulation. Nature reviews neuroscience 2015;16:693–700. 61. Dalgleish T, Walsh ND, Mobbs D, et al. Social pain and social gain in the adolescent brain: A common neural circuitry underlying both positive and nega-tive social evaluation. Scientific reports 2017;7:42010. 62. Mumtaz W, Xia L, Mohd Yasin MA, Azhar Ali SS, and Malik AS. A wavelet-based technique to pre-dict treatment outcome for major depressive disor-der. PloS one 2017;12:e0171409. 63. Cai H, Yuan Z, Gao Y, et al. A multi-modal open dataset for mental-disorder analysis. Scientific data 2022;9:178. 64. Bréchet L, Brunet D, Birot G, Gruetter R, Michel CM, and Jorge J. Capturing the spatiotemporal dy-namics of self-generated, task-initiated thoughts with EEG and fMRI. Neuroimage 2019;194:82–92. 65. Koenig T, Prichep L, Lehmann D, et al. Millisec-ond by millisecond, year by year: normative EEG microstates and developmental stages. Neuroimage 2002;16:41–8. 18 66. Milz P, Faber PL, Lehmann D, Koenig T, Kochi K, and Pascual-Marqui RD. The functional significance of EEG microstates—Associations with modalities of thinking. Neuroimage 2016;125:643–56. 67. Kim K, Duc NT, Choi M, and Lee B. EEG microstate features according to performance on a mental arith-metic task. Scientific reports 2021;11:343. 68. Huang G. EEG/ERP data analysis toolboxes. In: EEG signal processing and feature extraction .Springer, 2019:407–34. 69. Lloyd S. Least squares quantization in PCM. IEEE transactions on information theory 1982;28:129–37. 70. Murray MM, Brunet D, and Michel CM. Topographic ERP analyses: a step-by-step tutorial review. Brain topography 2008;20:249–64. 71. Song YW, Kim S, Lee HA, Shim SH, and Kim JS. EEG microstate-based classification us-ing machine learning in depressed adolescents with and without non-suicidal self-injury. Progress in Neuro-Psychopharmacology and Biological Psychia-try 2025:111538. 72. Bao C, Zhang Q, Zou H, et al. EEG Microstates as Biomarkers of Drug-Naı¨ve Major Depressive Disor-der in Young Adults with Non-Suicidal Self-Injury. Journal of Psychiatric Research 2025. 73. Liu J, Xu J, Zou G, He Y, Zou Q, and Gao JH. Re-liability and individual specificity of EEG microstate characteristics. Brain Topography 2020;33:438–49. 74. Nie Y, Nguyen NH, Sinthong P, and Kalagnanam J. A time series is worth 64 words: Long-term forecasting with transformers. arXiv preprint arXiv:2211.14730 2022. 75. Oord Avd, Li Y, and Vinyals O. Representation learn-ing with contrastive predictive coding. arXiv preprint arXiv:1807.03748 2018. 19
