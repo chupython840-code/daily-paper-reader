@@ -1,0 +1,2215 @@
+Title: Noisy-Label Calibration with Multiple Unreliable Labels
+
+URL Source: https://arxiv.org/pdf/2610.19543v1
+
+Published Time: Thu, 15 Oct 2026 00:45:04 GMT
+
+Number of Pages: 43
+
+Markdown Content:
+# Noisy-Label Calibration with Multiple Unreliable Labels 
+
+Keisuke Hanada 1,3, Futoshi Futami 2,3,41Department of Biostatistics, Wakayama Medical University, Wakayama, Japan 
+
+> 2
+
+Graduate School of Engineering Science, The University of Osaka, Osaka, Japan 
+
+> 3
+
+RIKEN AIP, Tokyo, Japan 
+
+> 4
+
+Department of Complexity Science and Engineering, The University of Tokyo, Tokyo, Japan 
+
+Abstract 
+
+In medical annotation and crowdsourcing, multiple annotators assign labels to each example, but these labels may be incorrect. Treating such noisy labels as ground truth can bias calibration evaluation. To address this problem, we propose methods for evaluating and recalibrating a fixed binary predictor under the underlying clean-label distribution, using only noisy annotations. First, given annotator-specific noise probabilities, we propose Noise Corrected ECE (NC-ECE), a binned estimator of expected calibration error (ECE) under class-conditional noise. We derive non-asymptotic bounds on the estimator’s bias. Then, we propose practical algorithms for estimating unknown noise probabilities under conditional independence and label-orientation assumptions. We also develop loss-based and histogram post-hoc recalibration with clean-risk and calibration guarantees, respectively. Experiments on semi-synthetic benchmarks show that the proposed ECE estimator closely tracks its clean-label oracle counterpart and that the recalibration methods substantially improve latent-label calibration, whereas uncorrected recalibration against noisy annotations can degrade it. 
+
+# 1 Introduction 
+
+Using probabilistic predictions for decisions requires more than accurate class predictions: the probabilities should also be calibrated. Calibration means that predicted probabilities agree with outcome frequencies among examples assigned those probabilities. For example, among examples assigned an eighty percent probability of a positive outcome, about eighty percent should be positive [Guo et al., 2017, Vaicenavicius et al., 2019]. Calibration evaluation and post-hoc recalibration usually treat held-out labels as ground truth [Guo et al., 2017, Fujisawa and Futami, 2025]. In medical annotation and crowdsourcing, however, multiple annotators label each example, and these labels may contain errors [Raykar et al., 2010, Tanno et al., 2019]. Medical experts may disagree in their annotations [Gulshan et al., 2016, Elmore et al., 2015], and majority voting does not necessarily eliminate annotation errors [Krause et al., 2018]. We study how to evaluate and improve a fixed binary predictor’s calibration under the underlying clean-label distribution when only noisy annotations are available. Noisy-label evaluation confounds predictor miscalibration with annotator response tenden-cies [Dawid and Skene, 1979, Penso et al., 2024]. For example, excess positive responses can reflect either underpredicted probabilities or an annotator’s tendency to report positives. With a fixed number of annotators, more evaluation examples generally leave this bias intact; averaging or majority vote need not remove it either. Recalibration toward annotation agreement can even worsen true-label calibration. Reliable uncertainty assessment is important in medical decision support, where expert judgments may disagree [Mimori et al., 2021]. Noisy evaluation labels complicate predictive reliability assessment. Loss correction for learning with noisy labels provides our starting point. Known noise probabilities can yield unbiased estimators of clean-label risk [Natarajan et al., 2013, Patrini et al., 2017, van Rooyen and Williamson, 2018]. We apply this principle to calibration evaluation 1arXiv:2610.19543v1 [stat.ML] 14 Oct 2026 in Section 3. Under annotator-specific class-conditional noise, inverting each known channel yields a corrected label whose conditional expectation given the prediction matches that of the true label. Subtracting the prediction gives a corrected residual with the desired conditional mean (Lemma 1). This gives unbiased estimates of clean-label bin residual moments, whose absolute values are summed to form a noise-corrected binned ECE estimator (Definition 4). The required noise probabilities, however, are usually unknown. Response frequencies mix annotator errors with true-class proportions and need not identify either [Hui and Walter, 1980]. Multiple annotations of the same example supply additional information [Dawid and Skene, 1979, Allman et al., 2009]. Under conditional independence and label-orientation assumptions, we use their joint distribution, supplemented where necessary by score-defined groups. Section 4 characterizes identification conditions and constructs channel estimators accordingly, using two annotators with score-defined groups (Theorem 2) or three or more informative annotators. We then account for their estimation errors in ECE evaluation rather than treating estimated noise probabilities as exact. Our analysis connects noise-probability estimation to calibration evaluation under the clean-label distribution, separating bin approximation, sampling variation, and channel-estimation errors (Theorem 1). The same corrected labels support post-hoc recalibration in Section 5: corrected-loss fitting provides a clean-risk guarantee, while histogram fitting provides a calibration guarantee (Proposition 2). Both evaluation and recalibration thus address the underlying clean-label distribution using noisy annotations alone. Our contributions are threefold. 1. Calibration evaluation. We propose a noise-corrected binned ECE estimator with separate binning, sampling, and channel-estimation error bounds (Theorem 1), including sample reuse with fixed bins (Proposition 1). We also optimize annotator weights to reduce residual variance (Lemma 2). 2. Recalibration. Corrected-loss and projected histogram fitting provide clean-risk and calibration guarantees, respectively (Section 5; Proposition 2). 3. Empirical validation. Controlled and semi-synthetic experiments assess estimation and recalibration (Section 6). Human annotations show how label choice can reverse recalibration assessments. 
+
+Related work. Calibration evaluation and binning bias have been studied extensively [Vaice-navicius et al., 2019, Roelofs et al., 2022, Futami and Fujisawa, 2024]. Weighted test functions provide a common view of calibration criteria [Błasiok et al., 2023, Gopalan et al., 2022]. Un-biased class-conditional loss correction is also established [Natarajan et al., 2013]. Kiryo et al. [2026] estimate ECE from positive and unlabeled data, and Futami and Ishida [2026] develop decontamination-based multicalibration estimators and post-processing for weak supervision. We build on this correction principle. Our focus is the statistical link from unknown, annotator-specific rates in repeated annotations to ECE evaluation and recalibration, including finite-sample error propagation and sample reuse. For identification, our two-group construction instantiates the Hui–Walter setting of two imperfect tests in populations with different prevalences [Hui and Walter, 1980]. Here the populations are observable score groups. The identification structure is classical. Our analysis connects quantitative channel-estimation guarantees in this setting to latent ECE. With additional annotators, we use the classical Dawid–Skene product-mixture model [Dawid and Skene, 1979, Allman et al., 2009]. Joint noisy-label classifier training [Tanno et al., 2019] estimates a predictor together with the annotation model. Our analysis evaluates and recalibrates a fixed predictor. Disagreement-based approaches model the distribution of annotator judgments [Mimori et al., 2021, Riera-Marín et al., 2026]. Our target is calibration to one latent binary outcome. The 2distinction between correcting known channels and identifying unknown ones determines the assumptions and scope of our results. 
+
+# 2 Preliminaries 
+
+Notation. For a positive integer d, let [ d] := {1, . . . , d }. Capital letters denote random variables and lower-case letters their realizations. We write PV for the distribution of V and PV |W for its conditional distribution given W . Probabilities and expectations are denoted by P and E. The indicator 1(E) equals one on event E and zero otherwise. Conditional-expectation equalities hold almost surely. Further notation is in Appendix A. 
+
+2.1 Calibration in binary classification 
+
+Let X and Y := {0, 1} be the input and label spaces, and let ( X, Y ) ∼ PX,Y . Fix a measurable predictor f : X → [0 , 1] and write Z := f (X). The score f (x) is intended to estimate E[Y | X = x]. Calibration compares a predicted probability with the positive-label frequency among inputs assigned that probability. 
+
+Definition 1 (Expected calibration error) . The predictor f is perfectly calibrated if E[Y | Z] = Z
+
+almost surely. Its expected calibration error (ECE) is ECE( f ) := E [|E[Y | Z] − Z|] . (1) To estimate ECE from data, binning groups examples with similar predicted probabilities [Guo et al., 2017]. Let S = {(Xi, Y i)}ni=1 be an independent and identically distributed (i.i.d.) sample from PX,Y , independent of the training of f , and put Zi := f (Xi). 
+
+Definition 2 (Binning ECE) . Let B := {B1, . . . , B M } partition [0 , 1] into M ≥ 1 measurable bins. For ℓ ∈ [M ], set Iℓ := {i ∈ [n] : Zi ∈ Bℓ} and nℓ := |Iℓ|. For nℓ > 0, define ¯Yℓ := n−1 
+
+> ℓ
+> ∑
+> i∈Iℓ
+
+Yi
+
+and ¯Zℓ := n−1 
+
+> ℓ
+> ∑
+> i∈Iℓ
+
+Zi; set both means to zero otherwise. The Binning ECE estimator is 
+
+[ECE B(f, S ) := ∑Mℓ=1 (nℓ/n )| ¯Yℓ − ¯Zℓ|
+
+= ∑Mℓ=1 
+
+> ∣∣
+
+n−1 ∑ni=1 (Yi − Zi)1(Zi ∈ Bℓ)∣∣ . (2) Binning ECE compares each bin’s positive-label frequency with its average prediction. Sam-pling introduces error in these averages, while binning can conceal opposite residuals within a bin. Both errors must be accounted for when estimating ECE( f ) [Roelofs et al., 2022, Futami and Fujisawa, 2024]. 
+
+2.2 Multi-annotator setting 
+
+In medical annotation and crowdsourcing, multiple annotators may supply noisy labels for each input when clean evaluation labels are unavailable [Raykar et al., 2010, Tanno et al., 2019]. Let 
+
+K ≥ 1 be the number of annotators and Aj ∈ Y the label supplied by annotator j ∈ [K]. Write 
+
+A1: K := ( A1, . . . , A K ). The annotation model PA1: K |X,Y extends PX,Y to the joint distribution of inputs, true labels, and annotations. We impose the following condition given ( Y, Z ). Assume 0 < P (Y = 1) < 1. For each j ∈ [K], define aj := P (Aj = 1 | Y = 0), bj := P (Aj =1 | Y = 1), and δj := bj − aj . The pair ( aj , b j ) is the annotator’s binary noise channel : aj is its false-positive probability and 1 − bj its false-negative probability. The channel gap is δj ; the channel is informative if δj̸ = 0. 
+
+Assumption 1 (Class-conditional annotation noise) . For every j ∈ [K], E[Aj | Y, Z ] = aj + δj Y .
+
+3Since Aj is binary, this excludes score-dependent errors: its error probabilities do not vary with the score once the true label is fixed. Write m(z) := E[Y | Z = z] for a measurable version 
+
+m : [0 , 1] → [0 , 1] of the conditional expectation. Then 
+
+E[Aj | Z] = aj + δj m(Z), j ∈ [K]. (3) Let Aij denote annotator j’s label for example i. Evaluating ECE directly from annotator 
+
+j’s labels amounts to replacing Yi by Aij in Eq. (2). The label-side conditional mean is then 
+
+aj + δj m(Z) rather than m(Z). Annotation noise therefore generally biases estimation of ECE with respect to the true label. Increasing the evaluation sample size, averaging annotations, or taking a majority vote does not in general remove this noise-induced bias (Appendix B.3). 
+
+# 3 Calibration Estimation 
+
+We evaluate ECE( f ) using known channel probabilities aj , b j , j ∈ [K], or supplied estimates ̂
+
+aj ,̂ bj . Section 4 gives methods for estimating these probabilities. For each j ∈ [K] with known channel probabilities and δj̸ = 0, Eq. (3) gives 
+
+E[Y | Z] = ( E[Aj | Z] − aj )/δ j = E[( Aj − aj )/δ j | Z].
+
+Applying this inverse transformation to an annotation therefore recovers the true label’s condi-tional expectation given the prediction. 
+
+Definition 3 (Corrected labels and residuals) . For known channels with δj̸ = 0 for every j ∈ [K], define Uj := ( Aj − aj )/δ j and ψj := Uj − Z. We call Uj the corrected label and ψj the corrected residual of annotator j. Let ∆ K := {α ∈ [0 , 1] K : ∑Kj=1 αj = 1 }. For fixed α ∈ ∆K , define their convex combinations by 
+
+Uα := ∑Kj=1 αj Uj , ψα := ∑Kj=1 αj ψj . (4) Thus ψα = Uα − Z.
+
+Lemma 1 (Corrected ECE representation) . Under Assumption 1, the corrections in Definition 3 satisfy, for every fixed α ∈ ∆K ,
+
+ECE( f ) = E[∣ ∣E[ψα | Z]∣∣]. (5) The proof is in Appendix C.1. The identity holds for every fixed α. Under conditional independence, Section 4.4 derives weights minimizing the total variance of the bin-moment estimates. 
+
+Estimation from finite samples. We estimate the conditional residual in Eq. (5) by bin averages, replacing unknown channel probabilities with estimates. If f is learned, condition on its training data and randomness. Let Dch and Dev be independent i.i.d. samples of 
+
+O := ( Z, A 1: K ) ∼ PO, with sizes nch and nev . Neither sample contains true labels; both are independent of the training of f .
+
+Definition 4 (Noise Corrected ECE (NC-ECE)) . For each j ∈ [K], let ̂ aj ,̂ bj be measurable estimators of aj , b j based on Dch , with 0 ≤̂ aj <̂ bj ≤ 1. Let ̂ α ∈ ∆K and the evaluation partition 
+
+B also be chosen measurably from Dch , not Dev . Set ̂ δj := ̂ bj −̂ aj . For each example i ∈ [nev ] and annotator j ∈ [K], define ̂ Uij := ( Aij −̂ aj )/̂ δj and ̂ ψij := ̂ Uij − Zi. Their weighted aggregates are ̂
+
+Ui := ∑Kj=1 ̂ αĵ Uij ,̂ ψi := ∑Kj=1 ̂ αĵ ψij . (6) 4Then ̂ ψi =̂ Ui − Zi. Define Iℓ, n ℓ, ¯Zℓ on Dev as in Definition 2, and set ¯Uℓ := n−1
+
+> ℓ
+
+∑
+
+> i∈Iℓ
+
+̂ Ui when 
+
+nℓ > 0, and zero otherwise. In a nonempty bin, ¯Uℓ − ¯Zℓ is the sample mean of the corrected residuals ̂ ψi. We define Noise Corrected ECE (NC-ECE) by 
+
+[ECE NC  
+
+> B
+
+(f, Dev ) := ∑Mℓ=1 nℓ 
+
+> nev
+
+| ¯Uℓ − ¯Zℓ|. (7) Write ̂ U (A1: K ) for the fitted correction of a new annotation vector. Its residual is ̂ ψ(O) := ̂
+
+U (A1: K ) − Z.
+
+Error relative to ECE. The estimation error separates into bin approximation, evaluation-sample fluctuation, and channel-estimation error. 
+
+Theorem 1 (ECE estimation with independent samples) . Suppose Assumption 1 holds, and use the estimator in Definition 4 with independent samples Dch , Dev . Assume r(z) := m(z) − z has a version satisfying |r(z) − r(z′)| ≤ Lr|z − z′| on the support of PZ . Let hB := max ℓ∈[M ] diam( Bℓ),̂
+
+B := ∑Kj=1 ̂ αj /̂ δj , and define 
+
+dch := ∑Kj=1 ̂ αj max( |̂aj − aj |, |̂bj − bj |)/̂δj . (8) 
+
+For every η ∈ (0 , 1) , conditional on Dch , with probability at least 1 − η,
+
+∣∣∣∣ [ECE NC  
+
+> B
+
+(f, Dev ) − ECE( f )
+
+∣∣∣∣
+
+≤ LrhB +̂ B
+
+√
+
+2( M log 2 + log(2 /η )) /n ev + dch . (9) The proof is in Appendix C.2. 
+
+Remark 1 (Three sources of error) . The terms represent binning, sampling, and channel-estimation errors. Smoothness controls binning; the proof also gives a smoothness-free fixed-bin bound. Because dch contains unknown parameters, the bound alone does not yield a computable confidence interval. 
+
+Convergence rates. Define the maximum channel estimation error across annotators by 
+
+ech := max 
+
+> 1≤j≤K
+
+(|̂aj − aj | + |̂ bj − bj |). (10) 
+
+Corollary 1 (Convergence rates) . Under Theorem 1, keep K fixed and assume δj ≥ δmin > 0
+
+for every j ∈ [K]. Suppose ech = Op(εnch ), where εnch > 0 is a deterministic sequence tending to zero. For M equal-width evaluation bins, 
+
+∣∣∣∣ [ECE NC  
+
+> B
+
+(f, Dev ) − ECE( f )
+
+∣∣∣∣
+
+= Op
+
+(
+
+M −1 +
+
+√
+
+M/n ev + εnch 
+
+)
+
+. (11) 
+
+Thus M ≍ n1/3ev gives Op(n−1/3ev + εnch ).
+
+The proof is in Appendix C.2.1. If ech = Op(n−1/2ch ) and M ≍ n1/3ev , the error is Op(n−1/3ev +
+
+n−1/2ch ). In particular, nch ≍ nev ≍ n gives Op(n−1/3). This matches the order of existing binning-based ECE estimation bounds with clean labels [Futami and Fujisawa, 2024]. 5Reusing the estimation sample. We next reuse one sample for channel estimation and ECE evaluation, with f and the evaluation bins fixed independently of that sample. 
+
+Proposition 1 (ECE estimation with a reused sample) . Suppose Assumption 1 and the Lipschitz condition of Theorem 1 hold. Fix f, B independently of an i.i.d. sample D of size n. Let ̂ aj ,̂ bj ,
+
+j ∈ [K], be measurable channel estimates fitted on D, with 0 ≤̂ aj <̂ bj ≤ 1, and let ̂ α ∈ ∆K
+
+also depend on D. Compute the estimator in Definition 4 on D with these values. For every 
+
+η ∈ (0 , 1) , with probability at least 1 − η, 
+
+> ∣∣∣∣
+
+[ECE NC  
+
+> B
+
+(f, D) − ECE( f )
+
+> ∣∣∣∣
+
+≤ LrhB +̂ B
+
+> √
+
+2( M log 2 + log(6 K/η )) /n + dch , (12) 
+
+where ̂ B, d ch are defined in Theorem 1 using estimates fitted on D.
+
+The proof is in Appendix C.3; Appendix C.4 treats the estimator based on cross-fitting. With fixed K, δj ≥ δmin > 0 for all j ∈ [K], and ech = Op(εn), Proposition 1 also gives the rate in Corollary 1, with Dev , n ev , n ch replaced by D, n, n .
+
+# 4 Channel and Weight Estimation 
+
+4.1 Setting and assumptions 
+
+Section 3 requires channel probabilities aj , b j . Without true labels, response frequencies mix annotation errors and class proportions; we identify these quantities using joint responses and score groups. We retain Assumption 1 and assume that annotations are independent conditional on the true label and score, extending the class-conditional noise model proposed by Natarajan et al. [2013] to multiple annotators. 
+
+Assumption 2 ( Conditionally independent annotations ) . For every s = ( s1, . . . , s K ) ∈ { 0, 1}K ,
+
+P (A1: K = s | Y, Z ) = 
+
+> K∏
+> j=1
+
+P (Aj = sj | Y, Z ).
+
+Together, Assumptions 1 and 2 give independence conditional on Y and channels shared across score groups (Appendix B.2). The observation distribution must determine the parameters (identification). One annotator, or two without scores, are generally insufficient (Appendix D.1). 
+
+Remark 2 (Label orientation) . Relabeling Y ⋆ := 1 − Y exchanges aj , b j and complements class proportions without changing the observations. To resolve this exchange, we specify an orientation, such as aj < b j for a designated annotator. Orientation alone does not resolve this information shortage. 
+
+4.2 Two annotators and two score groups 
+
+Let K = 2. Choose a threshold t ∈ (0 , 1) in advance or on data independent of Dch , and define G := 1(Z ≥ t). Here G = 0 is the low-score group and G = 1 the high-score group. The group indicator G is not the true label Y : either group may contain both classes. For 
+
+g ∈ { 0, 1}, assume P (G = g) > 0 and let μg := P (Y = 1 | G = g) be its unknown positive-class proportion. We jointly estimate θ := ( a1, b 1, a 2, b 2, μ 0, μ 1). The groups share channels; their class proportions may differ. 6Estimation idea and observable moments. We recover channel probabilities from response-pair means and covariances within each score group, together with differences between the group means. For each g ∈ { 0, 1}, define q1,g := E[A1 | G = g], q2,g := E[A2 | G = g], and 
+
+q12 ,g := E[A1A2 | G = g]. They are the probabilities that annotator 1, annotator 2, and both answer positively, respectively. Averaging over the true label gives the following three identities for each g ∈ { 0, 1}, hence six moment equations in total: 
+
+q1,g = a1 + δ1μg, q2,g = a2 + δ2μg,q12 ,g = (1 − μg)a1a2 + μgb1b2, g ∈ { 0, 1}. (13) Conditional independence gives the joint-positive terms and, for g ∈ { 0, 1},
+
+q1,1 − q1,0 = δ1(μ1 − μ0),q2,1 − q2,0 = δ2(μ1 − μ0),q12 ,g − q1,g q2,g = δ1δ2μg(1 − μg).
+
+The last line is the within-group covariance. These relations yield a closed-form inverse; its lengthy expression is given in Appendix D.2. 
+
+Theorem 2 (Two-group identification) . Suppose Assumptions 1 and 2 hold with K = 2 ,
+
+0 ≤ aj < b j ≤ 1 for j ∈ [2] , and 0 < μ 0, μ 1 < 1 with μ0̸ = μ1. For the two positive-probability groups above, the six moments 
+
+Γ( θ) := ( q1,0, q 2,0, q 12 ,0, q 1,1, q 2,1, q 12 ,1)
+
+uniquely determine θ.
+
+Appendix D.2 gives the inverse and proof. The class proportions are estimated, not supplied. Calibration of f is unnecessary, but a low/high score split alone does not ensure μ0̸ = μ1.
+
+Finite-sample estimation. On Dch , let Gi := 1(Zi ≥ t) and ng := ∑nch  
+
+> i=1
+
+1(Gi = g). For 
+
+g ∈ { 0, 1} with ng > 0, estimate the three moments by ̂
+
+qj,g := n−1
+
+> g
+
+∑ 
+
+> i:Gi=g
+
+Aij , j ∈ [2] ,̂
+
+q12 ,g := n−1
+
+> g
+
+∑ 
+
+> i:Gi=g
+
+Ai1Ai2. (14) Let ̂ Γ collect the six estimates in the order of Γ( θ). The closed-form estimator is ̂ θmom := H(̂ Γ), where H is the inverse in Theorem 2, whenever it is feasible. Sampling error can make the closed-form inverse infeasible. We therefore also fit the same moment model by constrained generalized method of moments (GMM; Appendices G.2 and D.4). Under separation and interiority, the feasible inverse and an exact GMM minimizer satisfy 
+
+ech = Op(n−1/2ch ) (Theorems D.2 and D.3), supplying the rate in Corollary 1. Constraints do not resolve weak identification. 
+
+4.3 Three or more annotators 
+
+With at least three informative annotators, the response vectors alone suffice under Assumptions 1 and 2: no threshold or score-group separation is required. 7Response distribution. Let K ≥ 3, μ := P (Y = 1) ∈ (0 , 1), and θ := ( μ, a 1, b 1, . . . , a K , b K ), with true value θ0. Under Assumptions 1 and 2, the responses are independent conditional on Y .Marginalizing Y therefore gives the joint response distribution P (A1: K = s) = pθ0 (s), where 
+
+pθ(s) := (1 − μ)
+
+> K∏
+> j=1
+
+asj 
+
+> j
+
+(1 − aj )1−sj
+
++ μ
+
+> K∏
+> j=1
+
+bsj 
+
+> j
+
+(1 − bj )1−sj , s ∈ { 0, 1}K . (15) Eq. (15) is the binary Dawid–Skene model [Dawid and Skene, 1979], a mixture of response distributions for the two classes. 
+
+Maximum-likelihood estimation. Using only responses, not predictions Z = f (X), we jointly estimate μ and ( aj , b j )j∈[K] on a compact set Θ ⊂ (0 , 1) 2K+1 containing θ0 with the prescribed orientation. On Dch , define the log likelihood and a measurable maximizer: 
+
+Lnch (θ) := n−1ch  
+
+> ∑nch
+> i=1
+
+log pθ(Ai, 1: K ),̂
+
+θML ∈ arg max 
+
+> θ∈Θ
+
+Lnch (θ). (16) The channel coordinates give ̂ aj ,̂ bj for the correction in Section 3. Numerical likelihood maxi-mization uses expectation–maximization (EM; Appendix F). A finite EM run need not reach a global maximizer [Wu, 1983]. 
+
+Why three annotations suffice. The third-order central moment, together with the three pairwise covariances, determines μ up to its complement. The prescribed orientation resolves this exchange; response means and covariances then recover the channels. Proposition D.2 gives the exact inverse, including μ = 1 /2 [Allman et al., 2009]. For fixed K, Theorem D.4 gives Op(n−1/2ch ) error under its identification, interiority, and Fisher-information conditions. Its channel estimates can be used in Corollary 1 when the positive-gap conditions hold. Prediction information can also be used: divide the prediction range into pre-specified intervals and jointly estimate their positive-class proportions and each annotator’s channel probabilities, shared across intervals. The EM algorithm (Joint score-bin EM) and numerical comparisons are in Appendices F and G, respectively. 
+
+4.4 Choosing aggregation weights 
+
+Channel and class-proportion estimates also determine the aggregation weights in Section 3. We design the weights by minimizing the known-channel residual variance, then substitute the estimated parameters. For fixed f and nonzero channel gaps, choose constant α ∈ ∆K to minimize Vres (α) := Var( ψα), where 
+
+Vres (α) = Var( Y − Z) + E[( Uα − Y )2]. (17) The equality follows from E[Uα − Y | Y, Z ] = 0; only the second term depends on the weights. For each j ∈ [K], the corrected annotation-noise variance ¯ vj := E[( Uj − Y )2] = E[Var( Uj | Y, Z )] satisfies ¯vj = [(1 − μ)aj (1 − aj ) + μb j (1 − bj )] /δ 2 
+
+> j
+
+.
+
+Thus the channel and class-proportion estimates give a plug-in estimate of this variance without true labels. 8Lemma 2 (Inverse-variance weights) . Under Assumptions 1 and 2, with δj̸ = 0 for all j ∈ [K],
+
+Vres (α) = Var( Y − Z) + ∑Kj=1 α2 
+
+> j
+
+¯vj . If every ¯vj > 0, the unique minimizer over ∆K is 
+
+αIV  
+
+> j
+
+:= ¯ v−1 
+
+> j
+
+/(∑ Kk=1 ¯v−1
+
+> k
+> )
+
+, j ∈ [K]. (18) The proof and zero-variance case are in Appendix C.6. For known channels and a fixed evaluation partition, these weights also minimize the total variance of the unbiased bin-moment estimates (Proposition C.1). In practice, we replace aj , b j , μ by their estimates and normalize the inverse estimated variances; Appendix F.4 specifies this plug-in rule. This optimality result assumes known channels. 
+
+# 5 Recalibration 
+
+We fit a measurable post-processing map g : [0 , 1] → [0 , 1] to improve the calibration of f . Let 
+
+Drec := {(Zi, A i, 1: K )}i∈[nrec ] be an i.i.d. sample from PO, independent of Dch . We fit g on Drec 
+
+using the corrected labels ̂ Ui =̂ U (Ai, 1: K ) defined as in Eq. (6). 
+
+5.1 Corrected-loss fitting 
+
+We use unbiased loss correction for class-conditional label noise [Natarajan et al., 2013]. Loga-rithmic loss is affine in the binary label, so E[Uα | Y, Z ] = Y recovers the clean-label expected loss when the channels are known. We fit the map using corrected labels ̂ Ui computed from estimated channels. 
+
+Definition 5 (Corrected logarithmic loss) . Let G be a class of measurable maps [0 , 1] → (0 , 1). For p ∈ (0 , 1), i ∈ [nrec ], and g ∈ G , define the corrected loss and empirical risk by ̂
+
+ℓi(p) := −̂Ui log p − (1 −̂ Ui) log(1 − p),̂
+
+R(g) := n−1rec  
+
+> ∑nrec
+> i=1 ̂
+
+ℓi(g(Zi)) . (19) We minimize this risk over temperature or Platt scaling maps [Guo et al., 2017, Platt, 1999]. Appendix E.2 defines these families with clipped input scores and compact parameter sets. These restrictions keep predictions away from zero and one and prevent an unbounded objective when corrected labels lie outside [0 , 1]. 
+
+Remark 3 (Risk and calibration guarantees) . Minimizing the corrected empirical risk attains clean log risk close to the best in the chosen family. Theorem E.2 bounds the excess risk by sampling, channel-estimation, and optimization errors. This is a log-risk guarantee, not a guarantee that every fitted temperature or Platt map reduces ECE( g ◦ f ). 
+
+5.2 Fixed-bin recalibration 
+
+Histogram binning offers a nonparametric alternative [Gupta and Ramdas, 2021]. The fitting bins need not coincide with the channel-estimation groups or the evaluation bins. 
+
+Definition 6 (Projected histogram recalibration) . For a positive integer J, let H := {Hh}h∈[J]
+
+be a measurable partition of [0 , 1] chosen independently of Drec . For h ∈ [J], set Ih := {i ∈
+
+[nrec ] : Zi ∈ Hh} and nh := |Ih|. Write Π [0 ,1] (u) := min(1 , max(0 , u )) for projection onto [0 , 1]. If 
+
+nh > 0, define 
+
+> ˜
+
+mh := n−1 
+
+> h
+> ∑
+> i∈Iĥ
+
+Ui,̂ mh := Π [0 ,1] ( ˜mh). (20) For an empty bin, choose ̂ mh ∈ [0 , 1] arbitrarily. The recalibration map is ̂ mH(z) :=  
+
+> ∑Jh=1 ̂
+
+mh1(z ∈ Hh). The bin mean estimates E[Y | Z ∈ Hh], and projection makes its output a probability. 9Proposition 2 (Calibration of projected bin averages) . Suppose Assumption 1 holds, Drec ⊥⊥ D ch ,and 0 ≤̂ aj <̂ bj ≤ 1 for j ∈ [K]. Let H and ̂ α ∈ ∆K be fixed conditional on Dch . For every 
+
+η ∈ (0 , 1) , conditional on Dch , with probability at least 1 − η,
+
+ECE( ̂ mH ◦ f ) ≤ dch + ( ̂ B + 1) 
+
+> √
+
+2( J log 2 + log(4 /η )) 
+
+nrec 
+
+. (21) The proof is in Appendix E. 
+
+# 6 Experiments 
+
+We use three settings: fully synthetic toy data to study ECE estimation and sample reuse; real tabular data with simulated label noise to test recalibration; and real images with collected human labels to stress-test both procedures without guaranteed theoretical assumptions. Appendix G gives details and additional results. 
+
+6.1 Toy data 
+
+We examine whether noisy labels suffice to estimate the ECE of a fixed predictor, with either known or estimated noise probabilities. We generate X ∼ 12 N (−1, 1) + 12 N (1 , 1), fix f (X) = σ(0 .3 − X), and draw Y | Z ∼ Bernoulli( m(Z)), where Z = f (X) and σ is the logistic function. Each of three annotators labels every example, independently conditional on Y , with false-positive probabilities (0 .08 , 0.13 , 0.18) and false-negative probabilities (0 .16 , 0.11 , 0.06). Here m(z) = P (Y = 1 | Z = z)is the true positive-label probability. Keeping the input distribution, f , and noise probabilities unchanged, we vary only m: m(z) = z (Calibrated), m(z) = σ(0 .65 log z 
+
+> 1−z
+
+− 0.3) (Shifted), or 
+
+m(z) = Π [0 .02 ,0.98] (z + 0 .12 sin(2 πz )) (Nonlinear), where Π clips to the indicated interval. The latter two make f miscalibrated; no recalibration is performed. Figure 1 uses only Calibrated, whose true ECE is zero; Table 1 uses all three. Table 1: Toy ECE estimation at N = 8000: mean ± SD of absolute error over 200 repetitions (×100).                           
+
+> Condition Sample splitting Full-sample reuse 5-fold cross-fitting Calibrated 1.960 ±0.480 1.343 ±0.322 1 .343 ±0.322
+> Shifted 0.751 ±0.605 0.448 ±0.358 0 .448 ±0.358
+> Nonlinear 0.618 ±0.508 0.427 ±0.336 0 .427 ±0.336
+
+ECE estimation. Soft-vote ECE and Majority-vote ECE replace the corrected label ̂ Ui in Eq. (7) by K−1 ∑Kj=1 Aij and 1{∑Kj=1 Aij > K/ 2}, respectively, with K = 3. NC-ECE uses true noise probabilities ( given rates ) or estimates obtained from noisy responses using Joint score-bin EM (Appendix F.1.2); both use equal weights. ECE uses ten equal-width bins. Clean-label ECE replaces ̂ Ui by Yi only as a reference. For N ∈ { 500 , 1000 , 2000 , 4000 , 8000 }, half the examples estimate noise probabilities; all methods use the remaining half for ECE. We report mean absolute error (MAE) relative to population ECE over 200 repetitions; error bars show one Monte Carlo standard error. Figure 1 shows decreasing NC-ECE errors, with estimated rates performing close to given rates, illustrating Lemma 1 and Theorem 1. Majority voting is wrong only when at least two of the three annotators are wrong, which is unlikely with low error rates and conditionally independent errors. These nonzero rates still change label expectations; correction need not have lower finite-sample MAE. Appendix Figure 2 shows the Shifted and Nonlinear comparisons: 10 Table 2: Recalibration on tabular data: dataset-wise Oracle ECE ( ×100), mean ± SD over ten seeds.                                                                                    
+
+> Dataset Base Temperature Platt Fixed-bin Naive Corrected Naive Corrected Naive Corrected ACSIncome 6.58 ±0.07 12 .22 ±0.18 3.00 ±0.24 12 .31 ±0.19 2 .35 ±0.16 9.17 ±0.14 0.80 ±0.08
+> CreditDefault 8.43 ±0.38 12 .50 ±0.21 5.54 ±0.35 10 .09 ±0.22 2 .37 ±0.28 9.06 ±0.18 1.51 ±0.26
+> HMDA 6.44 ±0.12 15 .33 ±0.25 4.44 ±0.35 14 .01 ±0.15 1 .96 ±0.11 11 .39 ±0.11 0.79 ±0.09
+> MEPS 10 .65 ±0.85 19 .12 ±0.66 12 .09 ±0.92 11 .76 ±0.25 3 .37 ±0.43 10 .56 ±0.33 2.39 ±0.39 500 1k 2k 4k 8k
+
+Total annotated examples N 
+
+> 1310
+> MAE to population ECE (×100)
+> Soft-vote ECE Majority-vote ECE NC-ECE (given rates) NC-ECE (Joint score-bin EM) Clean-label ECE
+
+Figure 1: Toy ECE-estimation MAE ( ×100, m(z) = z). voting is close to NC-ECE in Shifted, whereas the difference is clearer at larger sample sizes in Nonlinear. 
+
+Sample reuse. For each of the three conditions, we compare how the same N examples, each labeled by three annotators, are used: sample splitting (half for noise estimation, half for ECE), 
+
+full-sample reuse (all examples for both), and five-fold cross-fitting (estimate noise probabilities on four folds and apply the correction to the remaining fold). Cross-fitting combines the held-out residuals before computing ECE. The predictor and bin boundaries remain fixed, and every method uses Joint score-bin EM and equal weights. Table 1 shows similar mean errors for reuse and cross-fitting, both lower than for splitting in all three conditions. Even when the true ECE is zero, finite-sample estimation error remains. The calibrated case illustrates the reuse allowed by Proposition 1, not a theoretical ranking of the methods. 
+
+6.2 Recalibration on tabular data 
+
+We examine whether recalibration improves an existing predictor when only noisy labels are available for post-hoc fitting. We train decision trees, random forests, SVMs, naive Bayes, logistic regression, and MLPs with the original labels of ACSIncome, CreditDefault, HMDA, and MEPS [Hansen et al., 2024]. Each held-out example receives labels from K = 2 , 3, 4 simulated annotators, generated by flipping its original label with annotator- and class-specific probabilities. Joint score-bin EM estimates the unknown noise probabilities on the recalibration sample (Appendix G.3), and the methods of Section 5 recalibrate the predictions using only these noisy labels. Naive 11 uses averaged noisy annotations as targets. Corrected adjusts each annotation using estimated noise probabilities and combines the corrected labels with inverse-variance weights. Table 2 checks improvement using original labels of separate test examples. Corrected Platt and fixed-bin methods reduce mean ECE relative to Base on all four datasets, whereas corrected temperature scaling worsens ECE on MEPS. Improvements are not universal. 
+
+6.3 Real label noise: a stress test 
+
+We stress-test ECE evaluation and recalibration on CIFAR-10N, where class-conditional noise (Assumption 1) and conditional independence (Assumption 2) are not assured. Each image has its original CIFAR-10 label and three additional classifications by distinct people, who can vary across images. The original multiclass study reports feature-dependent noise [Wei et al., 2022]. No artificial corruption is introduced. Both label sets are mapped to animal/vehicle. CLIP ViT-B/32’s animal probability is the score [Radford et al., 2021]. We compare the base predictor, fixed-bin fitting to mean responses (Naive), and noise-corrected fixed-bin fitting (Corrected). For recalibration and evaluation, marginal Dawid–Skene EM estimates noise probabilities from responses alone on separate images. We reserve original CIFAR-10 labels [Krizhevsky, 2009] as benchmark reference labels for binned 
+
+Oracle ECE ; they are not used for fitting or selection. Table 3: CIFAR-10N fixed-bin recalibration: mean ± SD over five pilot splits ( ×100).                               
+
+> Method Oracle ECE Soft-vote ECE NC-ECE Base 2.129 ±0.000 2.825 ±0.000 2.436 ±0.000 Naive fixed-bin 4.351 ±0.243 0.450 ±0.141 4.695 ±0.226 Corrected fixed-bin 0.470 ±0.157 4.291 ±0.101 0.482 ±0.069
+
+Table 3 averages five fits sharing held-out samples. Naive recalibration reduces Soft-vote ECE but worsens reference-label ECE; correction reverses both changes. In this fixed-bin comparison, NC-ECE is close to Oracle ECE values and tracks their direction of change using noisy responses alone; the noise assumptions remain unverified. 
+
+# 7 Conclusion and Limitations 
+
+Corrected annotations enable ECE evaluation and recalibration from noisy responses. Our bounds separate binning, sampling, and channel-estimation errors, including fixed-bin sample reuse. Corrected-loss and histogram fitting provide clean-risk and calibration guarantees, respectively. Our framework assumes score-invariant error rates within each true class. Identifying unknown channels additionally requires conditional independence of annotators given the true label and score, and label orientation. Even under these strong assumptions, small channel gaps can amplify correction variance, while weak separation between group class proportions can destabilize two-annotator estimation. Likelihood rates need not hold after finitely many EM steps. Addressing the limitations of these assumptions and extending the framework to multiclass labels remain directions for future work. 
+
+# References 
+
+Elizabeth S. Allman, Catherine Matias, and John A. Rhodes. Identifiability of parameters in latent structure models with many observed variables. The Annals of Statistics , 37(6A): 3099–3132, 2009. doi: 10.1214/09-AOS689. Heesun Bae, Seungjae Shin, Byeonghu Na, Joonho Jang, Kyungwoo Song, and Il-Chul Moon. From noisy prediction to true label: Noisy prediction calibration via generative model. In Proceedings 
+
+12 of the 39th International Conference on Machine Learning , volume 162 of Proceedings of Machine Learning Research , pages 1277–1297, 2022. Jarosław Błasiok, Parikshit Gopalan, Lunjia Hu, and Preetum Nakkiran. A unifying theory of distance from calibration. In Proceedings of the 55th Annual ACM Symposium on Theory of Computing , pages 1727–1740, 2023. Alexander Philip Dawid and Allan M. Skene. Maximum likelihood estimation of observer error-rates using the em algorithm. Journal of the Royal Statistical Society: Series C (Applied Statistics) , 28(1):20–28, 1979. doi: 10.2307/2346806. Arthur P. Dempster, Nan M. Laird, and Donald B. Rubin. Maximum likelihood from incomplete data via the EM algorithm. Journal of the Royal Statistical Society: Series B (Methodological) ,39(1):1–22, 1977. Frances Ding, Moritz Hardt, John Miller, and Ludwig Schmidt. Retiring adult: New datasets for fair machine learning. In Advances in Neural Information Processing Systems , volume 34, pages 6478–6490, 2021. Joann G Elmore, Gary M Longton, Patricia A Carney, Berta M Geller, Tracy Onega, Anna NA Tosteson, Heidi D Nelson, Margaret S Pepe, Kimberly H Allison, Stuart J Schnitt, et al. Diagnostic concordance among pathologists interpreting breast biopsy specimens. JAMA , 313 (11):1122–1132, 2015. Masahiro Fujisawa and Futoshi Futami. PAC-Bayes Analysis for Recalibration in Classification. In Aarti Singh, Maryam Fazel, Daniel Hsu, Simon Lacoste-Julien, Felix Berkenkamp, Tegan Ma-haraj, Kiri Wagstaff, and Jerry Zhu, editors, Proceedings of the 42nd International Conference on Machine Learning , volume 267 of Proceedings of Machine Learning Research , pages 17986– 18023. PMLR, 2025. URL https://proceedings.mlr.press/v267/fujisawa25a.html .Futoshi Futami and Masahiro Fujisawa. Information-theoretic generalization analysis for expected calibration error. In Advances in Neural Information Processing Systems , volume 37, pages 84246–84297, 2024. Futoshi Futami and Takashi Ishida. Unified approach for weakly supervised multicalibration. 
+
+arXiv preprint arXiv:2605.09857 , 2026. Parikshit Gopalan, Michael P. Kim, Mihir A. Singhal, and Shengjia Zhao. Low-degree multicali-bration. In Proceedings of the 35th Conference on Learning Theory , volume 178 of Proceedings of Machine Learning Research , pages 3193–3234, 2022. Varun Gulshan, Lily Peng, Marc Coram, Martin C Stumpe, Derek Wu, Arunachalam Narayanaswamy, Subhashini Venugopalan, Kasumi Widner, Tom Madams, Jorge Cuadros, et al. Development and validation of a deep learning algorithm for detection of diabetic retinopathy in retinal fundus photographs. JAMA , 316(22):2402–2410, 2016. Chuan Guo, Geoff Pleiss, Yu Sun, and Kilian Q. Weinberger. On Calibration of Modern Neural Networks. In Doina Precup and Yee Whye Teh, editors, Proceedings of the 34th International Conference on Machine Learning , volume 70, pages 1321–1330. PMLR, 2017. URL https://proceedings.mlr.press/v70/guo17a.html .Chirag Gupta and Aaditya Ramdas. Distribution-free calibration guarantees for histogram binning without sample splitting. In Proceedings of the 38th International conference on machine learning , volume 139, pages 3942–3952. PMLR, 2021. 13 Dutch Hansen, Siddartha Devic, Preetum Nakkiran, and Vatsal Sharan. When is multicalibration post-processing necessary? In Advances in Neural Information Processing Systems , volume 37, pages 38383–38455, 2024. Lars Peter Hansen. Large sample properties of generalized method of moments estimators. 
+
+Econometrica , 50(4):1029–1054, 1982. Mahmoud Hegazy, Michael I. Jordan, and Aymeric Dieuleveut. Scalable utility-aware multiclass calibration. In Emtiyaz Khan, Yingzhen Li, Arno Solin, and Aaditya Ramdas, editors, 
+
+Proceedings of The 29th International Conference on Artificial Intelligence and Statistics ,volume 300, pages 397–405. PMLR, 2026. Siu L. Hui and Stephen D. Walter. Estimating the error rates of diagnostic tests. Biometrics , 36 (1):167–171, 1980. doi: 10.2307/2530508. Ryuichi Kiryo, Futoshi Futami, and Masashi Sugiyama. Estimating expected calibration error for positive-unlabeled learning. Transactions on Machine Learning Research , 2026. https: //openreview.net/forum?id=SvoBtLIrPZ .Jonathan Krause, Varun Gulshan, Ehsan Rahimy, Peter Karth, Kasumi Widner, Greg S Corrado, Lily Peng, and Dale R Webster. Grader variability and the importance of reference standards for evaluating machine learning models for diabetic retinopathy. Ophthalmology , 125(8):1264–1272, 2018. Alex Krizhevsky. Learning multiple layers of features from tiny images. Techni-cal report, University of Toronto, 2009. URL https://www.cs.toronto.edu/~kriz/ learning-features-2009-TR.pdf .Takahiro Mimori, Keiko Sasada, Hirotaka Matsui, and Issei Sato. Diagnostic uncertainty calibration: Towards reliable machine predictions in medical domain. In Arindam Banerjee and Kenji Fukumizu, editors, Proceedings of The 24th International Conference on Artificial Intelligence and Statistics , volume 130 of Proceedings of Machine Learning Research , pages 3664– 3672. PMLR, 13–15 Apr 2021. URL https://proceedings.mlr.press/v130/mimori21a. html .Nagarajan Natarajan, Inderjit S Dhillon, Pradeep K Ravikumar, and Ambuj Tewari. Learning with noisy labels. Advances in neural information processing systems , 26, 2013. Amanda Olmin and Fredrik Lindsten. Robustness and reliability when training with noisy labels. In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics ,volume 151, pages 922–942, 2022. Giorgio Patrini, Alessandro Rozza, Aditya Krishna Menon, Richard Nock, and Lizhen Qu. Making deep neural networks robust to label noise: A loss correction approach. In Proceedings of the IEEE conference on computer vision and pattern recognition , pages 1944–1952, 2017. Coby Penso, Lior Frenkel, and Jacob Goldberger. Confidence calibration of a medical imaging classification system that is robust to label noise. IEEE Transactions on Medical Imaging , 43 (6):2050–2060, 2024. doi: 10.1109/TMI.2024.3353762. John C. Platt. Probabilistic outputs for support vector machines and comparisons to regularized likelihood methods. In Advances in Large Margin Classifiers , pages 61–74. MIT Press, 1999. Teodora Popordanoska, Raphael Sayer, and Matthew B. Blaschko. A consistent and differentiable 
+
+lp canonical calibration error estimator. Advances in Neural Information Processing Systems ,35:7933–7946, 2022. 14 Teodora Popordanoska, Sebastian Gregor Gruber, Aleksei Tiulpin, Florian Buettner, and Matthew B. Blaschko. Consistent and asymptotically unbiased estimation of proper cali-bration errors. In Proceedings of the 27th International Conference on Artificial Intelligence and Statistics , volume 238, pages 3466–3474, 2024. Alec Radford, Jong Wook Kim, Chris Hallacy, Aditya Ramesh, Gabriel Goh, Sandhini Agarwal, Girish Sastry, Amanda Askell, Pamela Mishkin, Jack Clark, et al. Learning transferable visual models from natural language supervision. In International conference on machine learning ,pages 8748–8763. PMLR, 2021. Vikas C. Raykar, Shipeng Yu, Linda H. Zhao, Gerardo Hermosillo Valadez, Charles Florin, Luca Bogoni, and Linda Moy. Learning From Crowds. Journal of Machine Learning Research , 11 (43):1297–1322, 2010. URL http://jmlr.org/papers/v11/raykar10a.html .Meritxell Riera-Marín, Javier García López, Júlia Rodríguez-Comas, Miguel A. González Ballester, and Adrian Galdran. Multi-rater calibration error estimation. In Uncertainty for Safe Utilization of Machine Learning in Medical Imaging , volume 16166 of Lecture Notes in Computer Science ,pages 147–157. Springer, 2026. doi: 10.1007/978-3-032-06593-3_14. Rebecca Roelofs, Nicholas Cain, Jonathon Shlens, and Michael C. Mozer. Mitigating bias in calibration error estimation. In Proceedings of the 25th International Conference on Artificial Intelligence and Statistics , pages 4036–4054, 2022. Raphael Rossellini, Jake A. Soloff, Rina Foygel Barber, Zhimei Ren, and Rebecca Willett. Can a calibration metric be both testable and actionable? In Proceedings of the Thirty-Eighth Conference on Learning Theory , volume 291, pages 4937–4972. PMLR, 2025. Shubham Sharma, Andrew H. Gee, David Paydarfar, and Joydeep Ghosh. FaiR-N: Fair and robust neural networks for structured data. In Proceedings of the 2021 AAAI/ACM Conference on AI, Ethics, and Society , pages 946–955, 2021. Ryutaro Tanno, Ardavan Saeedi, Swami Sankaranarayanan, Daniel C Alexander, and Nathan Silberman. Learning from noisy labels by regularized estimation of annotator confusion. In 
+
+2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , pages 11236–11245. IEEE, 2019. Juozas Vaicenavicius, David Widmann, Carl Andersson, Fredrik Lindsten, Jacob Roll, and Thomas Schön. Evaluating model calibration in classification. In Kamalika Chaudhuri and Masashi Sugiyama, editors, Proceedings of the Twenty-Second International Conference on Artificial Intelligence and Statistics , volume 89, pages 3459–3467. PMLR, 2019. URL 
+
+https://proceedings.mlr.press/v89/vaicenavicius19a.html .Aad W. van der Vaart. Asymptotic Statistics . Cambridge University Press, 1998. Brendan van Rooyen and Robert C. Williamson. A theory of learning with corrupted labels. 
+
+Journal of Machine Learning Research , 18(228):1–50, 2018. URL http://jmlr.org/papers/ v18/16-315.html .Jiaheng Wei, Zhaowei Zhu, Hao Cheng, Tongliang Liu, Gang Niu, and Yang Liu. Learning with noisy labels revisited: A study using real-world human annotations. In International Conference on Learning Representations , 2022. URL https://openreview.net/forum?id=TBWA6PLJZQm .C. F. Jeff Wu. On the convergence properties of the EM algorithm. The Annals of Statistics , 11 (1):95–103, 1983. I-Cheng Yeh. Default of credit card clients. UCI Machine Learning Repository, 2009. 15 Supplementary Material 
+
+The supplement gives proofs, additional statistical results, algorithms, and experimental protocols. Appendix A collects the notation; Appendix B discusses the annotation model. Appendices C–E establish the results of Sections 3–5. Algorithms and experiments are given in Appendices F and G, followed by additional related work and discussion in Appendix H. 
+
+# A Notation 
+
+The input space is standard Borel. Predictors, post-processing maps, and bin-membership indi-cators are measurable, jointly with any fitting data. A learned predictor is fixed by conditioning on its training data and randomness; all subsequent samples are independent of that information. We assume the same K response slots are observed for every example; sparse responses require additional missingness assumptions and example-dependent aggregation. Conditional expecta-tions hold almost surely. Pointwise statements about m(z) = E[Y | Z = z] use a measurable version; regularity assumptions require a version with the stated property. Symbol Meaning 
+
+Z = f (X), O = ( Z, A 1: K ) Prediction and observed post-hoc data; their laws are PZ , P O.
+
+aj , b j , δ j False-positive probability, true-positive probability, and bj − aj .
+
+ρ0,j , ρ 1,j Alternative noise coordinates aj , 1 − bj .
+
+μ, r(z) P (Y = 1) and m(z) − z.
+
+B, M, ECE B(f ) Evaluation partition, bin count, and population binned error in Eq. (B.2). 
+
+C, L, G, μ g Identification partition, group count, group indicator, and P (Y =1 | G = g). Two-group formulas use g ∈ { 0, 1}.
+
+H, J Recalibration partition and its bin count. 
+
+Ds, n s Sample and size for s ∈ { ch , rec , val , ev }. Split-sample results use mutually independent samples. 
+
+EDs [h] n−1 
+
+> s
+> ∑ns
+> i=1
+
+h(O(s) 
+
+> i
+
+). 
+
+Uj , ψ j , U α, ψ α Known-channel corrected labels and residuals; hats denote fitted corrections. ̂
+
+B, d ch Bounds for a fitted correction and its conditional-mean error. 
+
+ech , ε nch Maximum endpoint error and its deterministic convergence-rate sequence. 
+
+Vres (α) Variance of one corrected residual, not of the ECE estimator. Expectations of fitted functions integrate over a fresh independent example, with the fit held fixed. Conditional risk and bias statements require finite integrals for almost every fit, not finite averages over the fitting data. Positive fitted gaps give a finite ̂ B for each fit but need not give E[̂ B] < ∞. We use the usual Op, o p, ≍ notation and natural logarithms. Norms 
+
+∥ · ∥ 2, ∥ · ∥ ∞, ∥ · ∥ op are Euclidean, maximum-coordinate, and induced operator norms; DF , ∇,and ∇2 denote Jacobian, gradient, and Hessian. Matrix inequalities use the positive-semidefinite order. A fixed nonempty informative subset J ⊆ [K] can replace [ K] in correction formulas, with weights in ∆ J = {αj ≥ 0 : ∑ 
+
+> j∈J
+
+αj = 1 }. An excluded zero-gap channel is not evaluated as a zero-weighted inverse. For equal-width partitions, bins are left-closed and right-open, except that the last bin includes 1. The same convention applies to M, L, J bins. Write Π[a,b ](u) = min( b, max( a, u )) and interpret factors with exponent zero in Bernoulli mass functions as one, including 0 0 = 1. 16 Table 4: Information sufficient for correction or identification. Unknown-channel estimation also requires label orientation; rate results impose the regularity conditions in Appendix D.                       
+
+> Task Annotation model Additional condition Known-channel correction Assumption 1 Nonzero gaps for inverted channels Unknown, K= 2 Assumptions 1, 2 Two informative channels; two positive-mass groups with distinct class proportions strictly between zero and one Unknown, K≥3Assumptions 1, 2 Three informative annotators; no score separation
+
+# B Calibration and the Annotation Model 
+
+B.1 Population and empirical binned errors 
+
+For a fixed partition, the clean estimator and its population counterpart are 
+
+[ECE B(f, S ) = ∑Mℓ=1 
+
+> ∣∣∣∣
+
+1
+
+n
+
+> ∑ni=1
+
+(Yi − Zi)1(Zi ∈ Bℓ) 
+
+> ∣∣∣∣
+
+, (B.1) ECE B(f ) = ∑Mℓ=1 |E[( Y − Z)1(Z ∈ Bℓ)] | . (B.2) For a positive-mass bin, conditional Jensen gives |E[r(Z) | Z ∈ Bℓ]| ≤ E[|r(Z)| | Z ∈ Bℓ]. Multiplying by pℓ = P (Z ∈ Bℓ) and summing proves ECE B(f ) ≤ ECE( f ). Fixed-bin estimation can therefore leave binning error even as sampling error vanishes. An independently fitted partition is held fixed in these expectations. 
+
+Example B.1 (Cancellation within a bin) . If Z is uniform on {1/4, 3/4} and Y ∼ Bernoulli(1 /2) is independent of Z, then ECE( f ) = 1 /4 but one bin gives ECE B(f ) = |E[Y − Z]| = 0. 
+
+B.2 Conditional distributions and identification 
+
+Because annotations are binary, Assumption 1 is equivalent to 
+
+P (Aj = 1 | Y, Z ) = aj + δj Y, δj = bj − aj . (B.3) Taking conditional expectations yields 
+
+qj (z) = E[Aj | Z = z] = aj + δj m(z). (B.4) Known-channel correction uses this marginal relation and nonzero gaps; it requires neither positive orientation nor independence among annotators. Assumption 2 additionally gives 
+
+P (A1: K = s | Y = y, Z = z) = ∏Kj=1 pj (y)sj (1 − pj (y)) 1−sj , pj (y) = aj + δj y. (B.5) This implies independence of the annotations given Y and A1: K ⊥⊥ Z | Y , producing the likelihood model [Dawid and Skene, 1979]. Dependence can violate this product relation while preserving the marginal correction identity. If the marginal channels themselves vary with Z given Y , a single shared correction need not remain valid. Table 4 separates the requirements. 
+
+Remark B.1 (Label orientation) . Replacing μ by 1 − μ and exchanging aj , b j leaves the marginal response law unchanged. Identification therefore needs a prescribed orientation, such as aj < b j
+
+for a specified informative annotator. 17 B.3 Aggregation before correction 
+
+Proposition B.1 (Expectation of an aggregated annotation) . Suppose PA1: K |Y,Z = PA1: K |Y . For a fixed finite-valued v : {0, 1}K → R, let cy = E[v(A1: K ) | Y = y]. Then 
+
+E[v(A1: K ) | Z] = c0 + ( c1 − c0)m(Z). (B.6) 
+
+The affine expression c0 + ( c1 − c0)t equals t for all t ∈ [0 , 1] if and only if c0 = 0 , c 1 = 1 .Proof. Iterated expectation gives E[v(A1: K ) | Z] = E[cY | Z] = (1 −m(Z)) c0+m(Z)c1. Evaluating the affine expression at 0 and 1 proves the last assertion. The proposition covers majority vote and fixed weighted averages. For fixed K, more evalua-tion examples do not remove a conditional-mean mismatch, although particular distributions may have equal scalar ECEs. 
+
+Remark B.2 (Prediction-dependent aggregation) . For the correctly specified posterior 
+
+τ (A1: K , Z ) = E[Y | A1: K , Z ], 
+
+E[τ (A1: K , Z ) | Z] = m(Z). (B.7) This follows by iterated expectation. Such prediction-dependent rules are not excluded by Proposition B.1; fitted posteriors require their own estimation-error analysis. 
+
+# C Calibration Estimation: Statements and Proofs 
+
+C.1 Weighted representations and corrected moments 
+
+A bounded function w selects or weights predictions. Bin indicators recover the usual ECE moments. Allowing one sign in each bin expresses the sum of absolute moments as a maximum, which is useful for concentration bounds; it does not change how the estimator is computed. Let 
+
+W∞ be the class of measurable maps [0 , 1] → [−1, 1] and define the calibration moment 
+
+Mf (w) := E[( Y − Z)w(Z)] , w ∈ W ∞. (C.1) For B := {Bℓ}ℓ∈[M ], let rℓ := E[( Y − Z)1(Z ∈ Bℓ)], ws(z) := ∑Mℓ=1 sℓ1(z ∈ Bℓ), and WB := {ws :
+
+s ∈ [−1, 1] M }.
+
+Lemma C.1 (Weighted calibration representations) . For the fixed predictor f ,
+
+ECE( f ) = sup w∈W ∞ Mf (w) = sup w∈W ∞ |Mf (w)|, (C.2) ECE B(f ) = sup w∈W B Mf (w) = max s∈{− 1,1}M 
+
+> ∑Mℓ=1
+
+sℓrℓ. (C.3) 
+
+Proof. Since w(Z) is measurable with respect to Z, Mf (w) = E[( m(Z) − Z)w(Z)]. Its absolute value is at most E[|m(Z) − Z|]. Equality is attained by the measurable sign of m(z) − z, with any value in [ −1, 1] at zero. The class is symmetric under sign change, which gives both suprema. For a binwise-constant ws, Mf (ws) = ∑Mℓ=1 sℓrℓ. Choosing each sign to agree with rℓ gives ∑Mℓ=1 |rℓ|,including zero-moment bins. 
+
+Lemma C.2 (Corrected moments and unbiased empirical moments) . Suppose Assumption 1 holds and δj̸ = 0 for j ∈ [K]. For Uj := ( Aj − aj )/δ j and ψj := Uj − Z, and every fixed α ∈ ∆K ,
+
+E[Uj | Y, Z ] = Y, E[Uα | Y, Z ] = Y, (C.4) 
+
+E[ψj | Z] = E[ψα | Z] = m(Z) − Z, (C.5) 
+
+E[ψj w(Z)] = E[ψαw(Z)] = Mf (w), w ∈ W ∞. (C.6) 
+
+For an independent evaluation sample, the empirical corrected moment is unbiased, conditional on any independent data determining α, w .
+
+18 Proof of Lemmas 1 and C.2. Eq. (B.3) gives E[( Aj − aj )/δ j | Y, Z ] = Y . Linearity and  
+
+> ∑Kj=1
+
+αj = 1 give the aggregate identity. Conditioning again on Z gives E[Uj | Z] = E[Uα | Z] = 
+
+m(Z). Subtracting Z proves Eq. (C.5). Substitution into the ECE definition in Eq. (1) proves Eq. (5). Multiplication by bounded w(Z) and expectation yield Eq. (C.6). All variables are integrable because the finite set of inverted gaps is nonzero. Finally, expectation of an empirical average equals its population expectation when the function is fixed independently of the sample. No joint annotator independence is used. 
+
+C.2 Independent-sample ECE bound 
+
+Write ̂ ψ(O) = ̂ U (A1: K ) − Z and define ̂
+
+rℓ := EDev [̂ ψ1(Z ∈ Bℓ)] , [ECE NC  
+
+> B
+
+(f, Dev ) = ∑Mℓ=1 |̂rℓ|. (C.7) The estimates, weights, and bins are measurable functions of Dch , which may include independent pilot information. They are independent of Dev .
+
+Lemma C.3 (Conditional-expectation error and bounds) . Under Assumption 1, assume 0 ≤̂
+
+aj <̂ bj ≤ 1 for j ∈ [K] and ̂ α ∈ ∆K . For an independent example O ∼ PO, with Dch held fixed as in Appendix A, 
+
+bch (z) := E[̂ U | Z = z, Dch ] − m(z)= ∑Kj=1 ̂ αj
+
+(1 − m(z))( aj −̂ aj ) + m(z)( bj −̂ bj )̂
+
+δj
+
+, (C.8) 
+
+|bch (Z)| ≤ dch , |̂U | ≤ ̂ B, |̂ ψ| ≤ ̂ B. (C.9) 
+
+These bounds also hold for zero true gaps. In that case they need not be small, and they do not imply that the channel can be identified. Proof. Independence of the example and Dch allows the estimates to be held fixed. By Eq. (B.4), the conditional expectation of the jth estimated corrected label is ( aj + δj m(z) −̂ aj )/̂δj . Sub-tracting m(z) and using δj −̂ δj = ( bj −̂ bj ) − (aj −̂ aj ) proves Eq. (C.8). Its numerator is a convex combination of two endpoint errors, so its absolute value is bounded by their maximum. Summing gives dch . The label bound follows from |Aj −̂ aj | ≤ 1. For the residual, note that ̂
+
+aj +̂ δj Z = (1 − Z)̂aj + Ẑ bj ∈ [0 , 1]. Thus |Aj −̂ aj −̂ δj Z| ≤ 1; division and convex aggregation prove the last bound. 
+
+Theorem C.1 (Finite-sample error and conditional bias) . Suppose Assumption 1 holds. Let Dch 
+
+and Dev be independent i.i.d. samples from PO, with the predictor fixed independently of both. Let the estimates, weights and partition satisfy Definition 4, and set pℓ := P (Z ∈ Bℓ | D ch ). No smoothness is needed for the first two assertions. Conditional on Dch ,
+
+−dch ≤ E[[ECE NC  
+
+> B
+
+(f, Dev ) | D ch ] − ECE B(f ) ≤̂ B
+
+> √
+
+M/n ev + dch . (C.10) 
+
+For every η ∈ (0 , 1) , with conditional probability at least 1 − η, 
+
+> ∣∣∣∣
+
+[ECE NC  
+
+> B
+
+(f, Dev ) − ECE B(f ) 
+
+> ∣∣∣∣
+
+≤̂ B
+
+> √
+
+2( M log 2 + log(2 /η )) 
+
+nev 
+
++ dch . (C.11) 
+
+If r(z) := m(z) − z has an Lr-Lipschitz version on the support of PZ , and hB := max ℓ∈[M ] diam( Bℓ), then 
+
+0 ≤ ECE( f ) − ECE B(f ) ≤ LrhB. (C.12) 
+
+Combining Eq. (C.11) and Eq. (C.12) proves Theorem 1 for the population target. 
+
+19 Proof. Condition throughout on Dch . Set qℓ = E[̂ ψ1(Z ∈ Bℓ) | D ch ] and QB = ∑ 
+
+> ℓ
+
+|qℓ|.Lemma C.3 gives ∑ 
+
+> ℓ
+
+|qℓ − rℓ| ≤ ∑ 
+
+> ℓ
+
+E[|bch (Z)|1(Z ∈ Bℓ) | D ch ] ≤ dch . (C.13) Thus |QB − ECE B(f )| ≤ dch . Since E[̂ rℓ] = qℓ and Var( ̂ rℓ) ≤̂ B2pℓ/n ev , Jensen and Cauchy– Schwarz yield 0 ≤ E[ [ECE NC  
+
+> B
+
+] − QB ≤ ∑ 
+
+> ℓ
+
+E|̂rℓ − qℓ| ≤ ̂ Bn −1/2ev 
+
+∑
+
+> ℓ
+
+√pℓ ≤̂ B√M/n ev , proving Eq. (C.10). For the deviation bound, 
+
+∑ 
+
+> ℓ
+
+|̂ rℓ − qℓ| = max s∈{− 1,1}M |(EDev − E)[ ̂ ψw s(Z)] |. (C.14) Each of the 2 M functions is bounded by ̂ B in absolute value. Two-sided Hoeffding and a union bound give tail probability at most 2 M +1 exp( −nev t2/(2 ̂B2)). Setting this equal to η and using Eq. (C.13) proves Eq. (C.11). Finally, in each positive-mass bin let ¯ rℓ = E[r(Z) | Z ∈ Bℓ]. An independent conditional copy Z′ gives |r(z) − ¯rℓ| ≤ E[|r(z) − r(Z′)| | Z′ ∈ Bℓ] ≤ Lr diam( Bℓ)almost surely. Conditional Jensen and summation with bin masses prove 0 ≤ ECE( f ) −
+
+ECE B(f ) ≤ LrhB and Theorem 1. 
+
+Lemma C.4 (Known-channel bias) . Suppose Assumption 1 holds and δj̸ = 0 for j ∈ [K]. Set 
+
+Bρ := max j∈[K] |δj |−1. (C.15) 
+
+Let α ∈ ∆K and B be fixed. On an i.i.d. sample D = {Oi}i∈[n] ∼ P nO, define the known-channel estimator [ECE NC 
+
+> ρ, B
+
+(f, D) := ∑Mℓ=1 |ED[( Uα − Z)1(Z ∈ Bℓ)] | . Each corrected bin moment is unbiased, and 
+
+0 ≤ E[ [ECE NC 
+
+> ρ, B
+
+(f, D)] − ECE B(f ) ≤ Bρ
+
+√
+
+M/n. (C.16) 
+
+If the weights and partition are chosen using independent data, the same statement holds conditional on those data. Proof. Lemma C.2 gives unbiased bin moments. Since aj + δj Z ∈ [0 , 1], |ψj | ≤ | δj |−1, including negative nonzero gaps. Thus |ψα| ≤ Bρ. The Jensen and variance argument in the preceding proof, now with qℓ = rℓ, yields the result. 
+
+C.2.1 Proof of Corollary 1 
+
+Proof. Use ech from Eq. (10). The assumption ech = Op(εnch ) with εnch → 0 implies ech = op(1). For every j ∈ [K], |̂δj − δj | ≤ | ̂ aj − aj | + |̂bj − bj | ≤ ech . Thus, on the event ech ≤ δmin /2, whose probability tends to one, ̂ δj ≥ δmin /2 for all j, and ̂ B ≤ 2/δ min , dch ≤ 2ech /δ min . The conditional probability bound in Theorem 1, integrated over Dch , therefore gives a sampling term of order Op(√M/n ev ) and channel error Op(εnch ). For equal-width bins, hB = M −1, proving Eq. (11). The choice M ≍ n1/3ev balances binning and sampling. For the reused sample, the same event and deterministic inequalities apply with ech = Op(εn). Apply Proposition 1; fixed K
+
+changes only a constant inside the logarithm. This gives Op(M −1 + √M/n + εn) and the stated choice of M . Neither argument treats fitted coefficients as independent of the sample that fitted them. The smoothness-free bound in Theorem C.1 also gives Op(n−1/2ev + εnch ) error relative to ECE B(f ) for a fixed partition. That statement concerns the auxiliary binned quantity, not ECE( f ). 
+
+Remark C.1 (Evaluation bins and channel groups) . A growing evaluation bin count M need not change the dimension of the channel estimator: its group count L can remain fixed. The rates above require the stated channel-error rate; fixed-dimensional channel theory does not supply that rate when its group count also grows. 20 C.3 Same-sample estimation with fixed bins 
+
+A uniform finite-class argument permits the same observations to fit the channels, choose the weights, and evaluate ECE. It controls the empirical deviations simultaneously over all admissible fitted corrections. Population expectations of a fitted function always refer to an independent example, with its realized coefficients held fixed. 
+
+Corollary C.1 (Same-sample ECE estimation) . Let D = {Oi}i∈[n] be i.i.d. from PO, and let the predictor and partition B be fixed independently of this sample. Suppose Assumption 1 holds. Let 
+
+0 ≤̂ aj <̂ bj ≤ 1 for j ∈ [K] and ̂ α ∈ ∆K be arbitrary measurable functions of D. Define ̂ B, d ch 
+
+as in Theorem 1 for these estimates. For every η ∈ (0 , 1) , with probability at least 1 − η, 
+
+> ∣∣∣∣
+
+[ECE NC  
+
+> B
+
+(f, D) − ECE B(f ) 
+
+> ∣∣∣∣
+
+≤̂ B
+
+> √
+
+2( M log 2 + log(6 K/η )) 
+
+n + dch . (C.17) 
+
+No nonzero-true-gap assumption is needed for this inequality. If r(z) := m(z) − z has an 
+
+Lr-Lipschitz version, add LrhB to obtain a bound relative to ECE( f ).Proof. For j ∈ [K], define three fixed functions hj, 0(O) := Aj , hj, 1(O) := Aj − Z, and hj, 2(O) := 
+
+Aj − 1. For every s ∈ {− 1, 1}M and v ∈ { 0, 1, 2}, hj,v ws takes values in [ −1, 1]. Hoeffding’s inequality and a union bound over the 3 K2M functions give an event of probability at least 1 − η
+
+on which max j,v,s |(ED − E)[ hj,v ws]| ≤ tn, tn := √2( M log 2 + log(6 K/η )) /n. (C.18) For any 0 ≤ a′ < b ′ ≤ 1, the exact decomposition 
+
+Aj − a′ − (b′ − a′)Z = (1 − b′)hj, 0 + ( b′ − a′)hj, 1 + a′hj, 2 (C.19) has nonnegative coefficients summing to one. Consequently, on the same event, simultaneously for all admissible channel estimates and convex weights, max s |(ED − E)[ ̂ ψw s]| ≤ ∑Kj=1 ̂ 
+
+> αĵ
+> δj
+
+tn =̂ Bt n.
+
+The inequality holds for every realized sample on the uniform event, even when the coefficients are fitted on D. For each realized correction, the algebra of Eq. (C.8), applied to an independent copy, also gives |E[̂ ψw s] − Mf (ws)| ≤ dch . Thus max s |ED[̂ ψw s] − Mf (ws)| ≤ ̂ Bt n + dch . The difference between the two maxima defining the empirical and population binned errors is bounded by this maximum deviation. Eq. (C.12) gives the population extension and proves Proposition 1. 
+
+Remark C.2 (Failed fits and data reuse) . The finite-class event is uniform over all admissible estimates. If a procedure can fail to return admissible gaps, the probability that it both succeeds and violates the bound is at most η. This is not a conditional coverage claim restricted to successful fits. Alternatively, a fixed admissible fallback defines the estimator on all samples, with fitting failures reported separately. The corollary does not cover a partition or base predictor fitted on D.
+
+Corollary C.2 (Explicit channel-error radius) . Under the conditions of Corollary C.1, suppose 
+
+δj ≥ δmin > 0 for j ∈ [K] and 
+
+P
+
+> (
+
+max j∈[K](|̂aj − aj | + |̂ bj − bj |) ≤ rn
+
+> )
+
+≥ 1 − ηch , rn ≤ δmin /2. (C.20) 
+
+Then, for ηev ∈ (0 , 1) , with probability at least 1 − ηch − ηev , 
+
+> ∣∣∣∣
+
+[ECE NC  
+
+> B
+
+(f, D) − ECE B(f ) 
+
+> ∣∣∣∣
+
+≤ 2
+
+δmin 
+
+> √
+
+2( M log 2 + log(6 K/η ev )) 
+
+n + rn 
+
+> 
+
+. (C.21) 21 Proof. On the channel event, ̂ δj ≥ δmin /2, ̂ B ≤ 2/δ min , and dch ≤ 2rn/δ min . Substitute these bounds into Corollary C.1 and take a union bound with the channel event. The bound is linear in the inverse gap multiplying the channel radius. For fixed K, consistent root-n channel estimates, a Lipschitz residual, and equal-width bins with M ≍ n1/3, it yields 
+
+∣∣∣∣ [ECE NC  
+
+> B
+
+(f, D) − ECE( f )
+
+∣∣∣∣ = Op(n−1/3). (C.22) This rate requires smoothness and does not establish distribution-free or minimax optimality. 
+
+C.4 Cross-fitting with one common evaluation partition 
+
+Let D = {Oi}i∈[n] consist of i.i.d. examples from PO. Let the index sets I1, . . . , I F partition [n] independently of the data, with F ≥ 2 and nk := |Ik| > 0 for k ∈ [F ]. Fix a common partition B independently of the full sample. For each fold k, fit channels and weights on 
+
+D−k := {Oi : i ∈ [n] \ Ik}, obtaining 0 ≤̂ a(−k) 
+
+> j
+
+<̂ b(−k) 
+
+> j
+
+≤ 1 and ̂ α(−k) ∈ ∆K . For each k ∈ [F ], define ̂ ψ(−k)(O) := ∑Kj=1 ̂ α(−k) 
+
+> jAj−
+
+̂a (−k)
+
+> j
+
+̂ 
+
+> b(−k)
+> j−
+
+̂a (−k)
+
+> j
+
+− Z. The held-out bin moments and their aggregate are ̂
+
+rk,ℓ := 1
+
+> nk
+
+∑
+
+> i∈Ik
+
+̂ ψ(−k)(Oi)1(Zi ∈ Bℓ),̂ rcf  
+
+> ℓ
+
+:= ∑Fk=1 nk
+
+> n
+
+̂ rk,ℓ , [ECE cf  
+
+> B
+
+(f, D) := ∑Mℓ=1 |̂rcf  
+
+> ℓ
+
+|. (C.23) The absolute values are taken after aggregating the moments, not before. For each k ∈ [F ], let ̂
+
+B(−k) and d(−k)ch be the quantities ̂ B and dch in Eq. (8), computed using the channels and weights fitted without fold k.
+
+Corollary C.3 (Cross-fitted calibration error) . Under Assumption 1 and the preceding conditions, for η ∈ (0 , 1) , with probability at least 1 − η,
+
+∣∣∣∣ [ECE cf  
+
+> B
+
+(f, D) − ECE B(f )
+
+∣∣∣∣ ≤ ∑Fk=1 
+
+nk
+
+n
+
+̂ B(−k)
+
+√
+
+2( M log 2 + log(2 F/η )) 
+
+nk
+
++ d(−k)ch 
+
+ . (C.24) 
+
+An LrhB term gives the population extension under the same smoothness condition as Theorem 1. Proof. Hold the independently chosen fold assignment and common partition fixed. For a fixed k, condition only on D−k. The held-out fold is an independent i.i.d. sample. The proof of Theorem C.1, before taking the difference of scalar errors, yields ∑Mℓ=1 |̂ rk,ℓ − rℓ| ≤ ̂
+
+B(−k)√2( M log 2 + log(2 F/η )) /n k + d(−k)ch with conditional probability at least 1 − η/F . Inte-grating this conditional probability gives the same unconditional failure bound. A union bound over the F folds is valid without independence of their fitted estimators. On the simultaneous event, ∑Mℓ=1 |̂rcf  
+
+> ℓ
+
+− rℓ| ≤ ∑Fk=1 nk
+
+> n
+
+∑Mℓ=1 |̂ rk,ℓ − rℓ|, which proves the claim by a reverse triangle inequality. 
+
+Remark C.3 (Common bins and the scope of cross-fitting) . The common partition ensures that every fold estimates the same rℓ. Arbitrary fold-specific partitions do not satisfy that requirement. Nor does this result establish calibration of a single map formed by combining independently fitted fold-specific recalibration maps. The fixed-bin recalibration theorem retains its stated sample splitting. 
+
+C.5 NC-ECE and histogram plug-in estimators 
+
+Let D = {Oi}i∈[n] be the evaluation sample, and set nℓ := ∑ni=1 1(Zi ∈ Bℓ) for ℓ ∈ [M ]. For a nonempty bin, let ¯Uℓ := n−1
+
+> ℓ
+
+∑
+
+> i:Zi∈Bℓ
+
+̂ Ui and ¯Zℓ := n−1
+
+> ℓ
+
+∑ 
+
+> i:Zi∈Bℓ
+
+Zi.22 Lemma C.5 (Equivalent NC-ECE formulas) . The following equality holds:   
+
+> ∑
+> ℓ:nℓ>0nℓ
+> n
+
+| ¯Uℓ − ¯Zℓ| = ∑Mℓ=1  
+
+> ∣∣∣1
+> n
+> ∑ni=1
+
+(̂ Ui − Zi)1(Zi ∈ Bℓ) 
+
+> ∣∣∣
+
+(C.25) 
+
+Empty bins contribute zero to both sides. Proof. For each nonempty bin, distribute nℓ/n inside the absolute value and substitute the definitions of its two means. Empty bins have zero sample mass, so both expressions contribute zero there. For constant weights and channels, averaging annotations within a bin and then applying their affine corrections gives exactly ¯Uℓ. Thus a histogram plug-in computation is not intrinsically a different estimator. Projection, a different fitting sample, different bins, or a different estimator of the conditional expectation can change the result, but those changes must be specified in a comparison. No uniform ranking of NC-ECE and plug-in estimators follows from the moment analysis. 
+
+C.6 Aggregation weights and residual variance 
+
+With the predictor, known channels, and constant weights fixed, Vres (α) = Var( ψα) is the variance over a fresh example. Let Assumptions 1 and 2 hold and suppose the channels used in correction have nonzero gaps. Define Uj := ( Aj − aj )/δ j , μ := P (Y = 1), and 
+
+vj (z) := (1 − m(z)) aj (1 − aj ) + m(z)bj (1 − bj )
+
+δ2
+
+> j
+
+, (C.26) ¯vj := E[vj (Z)] = E[( Uj − Y )2] = (1 − μ)aj (1 − aj ) + μb j (1 − bj )
+
+δ2
+
+> j
+
+. (C.27) 
+
+Lemma C.6 (Optimal constant weights for known channels) . For α ∈ ∆K ,
+
+Var( Uα − Z) = Var( Y − Z) + ∑Kj=1 α2 
+
+> j
+
+¯vj . (C.28) 
+
+If every ¯vj > 0, the unique minimizing constant vector is 
+
+αIV  
+
+> j
+
+:= ¯v−1 
+
+> j
+> ∑Kk=1 ¯v−1
+> k
+
+, j ∈ [K]. (C.29) 
+
+If some ¯vj = 0 , the minimizers are precisely the convex vectors supported on zero-variance annotators. Proof of Lemmas 2 and C.6. The decomposition Uα − Z = ( Y − Z) + ( Uα − Y ) has uncorre-lated terms because E[Uα − Y | Y, Z ] = 0. Conditional independence gives Var( Uα | Y, Z ) =  
+
+> ∑Kj=1
+
+α2 
+
+> j
+
+Var( Uj | Y, Z ). Averaging the two Bernoulli conditional variances yields Eq. (C.28). For positive ¯ vj , Cauchy–Schwarz gives 1 =  
+
+> (∑Kj=1
+
+αj
+
+> )2
+
+≤ 
+
+> (∑Kj=1
+
+α2 
+
+> j
+
+¯vj 
+
+> ) ( ∑Kj=1
+
+¯v−1
+
+> j
+> )
+
+, with equality exactly when αj ¯vj is constant. Normalization gives Eq. (C.29), and strict convexity proves uniqueness. If some ¯ vj = 0, the noise term is minimized exactly by assigning zero weight to annotators with positive variance. 
+
+Alternative constant rules. For positive gaps, Equal, Gap, and Squared-gap weights are proportional to 1 , δ j , δ 2 
+
+> j
+
+. Writing ζj = (1 −μ)aj (1 −aj )+ μb j (1 −bj ) gives αIV  
+
+> j
+
+∝ δ2 
+
+> j
+
+/ζ j , so Squared-gap and IV agree when all positive ζj are equal. These rules compare residual variance, not finite-sample ECE mean squared error. Plug-in IV and shrinkage are specified in Appendix F.4. 23 C.6.1 Connection to bin-moment and NC-ECE variance 
+
+Fix the predictor, the true nonzero-gap channels, a partition B := {B1, . . . , B M }, and constant weights α ∈ ∆K independently of an i.i.d. evaluation sample D := {Oi}ni=1 . For ℓ ∈ [M ], define 
+
+Rℓ,α (O) := ψα(O)1(Z ∈ Bℓ), rℓ := E[( Y − Z)1(Z ∈ Bℓ)] ,̂
+
+rℓ,α := 1
+
+n
+
+∑ni=1 Rℓ,α (Oi),̂ Eα := ∑Mℓ=1 |̂rℓ,α |. (C.30) Here ̂ Eα is NC-ECE with known channels. Unbiasedness applies to each ̂ rℓ,α , not generally to ̂
+
+Eα; the absolute values give E[̂ Eα] ≥ ∑Mℓ=1 |rℓ|.
+
+Proposition C.1 (Variance of bin moments and NC-ECE) . Under Assumption 1 and the preceding conditions, E[̂ rℓ,α ] = rℓ,
+
+∑Mℓ=1 Var( ̂rℓ,α ) = 1
+
+n
+
+(
+
+E[ψ2
+
+> α
+
+] − ∑Mℓ=1 r2
+
+> ℓ
+
+)
+
+= 1
+
+n
+
+(
+
+Vres (α) + ( E[Y − Z]) 2 − ∑Mℓ=1 r2
+
+> ℓ
+
+)
+
+. (C.31) 
+
+Thus minimizing Vres is equivalent to minimizing the sum of variances, or the sum of mean squared errors, of these bin-moment estimates. If M and B remain fixed as n → ∞ , and rℓ̸ = 0 for every bin with P (Z ∈ Bℓ) > 0, then 
+
+Var( ̂Eα) = σ2 
+
+> α
+> n
+
++ o(n−1), σ2 
+
+> α
+
+:= Vres (α) + ( E[Y − Z]) 2 − ECE B(f )2. (C.32) 
+
+Consequently, under Assumption 2 as well, the IV weights of Lemma C.6 minimize both the exact total bin-moment variance and, under the nonzero-moment condition, the leading asymptotic variance of known-channel NC-ECE among constant convex weights. Proof. The corrected-moment identity gives E[Rℓ,α ] = rℓ. Independent evaluation examples imply Var( ̂ rℓ,α ) = Var( Rℓ,α )/n . Since the bins partition the score space, ∑Mℓ=1 R2 
+
+> ℓ,α
+
+= ψ2 
+
+> α
+
+almost surely. Summing the variances and using E[ψα] = E[Y − Z] proves Eq. (C.31). Its other terms do not depend on α, and each bin-moment estimate is unbiased. For the second part, zero-mass bins contribute zero almost surely. Let s(z) := 
+
+∑Mℓ=1 sgn( rℓ)1(z ∈ Bℓ) and Hn := n−1 ∑ni=1 ψα(Oi)s(Zi). Then s(Z)2 = 1 almost surely, 
+
+E[Hn] = ECE B(f ), and Var( Hn) = ( E[ψ2
+
+> α
+
+] − ECE B(f )2)/n . To control sign changes, let 
+
+d := min ℓ:P (Z∈Bℓ)>0 |rℓ| > 0 and Bρ := max j∈[K] |δj |−1. We have |ψα| ≤ Bρ, and Hoeffding’s inequality gives P (̂ Eα̸ = Hn) ≤ 2M exp 
+
+(
+
+− nd 2
+
+> 2B2
+> ρ
+
+)
+
+. Indeed, the two statistics are equal whenever no estimated bin moment has the opposite sign to its population moment. Also |̂Eα − Hn| ≤ 2Bρ,so E[( ̂Eα − Hn)2] decays exponentially. It follows that n∣∣Var( ̂ Eα) − Var( Hn)∣∣ → 0. The iden-tity E[ψ2
+
+> α
+
+] = Vres (α) + ( E[Y − Z]) 2 proves Eq. (C.32). Applying Lemma C.6 completes the argument. 
+
+Example C.1 (Residual and finite-sample ECE variances can favor different weights) . Let K = 2, 
+
+Z = 1 /2, Y ∼ Bernoulli(1 /2), and suppose the two annotators are conditionally independent with identical known channels a1 = a2 = 1 /4, b1 = b2 = 3 /4. Each ψj = 2 Aj − 1 takes values 
+
+−1, 1 with equal probabilities. For n = 1 and one bin, choosing α = (1 , 0) gives Var( ψα) = 1 but ̂ Eα = |ψ1| = 1 almost surely, so Var( ̂ Eα) = 0. The IV weights are α = (1 /2, 1/2), with 
+
+ψα = A1 + A2 − 1. They reduce the residual variance to Var( ψα) = 5 /8, but ̂ Eα is Bernoulli with success probability 5 /8 and hence Var( ̂ Eα) = 15 /64 > 0. Both residual-moment estimates are unbiased for zero. 24 The asymptotic statement above excludes zero population bin moments and does not cover an increasing number of bins or estimated channels. Signed bin moments are unbiased with known channels, whereas their absolute values have nonnegative finite-sample bias by Jensen’s inequality. Small channel gaps can amplify this effect through larger corrected-label variance. IV weighting reduces signed-moment variance but does not remove this bias, so the result is not a finite-sample optimality claim for the absolute-value statistic. 
+
+# D Channel Identification and Estimation 
+
+Identification asks whether two parameter values can produce the same distribution of available data. Estimation asks how accurately the uniquely determined parameters can be recovered from a finite sample. We address these questions in that order. The channel-error bounds can then be inserted into the calibration bounds of Appendix C. Within each model, θ denotes a candidate parameter vector, θ0 its true value, and ̂ θ an estimate based on Dch . The coordinates of ̂ θ corresponding to aj , b j are the channel estimates ̂ aj ,̂ bj used in Section 3. 
+
+D.1 Non-identification without sufficient information 
+
+Proposition D.1 (One annotator) . Suppose K = 1 and q(z) := P (A1 = 1 | Z = z) satisfies 
+
+0 < ess inf q(Z) ≤ ess sup q(Z) < 1. (D.1) 
+
+There is a continuum of positively oriented class-conditional channels and true-label distributions inducing the same distribution of (Z, A 1). The population true-label calibration error is not generally identifiable in this model. Proof. Keep PZ fixed. For any pair satisfying 0 ≤ a′ < ess inf q(Z) ≤ ess sup q(Z) < b ′ ≤ 1, define 
+
+m′(z) := ( q(z)−a′)/(b′ −a′) outside a PZ -null set and extend it measurably to that set, for example by setting it to 1 /2. Then 0 < m ′(Z) < 1 almost surely. Generate Y ′ | Z = z ∼ Bernoulli( m′(z)) and A1 | (Y ′ = 0 , Z ) ∼ Bernoulli( a′), A1 | (Y ′ = 1 , Z ) ∼ Bernoulli( b′). This construction has 
+
+P (A1 = 1 | Z) = a′ + ( b′ − a′)m′(Z) = q(Z), so the distribution of the available data is unchanged. The condition in Eq. (D.1) provides a continuum of such pairs. To show that calibration itself can change, take Z ∼ Unif[0 , 1]. The models ( a, b, m (z)) = (0 .2, 0.8, 0.25 + 0 .5z), (a′, b ′, m ′(z)) = (0 .1, 0.9, 0.3125 + 0 .375 z) both give q(z) = 0 .35 + 0 .3z.Their calibration errors are respectively 1 /8 and 5 /32. Thus the same available-data distribution need not determine ECE( f ). The essential bounds in Eq. (D.1) ensure that the alternative channels remain valid probabil-ities. The example establishes non-identification of ECE in general; particular equivalent models can still have equal calibration errors. 
+
+Two annotators after discarding scores. The following family produces identical marginal annotation distributions with different noise probabilities. Set μ = 1 /2, choose d ∈ (0 .24 , 1), and define δ1 := d, δ2 := 0 .24 /d , aj := (1 − δj )/2, bj := (1 + δj )/2 for j ∈ [2]. Generate the two annotations independently conditional on Y . For every such d, both annotation means equal 1 /2and their covariance is μ(1 − μ)δ1δ2 = 0 .06. Hence the (0 , 0) , (0 , 1) , (1 , 0) , (1 , 1) probabilities are always (0 .31 , 0.19 , 0.19 , 0.31), although the channels vary continuously. All channels are positively oriented and interior. The marginal two-annotator model is therefore not generally identified. Longer optimization cannot recover information discarded with the scores. 25 D.2 Two annotators in two score groups 
+
+Let G := 1(Z ≥ t), where t ∈ (0 , 1) is fixed independently of the channel sample, or is chosen on an independent pilot sample. All statements can be conditioned on that pilot sample. For 
+
+g ∈ { 0, 1} and j ∈ [2], assume 
+
+P (G = g) > 0, 0 < μ g < 1, μ0̸ = μ1, 0 ≤ aj < b j ≤ 1, (D.2) and impose Assumptions 1 and 2 with K = 2. The shared channels and group proportions are θ := ( a1, b 1, a 2, b 2, μ 0, μ 1). Define q1,g , q 2,g , q 12 ,g as in Section 4.2; their model equations are Eq. (13) for g ∈ { 0, 1}. Let Γ( θ) := ( q1,0, q 2,0, q 12 ,0, q 1,1, q 2,1, q 12 ,1). 
+
+Theorem D.1 (Closed-form two-group identification) . Under Assumptions 1 and 2 and the conditions in Eq. (D.2) , let 
+
+cg := q12 ,g − q1,g q2,g , β := q2,1 − q2,0
+
+q1,1 − q1,0
+
+, hg := cg
+
+β + q21,g , (D.3) 
+
+u := h1 − h0
+
+q1,1 − q1,0
+
+, v := uq 1,0 − h0, τ := q2,0 − βq 1,0. (D.4) 
+
+Then the channels and proportions are uniquely recovered by 
+
+a1 = u − √u2 − 4v
+
+2 , b1 = u + √u2 − 4v
+
+2 ,a2 = τ + βa 1, b2 = τ + βb 1, μg = q1,g − a1
+
+b1 − a1
+
+, g ∈ { 0, 1}. (D.5) 
+
+The Jacobian determinant is 
+
+det DΓ( θ) = δ21 δ22 (μ1 − μ0)2. (D.6) 
+
+Proof. The group-moment equations follow by conditioning on Y and using the product as-sumption. In particular, q1,1 − q1,0 = δ1(μ1 − μ0)̸ = 0 and q2,1 − q2,0 = δ2(μ1 − μ0), so 
+
+β = δ2/δ 1 > 0. Conditional independence gives cg = δ1δ2μg(1 − μg). Since q1,g − a1 = δ1μg
+
+and b1 − q1,g = δ1(1 − μg), cg 
+
+> β
+
+= ( q1,g − a1)( b1 − q1,g ), hg = ( a1 + b1)q1,g − a1b1. The two distinct values of q1,g identify the slope a1 + b1 and the negative intercept −a1b1. The polynomial 
+
+q2 − uq + v = ( q − a1)( q − b1) therefore has the two ordered roots in Eq. (D.5). Positive orientation fixes the ordering. Also q2,g − βq 1,g = a2 − βa 1, proving the remaining channel formulas. Finally 
+
+μg = ( q1,g − a1)/δ 1. This proves identification and Theorem 2. For completeness, replace the input coordinates by ( a1, δ 1, a 2, δ 2, μ 0, μ 1) and the output coordinates by ( q1,0, q 2,0, c 0, q 1,1, q 2,1, c 1). Both changes have determinant one. The resulting Jacobian is 
+
+
+
+1 μ0 0 0 δ1 00 0 1 μ0 δ2 00 δ2μ0(1 − μ0) 0 δ1μ0(1 − μ0) δ1δ2(1 − 2μ0) 01 μ1 0 0 0 δ1
+
+0 0 1 μ1 0 δ2
+
+0 δ2μ1(1 − μ1) 0 δ1μ1(1 − μ1) 0 δ1δ2(1 − 2μ1)
+
+
+
+. (D.7) Subtract the first three rows from their corresponding last rows and write d = μ1 − μ0 and 
+
+q = 1 − μ0 − μ1. Expanding along the first and third columns leaves the negative of a 4 × 4determinant. Subtracting qδ 2 times its second row and qδ 1 times its third row from its fourth row leaves (0 , 0, δ 1δ2(1 − 2μ1), −δ1δ2(1 − 2μ0)). Expansion gives −δ21 δ22 d2; the preceding sign proves Eq. (D.6). 26 These are the classical two-test, two-population conditions [Hui and Walter, 1980]. Scores need not be calibrated, but the group class proportions must differ. Small between-group response-mean differences or a small minimum singular value of DΓ( ̂θ) diagnose weak identification, but do not test the latent condition μ0̸ = μ1. The exactly identified model supplies no excess moments for testing its assumptions. 
+
+D.3 Concentration and stable inversion 
+
+Let Dch consist of i.i.d. examples and let Gi be the group assigned to its ith example by the fixed score partition. For groups indexed by [ L], let ng := ∑nch  
+
+> i=1
+
+1(Gi = g) and nmin := min g∈[L] ng.For positive group counts, define, for j ∈ [2] and g ∈ [L], ̂
+
+qj,g := 1 
+
+> ng
+> ∑
+> i:Gi=g
+
+Aij ,̂ q12 ,g := 1 
+
+> ng
+> ∑
+> i:Gi=g
+
+Ai1Ai2. (D.8) Stack ( ̂ q1,g ,̂ q2,g ,̂ q12 ,g ) in increasing order of g to obtain ̂ ΓL. Its population counterpart is Γ L(θ0). 
+
+Lemma D.1 (Group-moment concentration) . For η ∈ (0 , 1) , conditional on positive group counts, 
+
+P
+
+> 
+
+∥̂ ΓL − ΓL(θ0)∥∞ >
+
+> √
+
+log(6 L/η )2nmin  
+
+> ∣∣∣∣∣∣
+
+(ng)g∈[L] 
+
+> 
+
+≤ η. (D.9) 
+
+Proof. Conditional on the group assignments, each coordinate is an average of ng independent variables in [0 , 1] from that group’s distribution. Hoeffding’s inequality bounds its two-sided deviation by 2 exp( −2ngt2) ≤ 2 exp( −2nmin t2). The bound does not depend on which indices form each group, so it also holds conditional only on group counts. A union bound over 3 L
+
+coordinates and the stated choice of t prove the result. Independence between coordinates is not needed. For two groups, use indices g ∈ { 0, 1} as in Appendix D.2 and write ̂ Γ for the resulting six sample moments. Let H denote the inverse given by Eq. (D.3) and Eq. (D.5). The method-of-moments estimator is ̂ θmom := H(̂Γ) whenever the formulas are real, the denominators are nonzero, and the resulting probabilities are feasible with positive gaps. Otherwise the inversion procedure reports failure. The following theorem gives a high-probability event on which the estimate is both defined and accurate. 
+
+Theorem D.2 (Finite-sample closed-form inversion) . Suppose the conditions of Theorem D.1 hold and, for fixed positive constants πmin , δ min , γ min , ϵ ,
+
+P (G = g) ≥ πmin , δj ≥ δmin , |μ1 − μ0| ≥ γmin , aj , b j , μ g ∈ [ϵ, 1 − ϵ] (D.10) 
+
+for j ∈ [2] , g ∈ { 0, 1}. There is R0 > 0 such that the inverse H in Eq. (D.5) is continuously differentiable on an open set containing the closed Euclidean ball N := B2(Γ( θ0), R 0) and maps 
+
+N into feasible, positively oriented probability parameters. Let LH := sup γ∈N ∥DH (γ)∥op < ∞.Conditional on positive group counts, if 
+
+√6 ϵn(η) ≤ R0, ϵn(η) :=   
+
+> √log(12 /η )2nmin
+
+, (D.11) 
+
+then with probability at least 1 − η, the empirical inverse is feasible and 
+
+∥̂ θmom − θ0∥2 ≤ √6LH ϵn(η). (D.12) 
+
+Proof. At the true moment vector, |q1,1 − q1,0| ≥ δmin γmin , β = δ2/δ 1 > 0, and the discriminant equals δ21 ≥ δ2min . All denominators and the square root are therefore separated from their singularities. The inverse is continuously differentiable on a sufficiently small open neighborhood. 27 By continuity and the interior assumptions, choose a closed ball N contained in that neighborhood whose image remains feasible and positively oriented. Continuity of DH on the compact ball gives finite LH . On the event from Lemma D.1 with L = 2, ∥̂ Γ − Γ( θ0)∥2 ≤ √6ϵn ≤ R0. The segment joining these two vectors is in the convex ball N . The integral form of the mean-value formula gives H(̂Γ) − H(Γ( θ0)) = ∫ 10 DH (Γ( θ0) + t(̂Γ − Γ( θ0)))( ̂Γ − Γ( θ0)) dt. Taking norms proves Eq. (D.12). For the asymptotic statement, extend the estimator by any fixed feasible value when inversion fails; the finite-sample bound concerns its valid event. Experimental failures remain reported separately. Each individual endpoint error is at most the Euclidean bound, while |̂aj − aj | +
+
+|̂bj − bj | ≤ √2∥̂θmom − θ0∥2. The endpoint bound controls dch in both independent-sample and same-sample evaluation. The sum bound is useful when a result is stated in terms of the maximum two-endpoint error. Since P (G = g) ≥ πmin , P (ng < n ch πmin /2) ≤ exp( −nch πmin /8) by a binomial multiplicative Chernoff bound. Thus positive counts and nmin of order nch 
+
+have probability tending to one, giving Op(n−1/2ch ) parameter error. Neither R0 nor LH is an automatically observable confidence bound. They quantify local stability under the specified separation assumptions. 
+
+D.4 Constrained GMM and optimization error 
+
+We estimate the grouped parameters by generalized method of moments (GMM) [Hansen, 1982]. Let C := {Cg}g∈[L] be a partition independent of the channel sample, where L ≥ 2 is fixed and G = g exactly when Z ∈ Cg. In this subsection write n := nch . For K = 2, define 
+
+θ := ( a1, b 1, a 2, b 2, μ 1, . . . , μ L) ∈ RL+4 . For each candidate parameter θ, let Γ L(θ) ∈ R3L collect (q1,g , q 2,g , q 12 ,g ) from the same three model equations as Eq. (13), now for each g ∈ [L], in increasing order of g. Let ̂ ΓL contain the corresponding empirical averages in Eq. (D.8). 
+
+Definition D.1 (Constrained GMM estimator) . Let Wn ∈ R3L×3L be symmetric positive definite, and let Θ be compact, contain the true parameter θ0, and impose interior probability bounds and gaps at least δmin > 0. Define 
+
+Qn(θ) := ∥∥W 1/2 
+
+> n
+
+(̂ΓL − ΓL(θ)) ∥∥22,̂ θGMM ∈ arg min θ∈Θ Qn(θ), (D.13) choosing any measurable minimizer. We use the following explicit conditions. 
+
+Assumption D.1 (GMM estimation conditions) . Assumptions 1 and 2 hold with K = 2 , and: (i) P (G = g) ≥ πmin > 0 for all g ∈ [L].(ii) θ0 belongs to a compact set Θ on which all probability coordinates lie in [ϵ, 1 − ϵ] for some 
+
+ϵ ∈ (0 , 1/2) , and bj − aj ≥ δmin > 0 for j ∈ [2] .(iii) There exist g0̸ = g1 in [L] such that |μg1 − μg0 | ≥ γmin > 0 at the true parameter. (iv) The symmetric moment-weighting matrix Wn ∈ R3L×3L may depend on the sample but satisfies deterministic bounds 0 < λ − ≤ λmin (Wn) ≤ λmax (Wn) ≤ λ+ < ∞ almost surely. 
+
+Define the quantitative identification constant 
+
+κΘ := inf θ∈Θ\{ θ0} ∥ΓL(θ)−ΓL(θ0)∥2 
+
+> ∥θ−θ0∥2
+
+. (D.14) Its positivity follows from the preceding conditions; it is not a separate assumption of a well-behaved inverse. 28 Lemma D.2 (Quantitative identification on the compact parameter set) . Under Assumption D.1, 
+
+ΓL(θ) = Γ L(θ0) for θ ∈ Θ implies θ = θ0, its Jacobian at θ0 has full column rank, and κΘ > 0.Proof. Restrict the moments to the two separated groups g0, g 1. Their first-annotator means differ because δ1(μg1 − μg0 )̸ = 0. Every parameter with these same moments must therefore also have different group proportions. The two-group inverse identifies its shared channels and these two proportions uniquely. All remaining proportions follow from μg = ( q1,g − a1)/δ 1. This proves identification of θ0 on Θ. If DΓL(θ0)v = 0, restriction to these same two groups and Eq. (D.6) forces the four channel coordinates of v and its two group-proportion coordinates to vanish. For each remaining group, the derivative of q1,g is then δ1vμg = 0, so v = 0. Let s0 > 0 be the smallest singular value of this full-column-rank Jacobian. Differentiability gives a radius r0 > 0 such that 
+
+∥ΓL(θ) − ΓL(θ0)∥2 ≥ (s0/2) ∥θ − θ0∥2 when ∥θ − θ0∥2 ≤ r0. On the remaining compact set, the numerator has a positive minimum by identification and continuity, while the denominator is bounded above. Combining the two regions gives κΘ > 0. This lemma does not provide a separation-free numerical lower bound: κΘ may become small as gaps or group differences decrease. 
+
+Theorem D.3 (Finite-sample GMM bound) . Suppose Assumption D.1 holds and condition on positive group counts. For the objective Qn in Definition D.1, any measurable feasible estimate satisfying 
+
+Qn(̂θ) ≤ inf θ∈Θ Qn(θ) + ϵopt , ϵopt ≥ 0, (D.15) 
+
+satisfies, for every η ∈ (0 , 1) , with probability at least 1 − η,
+
+∥̂ θ − θ0∥2 ≤ 2√3LκΘ
+
+> √
+
+λmax (Wn)
+
+λmin (Wn)
+
+> √
+
+log(6 L/η )2nmin 
+
++
+
+√ϵopt 
+
+κΘ
+
+> √
+
+λmin (Wn) . (D.16) 
+
+A global minimizer has ϵopt = 0 .Proof. Because θ0 ∈ Θ, Eq. (D.15) and √x2 + y ≤ x+√y for x, y ≥ 0 give ∥W 1/2 
+
+> n
+
+(̂ ΓL−ΓL(̂ θ)) ∥2 ≤∥W 1/2 
+
+> n
+
+(̂ ΓL − ΓL(θ0)) ∥2 + √ϵopt . The triangle inequality and the eigenvalue bounds therefore imply ∥ΓL(̂ θ) − ΓL(θ0)∥2 ≤ 2√λmax (Wn)/λ min (Wn)∥̂ΓL − ΓL(θ0)∥2 +
+
+> √
+
+ϵopt /λ min (Wn). Apply Eq. (D.14), ∥v∥2 ≤ √3L∥v∥∞ in R3L, and Lemma D.1. All inequalities hold for each realized 
+
+Wn, so its independence from ̂ ΓL is not required. A stopping tolerance or a stationary point is not a certificate for Eq. (D.15) with a specified global objective gap. The theorem for a global minimizer must not be attributed to an arbitrary numerical output without that additional justification. For fixed L, a certified optimization gap 
+
+Op(n−1ch ) preserves the root-nch order under the stated stability conditions. 
+
+Propagation to ECE. Let Rθ be the right-hand side of Eq. (D.16), using channel failure probability ηch . For any channel-data-dependent convex weights, dch ≤ Rθ/δ min and ̂ B ≤ 1/δ min 
+
+because the feasible estimate has gaps at least δmin . If r(z) := m(z) − z has an Lr-Lipschitz version, independent evaluation gives, with probability at least 1 − ηch − ηev conditional on positive group counts,  
+
+> ∣∣∣∣
+
+[ECE NC  
+
+> B
+
+(f, Dev ) − ECE( f ) 
+
+> ∣∣∣∣
+
+≤ LrhB + 1
+
+δmin 
+
+> √
+
+2( M log 2 + log(2 /η ev )) 
+
+nev 
+
++ Rθ
+
+δmin 
+
+. (D.17) For a global minimizer, the last term is exactly 2√3LκΘδmin 
+
+> √
+
+λmax (Wn)
+
+λmin (Wn)
+
+> √
+
+log(6 L/η ch )2nmin 
+
+. (D.18) 29 This independent-sample propagation has one inverse gap factor, in addition to the conditioning already present in κΘ. For same-sample evaluation, the same bounds dch ≤ Rθ/δ min and ̂
+
+B ≤ 1/δ min can be inserted directly into Corollary C.1. No additional channel-radius restriction is needed, since the feasible GMM set already imposes the lower gap bound. The logarithmic term then uses log(12 /η ev ) because K = 2. The same-sample concentration event is unconditional. Combine it with the group-count event as below; conditioning it on successful channel fitting is not justified by the uniform bound alone. 
+
+Accounting for random group counts. The preceding bounds condition on positive counts, rather than treating these counts as fixed design quantities. For an unconditional statement, the multiplicative binomial bound gives P (nmin < n ch πmin /2) ≤ L exp( −nch πmin /8) . On its complement, replace nmin in Eq. (D.16) by nch πmin /2. Combining with the channel and evaluation events gives probability at least 1 − ηch − ηev − L exp( −nch πmin /8) for Eq. (D.17) with that enlarged radius. A procedure returning failure when a group is empty is thus covered on an explicit high-probability success event. This does not assign zero estimation loss to failed runs. 
+
+D.5 Marginal identification with three informative annotators 
+
+Let K ≥ 3, μ := P (Y = 1) ∈ (0 , 1), and assume Assumptions 1 and 2. Its probabilities are pθ(s)in Eq. (15). The following moment argument gives the binary identification result under the stated nondegeneracy conditions; it is consistent with the latent-class identification framework of Allman et al. [2009]. For the identities behind the argument in Section 4.3, relabel an informative triple as 1, 2, 3, define qj := E[Aj ] for j ∈ [K] and Cjk := Cov( Aj , A k) for distinct j, k ∈ [K], and let 
+
+T := E[( A1 − q1)( A2 − q2)( A3 − q3)]. Then 
+
+Cjk = μ(1 − μ)δj δk, T = μ(1 − μ)(1 − 2μ)δ1δ2δ3. (D.19) Combining them eliminates the channel gaps:   
+
+> T2
+> C12 C13 C23
+
+= (1 −2μ)2 
+
+> μ(1 −μ)
+
+= 1 
+
+> μ(1 −μ)
+
+− 4. (D.20) The proposition and its proof justify these identities and recover the remaining parameters. 
+
+Proposition D.2 (Binary marginal identification) . Under the conditions above, suppose three specified annotators are informative and the sign of one of their gaps is known. Then the marginal distribution of A1: K identifies μ and every aj , b j , up to the global permutation before orientation. Other modeled annotators may be uninformative. Proof. Relabel the specified informative triple as 1 , 2, 3 and first take the known anchor sign to be δ1 > 0. For a negative anchor sign, exchange the two class labels for this calculation and undo that exchange afterwards. Put qj := E[Aj ], Cjk := E[( Aj − qj )( Ak − qk)] for distinct 
+
+j, k ∈ [K], and T := E[( A1 − q1)( A2 − q2)( A3 − q3)]. To obtain the moment identities, write 
+
+ξj := Aj − aj − δj Y . The two assumptions imply conditional independence given Y and 
+
+E[ξj | Y ] = 0. Also qj = aj + μδ j , so Aj − qj = δj (Y − μ) + ξj . In products involving distinct annotators, terms containing any ξj have zero conditional expectation given Y . Using 
+
+E[( Y − μ)2] = μ(1 − μ) and E[( Y − μ)3] = μ(1 − μ)(1 − 2μ) therefore gives 
+
+Cjk = μ(1 − μ)δj δk, T = μ(1 − μ)(1 − 2μ)δ1δ2δ3. (D.21) For the triple, C12 C13 C23 = [ μ(1 − μ)] 3δ21 δ22 δ23 > 0. Dividing the squared third moment by this expression gives Eq. (D.20); the channel gaps cancel exactly. To fix the branch left by that squared ratio, use the known anchor sign and the sign of the third moment. Let sδ := sign( C12 C13 ) and 30 t := sδT / √C12 C13 C23 . Because δ1 > 0, sδ is the sign of δ1δ2δ3, and hence t = (1 −2μ)/√μ(1 − μ). Solving gives 
+
+μ = 12
+
+(
+
+1 − t
+
+√t2 + 4 
+
+)
+
+, δ1 =
+
+√
+
+C12 C13 
+
+C23 μ(1 − μ) . (D.22) When μ = 1 /2, T = 0 and t = 0, so the same formulas recover μ = 1 /2 and the oriented gaps. No nonzero-third-moment condition is needed. For j ∈ [K] \ { 1}, δj = C1j /(μ(1 − μ)δ1), including zero gaps. Finally aj = qj − μδ j and bj = aj + δj . All formulas are determined by the marginal distribution and the chosen orientation. Reversing the orientation applies the one global label permutation, completing the proof. An uninformative channel can be estimated as part of this likelihood model but cannot be inverted as a known channel. In applying the known-channel correction or variance formulas, use only a specified informative subset as described in Appendix A. The estimated-channel bound of Theorem 1 instead requires positive estimated gaps and records any large channel error explicitly; it does not make an uninformative annotator informative. 
+
+D.6 Regular likelihood estimators and grouped models 
+
+Write A = A1: K in the likelihood formulas. For marginal estimation, let ℓθ(A) := log pθ(A) and 
+
+θ := ( μ, a 1, b 1, . . . , a K , b K ). For grouped estimation with fixed L, set, for g ∈ [L] and s ∈ { 0, 1}K ,
+
+pθ(s | g) := (1 − μg) ∏Kj=1 asj 
+
+> j
+
+(1 − aj )1−sj + μg
+
+∏Kj=1 bsj 
+
+> j
+
+(1 − bj )1−sj , (D.23) 
+
+ℓθ(G, A ) := log pθ(A | G), θ := (( aj , b j )j∈[K], (μg)g∈[L]). (D.24) The group probabilities πg := P (G = g) > 0 do not depend on these parameters. The joint distribution of ( G, A ) is πgpθ(s | g), so maximizing the conditional likelihood is appropriate without modeling the score density inside a group. 
+
+Theorem D.4 (Consistency and rate of likelihood estimation) . Consider either of these correctly specified finite-alphabet models with fixed K and, for the grouped model, fixed L. Let Θ be compact, with all channel and class-proportion coordinates in [ϵ, 1 − ϵ] for some ϵ ∈ (0 , 1/2) . Assume the prescribed orientation identifies the true parameter θ0 on Θ. Let V1, . . . , V nch be i.i.d. observations from that model at θ0, with Ai = Ai, 1: K . Write n := nch and define the normalized log likelihood 
+
+Ln(θ) := n−1ch 
+
+∑nch  
+
+> i=1
+
+ℓθ(Vi), where Vi = Ai or (Gi, A i) as appropriate. Let ̂ θ ∈ Θ be a measurable estimate satisfying 
+
+Ln(̂ θ) ≥ sup θ∈Θ Ln(θ) − ϵopt , ϵopt ≥ 0, ϵopt = op(1) . (D.25) 
+
+Then ̂ θ → θ0 in probability. If, additionally, θ0 is interior to Θ and I(θ0) := 
+
+Eθ0 [∇ℓθ0 (V )∇ℓθ0 (V )T] is positive definite, let ench > 0 be a deterministic sequence tending to zero such that ϵopt = Op(ench ). Then 
+
+∥̂θ − θ0∥2 = Op
+
+(
+
+n−1/2ch + √ench 
+
+)
+
+. (D.26) 
+
+In particular, exact global maximizers are consistent and have root-nch error. The same order holds when ϵopt = Op(n−1ch ).Proof. Uniform convergence. All model probabilities are uniformly positive on Θ because the alphabet is finite and all coordinates are bounded away from zero and one. The log probabilities are therefore bounded and continuous on Θ. Writing L(θ) := Eθ0 ℓθ(V ), convergence of the finite vector of empirical cell frequencies gives sup θ∈Θ |Ln(θ) − L(θ)| → 0 in probability. 
+
+Identification of the population maximum. For the marginal model, L(θ0) − L(θ) = DKL (pθ0 ∥pθ). For the grouped model, this difference is ∑Lg=1 πgDKL (pθ0 (· | g)∥pθ(· | g)). Here DKL (p∥q) := 31 ∑ 
+
+> s
+
+p(s) log( p(s)/q (s)). Positivity of the group probabilities and identification give a unique population maximum at θ0. Compactness then implies strict population separation outside every fixed neighborhood of θ0. Uniform convergence and Eq. (D.25) prove consistency. Continuity also ensures existence of an exact global maximizer. 
+
+Local error bound. For the rate, choose a closed convex neighborhood N of θ0 inside Θ. The first two log-likelihood derivatives are uniformly bounded and continuous there. Differentiating the finite sum of probabilities gives Eθ0 ∇ℓθ0 = 0 and ∇2L(θ0) = −I(θ0). Hence ∥∇ Ln(θ0)∥2 =
+
+Op(n−1/2ch ). After reducing N , uniform convergence of its Hessians implies, with probability tending to one, ∇2Ln(θ) ⪯ − λI d/2 for every θ ∈ N , where λ := λmin (I(θ0)) > 0, d is the parameter dimension, and Id is the identity matrix. Consistency places ̂ θ in N with probability tending to one. The Taylor formula and approximate optimality then give, for r := ∥̂ θ − θ0∥2,
+
+λr 2/4 ≤ ∥∇ Ln(θ0)∥2r + ϵopt . Solving this scalar inequality yields r ≤ 4∥∇ Ln(θ0)∥2/λ + 2 
+
+> √
+
+ϵopt /λ 
+
+on this event. Together with the assumed rate of the optimization gap, this proves Eq. (D.26). A separate local statement is useful for comparing this theorem with standard likelihood theory [van der Vaart, 1998]. Any selected consistent interior stationary solution also has root-nch 
+
+error: its empirical score equation is 0 = ∇Ln(θ0) + Hn(̂ θ − θ0), Hn := ∫ 10 ∇2Ln(θ0 + t(̂ θ − θ0)) dt. (D.27) Consistency and uniform Hessian convergence give Hn → − I(θ0), and the empirical score is 
+
+Op(n−1/2ch ). Unlike global likelihood maximization on the identified compact set, stationarity alone does not establish the consistency used in this local argument. The tolerance in Eq. (D.25) is a gap in mean log likelihood relative to the global optimum, not the change between consecutive EM iterations. 
+
+Corollary D.1 (Fixed-group shared-channel likelihood) . For the grouped model, suppose C is fixed independently of the channel sample, L is fixed, and every group has positive probability. Sufficient identification conditions are either: (a) an informative pair of positively oriented annotators and two groups with different interior true-label class proportions; or (b) three informative annotators, interior group proportions, and a common label orientation. On an oriented compact parameter set satisfying Theorem D.4, global grouped likelihood maximizers are consistent. With interior truth and nonsingular Fisher information, their error is Op(n−1/2ch ), and approximate global maximizers obey Eq. (D.26) under its stated optimization-error condition. This includes the fixed-L statistical model fitted by Joint score-bin EM. Proof. Under (a), the two-group inverse identifies the shared pair and its group proportions. Other group proportions follow from either identified annotator’s mean. For an additional annotator, its means in the two separated groups identify its two endpoints by a two-equation linear system. Under (b), the marginal triple identifies the shared channels and orientation by Proposition D.2; group means then identify every μg. The compact-set and interior conditions and nonsingular Fisher information remain explicit hypotheses. Theorem D.4 applied to the finite alphabet [ L] × { 0, 1}K proves the rate. This corollary is not a growing-dimensional result. In particular, taking L = M ≍ n1/3ev does not follow from the fixed-L argument. Increasing the number of evaluation bins reduces binning error, whereas increasing L changes the dimension of the channel-estimation problem. Likewise, a partition constructed from the same channel sample is outside the fixed-partition likelihood argument without additional analysis. 
+
+Remark D.1 (What EM establishes) . Exact E- and M-steps do not decrease the likelihood [Dempster et al., 1977, Wu, 1983]. Neither monotonicity nor a finite number of initializations guarantees the global objective condition or the consistent local solution required above. Aconverged admissible fit is a numerical output, not a proof of global optimality or of consistency. A numerical fit at a boundary can also fall outside the regular interior theory. 32 D.7 Model checks and extensions 
+
+For two annotators and L > 2, 3 L moments versus L + 4 parameters give 2 L − 4 restrictions at regular points. A marginal model has 2 K − 1 observable probabilities and 2 K + 1 parameters; 
+
+K > 3 permits additional model checks. Discrepancy tests need their own regularity and calibration, especially near boundaries or weak identification. Group-specific channels require informative overlap and a common orientation in every group; effective sizes are the group counts. Missing answers require a missingness model and identifiable overlap. No guarantee for arbitrary selective missingness, dependence, or instance-dependent channels is asserted. 
+
+# E Recalibration: Statements and Proofs 
+
+This appendix proves clean-risk guarantees for corrected-loss fitting, calibration guarantees for histogram fitting, and evaluation bounds for the fitted predictor. 
+
+E.1 Corrected binary losses 
+
+Let ℓ : (0 , 1) × { 0, 1} → R be a binary loss and write ℓy(p) := ℓ(p, y ) for y ∈ { 0, 1}.
+
+Definition E.1 (Corrected binary loss) . For fixed true channels with δj̸ = 0 for every j ∈ [K], and fixed α ∈ ∆K , define 
+
+ℓcorr  
+
+> ρ,α
+
+(p, A 1: K ) := ℓ0(p) + Uα(A1: K )( ℓ1(p) − ℓ0(p)) . (E.1) Its estimated-channel version, denoted by ℓcorr ̂ 
+
+> ρ
+
+, replaces Uα by ̂ U and therefore uses both the fitted channels and the fitted convex weights. For a fixed measurable g : [0 , 1] → (0 , 1), write Rℓ(g) := E[ℓ(g(Z), Y )]. Every map used in the following risk identities is assumed to satisfy E[|ℓ0(g(Z)) | + |ℓ1(g(Z)) |] < ∞; for a random class this condition is imposed after fixing the independent fitting data. This excludes undefined differences of infinite risks. 
+
+Theorem E.1 (Corrected risk and channel error) . Suppose Assumption 1 holds. For known channels with nonzero gaps and fixed α ∈ ∆K ,
+
+E[ℓcorr  
+
+> ρ,α
+
+(g(Z), A 1: K )] = Rℓ(g) (E.2) 
+
+for every fixed measurable g for which these expectations exist. For estimated channels satisfying the conditions of Lemma C.3, no nonzero-true-gap condition is needed for the following comparison. If a class G satisfies 
+
+Cℓ, G := sup g∈G sup z∈[0 ,1] |ℓ1(g(z)) − ℓ0(g(z)) | < ∞, (E.3) 
+
+then risks evaluated on an independent example, conditional on the channel-fitting data, satisfy 
+
+sup g∈G 
+
+> ∣∣∣
+
+E[ℓcorr ̂ 
+
+> ρ
+
+(g(Z), A 1: K ) | D ch ] − Rℓ(g) 
+
+> ∣∣∣
+
+≤ Cℓ, G dch . (E.4) 
+
+The class may be fixed conditional on Dch .Proof. A binary loss satisfies ℓ(p, y ) = ℓ0(p) + y(ℓ1(p) − ℓ0(p)). Conditioning Eq. (E.1) on ( Y, Z )and using E[Uα | Y, Z ] = Y proves Eq. (E.2). For estimated channels, conditioning on ( Z, Dch )shows that the risk difference is E[bch (Z)( ℓ1(g(Z)) − ℓ0(g(Z))) | D ch ]. Lemma C.3 bounds this uniformly by Cℓ, G dch .33 E.2 Parametric logarithmic-loss fitting 
+
+Fix an input clipping level ϵ ∈ (0 , 1/2) and write ¯ z := Π [ϵ, 1−ϵ](z) and s(z) := log(¯ z/ (1 − ¯z)). Let 
+
+σ(t) := (1 + e−t)−1. The two families are 
+
+gT (z) := σ(s(z)/T ), T ∈ [Tmin , T max ], 0 < T min < T max < ∞, (E.5) 
+
+gu,v (z) := σ(us (z) + v), (u, v ) ∈ ΘP , ΘP ⊂ R2 nonempty and compact . (E.6) Compactness and bounded s imply a common output interval [ ϵp, 1 − ϵp] for some ϵp ∈ (0 , 1/2). The logarithmic loss is ℓlog (p, y ) := −y log p − (1 − y) log(1 − p). Its corrected version is 
+
+ℓcorr log ,̂ρ (p, A 1: K ) := −̂U log p − (1 −̂ U ) log(1 − p). (E.7) It may be negative for individual examples. Bounded probabilities are therefore substantive conditions, not only numerical conventions. In code we evaluate log(1 + exp η) −̂ Uiη directly with a stable softplus, rather than using a binary-cross-entropy routine that restricts targets to [0 , 1]. 
+
+Remark E.1 (Convexity and boundedness) . For xi = ( s(Zi), 1) T and ϑ = ( u, v )T, the corrected loss is log(1 + exT 
+
+> iϑ
+
+) −̂ UixT 
+
+> i
+
+ϑ. Its Hessian is σ(xT 
+
+> i
+
+ϑ)(1 − σ(xT 
+
+> i
+
+ϑ)) xixT 
+
+> i
+
+⪰ 0, regardless of ̂ Ui. The same argument applies to inverse temperature. The objective is convex on a convex parameter set but can be unbounded below without the stated compactness. Conditional on Dch , let ̂ FG := {O 7 → ℓcorr log ,̂ρ (g(Z), A 1: K ) : g ∈ G} and define its expected absolute Rademacher complexity by 
+
+Rn(̂ FG | D ch ) := ED,ε 
+
+[
+
+sup h∈̂ FG
+
+∣∣∣ 1
+
+> n
+
+∑ni=1 εih(Oi)
+
+∣∣∣∣∣∣ Dch 
+
+]
+
+, (E.8) where D consists of n i.i.d. examples from PO, independently of Dch , and εi are independent uniform signs, independent of the data. The compact continuous families above give measurable suprema, for example by restriction to a countable dense parameter subset. 
+
+Theorem E.2 (Clean log-loss guarantee) . Suppose Assumption 1 holds, channels satisfy 0 ≤̂
+
+aj <̂ bj ≤ 1, and Drec ⊥⊥ D ch . Let G be one of the families in Eq. (E.5) and Eq. (E.6) .Suppose a measurable fitted map ̂ g ∈ G satisfies ̂ R(̂g) ≤ inf g∈G ̂ R(g) + ϵopt with ϵopt ≥ 0. Define 
+
+Blog := (1 + 2 ̂ B) log(1 /ϵ p) and Cϵp := log((1 − ϵp)/ϵ p). For η ∈ (0 , 1) , conditional on Dch , with probability at least 1 − η,
+
+Rlog (̂ g) − inf g∈G Rlog (g) ≤ 4Rnrec (̂ FG | D ch ) + 2 Blog 
+
+√
+
+2 log(1 /η )
+
+nrec 
+
++ 2 Cϵp dch + ϵopt . (E.9) 
+
+For the fixed-dimensional compact families above, the complexity is O(n−1/2rec ) conditional on bounded ̂ B and fixed parameter and clipping bounds. Proof. By |̂ U | ≤ ̂ B, |ℓcorr log ,̂ρ | ≤ Blog . For a class bounded in [ −Blog , B log ], symmetrization gives expected uniform empirical deviation at most twice its expected absolute Rademacher complexity. Changing one sample point changes the supremum deviation by at most 2 Blog /n rec .McDiarmid’s inequality consequently gives, with probability 1 − η, sup h∈̂ FG |EDrec [h] − E[h |Dch ]| ≤ 2Rnrec (̂FG | D ch ) + Blog 
+
+√2 log(1 /η )/n rec . Also |ℓ1(p) − ℓ0(p)| = | log((1 − p)/p )| ≤ Cϵp .Theorem E.1 bounds the uniform difference between conditional corrected risk and clean risk by 
+
+Cϵp dch . Call the sum of these two bounds ∆ n. For any g ∈ G , approximate empirical optimality gives Rlog (̂ g) ≤̂ R(̂ g) + ∆ n ≤̂ R(g) + ϵopt + ∆ n ≤ Rlog (g) + ϵopt + 2∆ n. Taking the infimum proves Eq. (E.9). The bounded input logit and compact parameters make the corrected loss uniformly Lipschitz in a one- or two-dimensional parameter. A Euclidean cover has logarithmic size at most d log( C/ϵ ′) for dimension d ∈ { 1, 2}. The entropy integral of its square root is finite, giving the stated n−1/2rec order, with constants depending on the fixed bounds and ̂ B.34 E.3 Fixed-bin recalibration 
+
+Let H := {Hh}h∈[J] be fixed conditional on Dch , independently of Drec . Define nh, ˜mh, and ̂ mh
+
+as in Eq. (20). For an empty bin, assign both ˜mh and ̂ mh any common value in [0 , 1]. Set 
+
+˜mH(z) := ∑Jh=1 ˜mh1(z ∈ Hh),̂ mH(z) := ∑Jh=1 ̂ mh1(z ∈ Hh). (E.10) The first map can take values outside [0 , 1] and is used only to describe the empirical residual; the second is the probability-valued predictor. For any H-binwise constant map g, define ̂
+
+CH(g) := ∑Jh=1 
+
+∣∣∣EDrec [( ̂ U − g(Z)) 1(Z ∈ Hh)] 
+
+∣∣∣ . (E.11) Its bins are those of the original score used for fitting. Test ECE is instead computed using bins of the transformed score. 
+
+Theorem E.3 (Uniform fixed-bin calibration guarantee) . Under the hypotheses of Proposition 2, with conditional probability at least 1 − η, simultaneously for every possibly sample-dependent 
+
+gH : [0 , 1] → [0 , 1] constant on each fitting bin, 
+
+ECE( gH ◦ f ) ≤̂ CH(gH) + dch + ( ̂ B + 1) 
+
+√
+
+2( J log 2 + log(4 /η )) 
+
+nrec 
+
+. (E.12) 
+
+For the fitted maps, the empirical residuals satisfy ̂
+
+CH( ˜mH) = 0 ,̂ CH(̂mH) = ∑  
+
+> h:nh>0nh
+> nrec
+
+| ˜mh −̂ mh|. (E.13) 
+
+Proof. Fix any vector of bin values ( gh)h∈[J] ∈ [0 , 1] J and let V := gH(Z). The finite-valued prediction has ECE( gH ◦ f ) = ∑ 
+
+> v∈{ gh:h∈[J]}
+
+|E[( Y − v)1(V = v)] | ≤ ∑Jh=1 |E[( Y − gh)1(Z ∈ Hh)] |.
+
+The inequality allows different fitting bins to have the same predicted value. By Lemma C.3, replacing Y by ̂ U in the population bin moments changes their sum of absolute values by at most dch . Let ph := P (Z ∈ Hh | D ch ). Adding and subtracting the empirical moments, using 0 ≤ gh ≤ 1, gives the pathwise bound ECE( gH ◦ f ) ≤̂ CH(gH) + dch + DU + D1,DU := ∑Jh=1 |E[̂ U 1(Z ∈ Hh) | D ch ] − EDrec [̂ U 1(Z ∈ Hh)] |,D1 := ∑Jh=1 |ph − EDrec [1(Z ∈ Hh)] |.
+
+These last two quantities do not depend on the vector ( gh). Use the 2 J sign representation of each sum. The corresponding summands are bounded by ̂ B and 1, respectively. Hoeffding concentration and a union bound over signs and the two sums give DU +D1 ≤ (̂ B+1) √2( J log 2 + log(4 /η )) /n rec 
+
+with probability at least 1 − η. The same event holds for every vector of bin values, including the vector fitted from the sample. This proves Eq. (E.12) for an arbitrary fitted vector of bin values. For a nonempty bin, EDrec [( ̂U − gh)1(Z ∈ Hh)] = ( nh/n rec )( ˜mh − gh). Substituting gh = ˜mh
+
+gives zero; substituting gh = Π [0 ,1] ( ˜mh) gives the second identity. Empty bins have zero empirical contribution and are included in the population sampling bound through DU , D 1.The projection residual is determined by the fitted bin means and is zero exactly when all nonempty-bin means lie in [0 , 1]. No Lipschitz assumption on m is used in this theorem. 
+
+Lemma E.1 (Projected bin masses) . Let p, q ≥ 0, θ ∈ [0 , 1] , and u ∈ R. For q > 0, set 
+
+v := Π [0 ,1] (u/q ). For q = 0 , assume u = 0 and choose any v ∈ [0 , 1] . Then 
+
+p|v − θ| ≤ | u − pθ | + |q − p|. (E.14) 35 Proof. If q = 0, the left side is at most p, which is no larger than the right side. For q > 0 and 0 ≤ u ≤ q, u = qv and p(v −θ) = u−pθ +( p−q)v, proving the inequality. If u < 0, then v = 0 and 
+
+pθ ≤ | u−pθ |. If u > q , then v = 1 and p(1 −θ) = ( p−q)+( q −u)+( u−pθ ) ≤ | p−q|+|u−pθ |.
+
+Corollary E.1 (Direct guarantee for the projected histogram) . Under the hypotheses of Propo-sition 2, with conditional probability at least 1 − η,
+
+ECE( ̂ mH ◦ f ) ≤ dch + ( ̂ B + 1) 
+
+> √
+
+2( J log 2 + log(4 /η )) 
+
+nrec 
+
+. (E.15) 
+
+No empirical projection residual appears in this bound. Proof. For each fitting bin, let ph := P (Z ∈ Hh | D ch ), θh := E[Y | Z ∈ Hh, Dch ] when 
+
+ph > 0, and choose any θh ∈ [0 , 1] when ph = 0. Apply Lemma E.1 with qh := nh/n rec ,
+
+uh := EDrec [̂ U 1(Z ∈ Hh)], and vh := ̂ mh. If qh = 0 then uh = 0, so the lemma includes empty bins. Grouping bins with equal outputs and using the triangle inequality gives ECE( ̂ mH ◦ f ) ≤ ∑Jh=1 ph|̂mh − θh|≤ ∑Jh=1 |uh − phθh| + ∑Jh=1 |qh − ph| ≤ DU + D1 + dch .
+
+The last step uses Eq. (C.8) to compare E[̂ U 1(Z ∈ Hh) | D ch ] with phθh. The DU , D 1 terms and their simultaneous concentration are exactly those in the proof of Theorem E.3. This proves Eq. (E.15) and Proposition 2. The general residual bound applies to any binwise-constant map. For the specific projected averages, the preceding proof removes the empirical projection-residual term. Projection is already included in the comparison with the bin’s true positive-label frequency. The absence of a bin-approximation term concerns calibration of a coarsened output. It is not a claim that coarse predictions retain the information or discrimination of the original predictor. 
+
+Corollary E.2 (Rate for projected histogram recalibration) . Under Proposition 2, suppose 
+
+J, K are fixed, min j δj ≥ δmin > 0, and ech = Op(εnch ), with ech as in Eq. (10) , for a positive deterministic sequence εnch → 0. Then ECE( ̂ mH ◦ f ) = Op(n−1/2rec + εnch ). No smoothness of m
+
+is required. Proof. The channel-error assumption gives ̂ B = Op(1) and dch = Op(εnch ) by the proof of Corollary 1. Substitute these orders and fixed J into Proposition 2. 
+
+E.4 Evaluation of a fitted predictor 
+
+Let A be the sigma-field generated by all data and algorithmic randomness used to choose a fitted map g, channel estimates, convex weights, and evaluation partition B. The map is jointly measurable in this information and its score argument. Assume the i.i.d. evaluation examples are jointly independent of A. For an independent example let T := g(Z). Every expectation below holds A fixed, and ECE B(g ◦ f ) = ∑Mℓ=1 |E[( Y − T )1(T ∈ Bℓ) | A ]|.
+
+Proposition E.1 (Held-out evaluation after recalibration) . Suppose Assumption 1 holds and the estimated channels satisfy 0 ≤̂ aj <̂ bj ≤ 1 for j ∈ [K]. On the independent sample, define [ECE NC  
+
+> B
+
+(g ◦ f, Dev ) := ∑Mℓ=1 
+
+> ∣∣∣
+
+n−1ev 
+
+> ∑nev
+> i=1
+
+(̂ Ui − g(Zi)) 1(g(Zi) ∈ Bℓ) 
+
+> ∣∣∣
+
+. For every η ∈ (0 , 1) ,conditional on A, with probability at least 1 − η,
+
+|[ECE NC  
+
+> B
+
+(g ◦ f, Dev ) − ECE B(g ◦ f )| ≤ ̂ B
+
+> √
+
+2( M log 2 + log(2 /η )) /n ev + dch . (E.16) 
+
+If g has at most J distinct output values and every evaluation bin contains at most one such value, then ECE B(g ◦ f ) = ECE( g ◦ f ). For a general map, an Lg-Lipschitz version of t 7 → E[Y |
+
+T = t, A] − t instead gives the approximation term LghB.
+
+36 Proof. For each fitted correction, Eq. (C.8) gives |E[̂ U − Y | Z, A]| ≤ dch . Since T is a function of Z conditional on A, iterated expectation yields |E[̂ U − Y | T, A]| ≤ dch . Also |̂U − T | ≤ ̂ B
+
+by the same convex-endpoint calculation as in Lemma C.3. The bin-sign proof of Theorem C.1 now applies to T . For finitely many outputs, a partition separating them groups no distinct prediction values, so the bin-moment expression is exactly the conditional ECE. Such interval boundaries can be placed between consecutive distinct outputs using fitting data alone; repeated values are merged. For the Lipschitz case, apply Eq. (C.12) to the transformed residual. Fixed equal-width test bins need not separate the outputs of a histogram map. The exact finite-output statement applies only to a partition that does so. Even when there is no binning error, empirical ECE still has sampling error. The finite-output statement does not identify a finite-sample ECE value with exact population ECE. 
+
+E.5 Split-sample workflow 
+
+The fitting and evaluation partitions have different roles. In Algorithm 1, all choices made before evaluation are independent of Dev . A separate channel sample may be used for final evaluation, as in the human-annotation protocol. In that case the held-out channels replace the fitting channels only in the evaluation step. Proposition E.1 gives the evaluation guarantee conditional on the samples determining the fitted map, weights, and test partition. 
+
+Algorithm 1 Calibration from repeated noisy annotations 
+
+Require: Fixed independently trained predictor f ; independent samples Ds of sizes ns, s ∈{ch , rec , val , ev }; identification groups independent of Dch ; fitting bins H independent of Drec ;evaluation bins B independent of Dev ; a pre-specified family of candidate procedures.  
+
+> 1:
+
+Estimate channels ( ̂aj ,̂ bj )j∈[K] and weights ̂ α ∈ ∆K from Dch . 
+
+> 2:
+
+Verify the required estimated gaps; return failure if the declared admissibility conditions are not met.  
+
+> 3:
+
+for s ∈ { rec , val , ev } and i ∈ [ns] do  
+
+> 4:
+
+Compute ̂ U (s) 
+
+> i
+
+← ∑Kj=1 ̂ αj (A(s) 
+
+> ij
+
+−̂ aj )/(̂ bj −̂ aj ).  
+
+> 5:
+
+end for  
+
+> 6:
+
+Fit candidate maps on Drec by corrected loss or the projected bin averages in Eq. (E.10).  
+
+> 7:
+
+Select ̂ g using the pre-specified corrected validation criterion on Dval , or retain the single pre-specified candidate.  
+
+> 8:
+
+for i ∈ [nev ] do  
+
+> 9:
+
+Set Ti ←̂ g(Z(ev)  
+
+> i
+
+).  
+
+> 10:
+
+end for  
+
+> 11:
+
+for ℓ ∈ [M ] do  
+
+> 12:
+
+Compute ̂ rℓ ← n−1ev 
+
+> ∑nev
+> i=1
+
+(̂U (ev)  
+
+> i
+
+− Ti)1(Ti ∈ Bℓ).  
+
+> 13:
+
+end for  
+
+> 14:
+
+Set [ECE NC 
+
+← ∑Mℓ=1 |̂rℓ|. 
+
+> 15:
+
+return (̂ g, [ECE NC 
+
+) and channel-fitting diagnostics. 
+
+# F Algorithms and Implementation 
+
+F.1 Likelihood updates 
+
+For n = nch , let Ai = ( Ai1, . . . , A iK ) and define 
+
+Li0(a) = ∏ 
+
+> j
+
+aAij  
+
+> j
+
+(1 − aj )1−Aij , Li1(b) = ∏ 
+
+> j
+
+bAij  
+
+> j
+
+(1 − bj )1−Aij . (F.1) 37 The E-step evaluates a posterior class probability under the current parameters; the M-step maximizes the expected complete-data log likelihood [Dempster et al., 1977]. These posterior probabilities lie in [0 , 1]; the corrected labels need not. 
+
+F.1.1 Marginal Dawid–Skene 
+
+The response likelihood is (1 − μ)Li0 + μL i1. At iteration q,
+
+γ(q) 
+
+> i
+
+= μ(q)Li1(b(q))(1 − μ(q))Li0(a(q)) + μ(q)Li1(b(q)) . (F.2) Replacing the unobserved Yi by γ(q) 
+
+> i
+
+in the Bernoulli log likelihood gives 
+
+μ(q+1) = n−1 ∑ 
+
+> i
+
+γ(q) 
+
+> i
+
+, a(q+1)  
+
+> j
+
+=
+
+> ∑
+> i
+
+(1 − γ(q) 
+
+> i
+
+)Aij 
+
+> ∑
+> i
+
+(1 − γ(q) 
+
+> i
+
+) , b(q+1)  
+
+> j
+
+= 
+
+> ∑
+> i
+
+γ(q) 
+
+> i
+
+Aij  
+
+> ∑
+> i
+
+γ(q)
+
+> i
+
+. (F.3) No predictions enter these updates. A marginal two-annotator fit is used only as a non-identified control. 
+
+F.1.2 Shared channels with score groups 
+
+For fixed groups Cg, write Gi = g when Zi ∈ Cg and ng = |{ i : Gi = g}| > 0. Use the grouped likelihood in Eq. (D.23). Its updates are 
+
+γ(q) 
+
+> i
+
+= μ(q) 
+
+> Gi
+
+Li1(b(q))(1 − μ(q) 
+
+> Gi
+
+)Li0(a(q)) + μ(q) 
+
+> Gi
+
+Li1(b(q)) , μ(q+1)  
+
+> g
+
+= n−1 
+
+> g
+> ∑
+> i:Gi=g
+
+γ(q) 
+
+> i
+
+. (F.4) The channel updates remain Eq. (F.3), pooled over all examples. Joint score-bin EM uses this same likelihood. Its optional prediction map is ̂
+
+mC (z) = ∑Lg=1 ̂ μg1(z ∈ Cg). (F.5) This map is distinct from separately fitting a recalibration map to corrected labels. Its in-sample summary ∑
+
+> g
+
+(ng/n )|̂μg − ¯Zg| is not an independent evaluation. Fitting group-specific channels instead applies the marginal updates within each group, with a common label orientation; the shared-channel guarantees do not automatically cover that extension. 
+
+F.2 Numerical procedure 
+
+For each EM start, alternate the updates above using log-scale probabilities and log-sum-exp until the stopping tolerance or iteration limit is reached. Impose the prescribed orientation by a single global label exchange, μg ← 1 − μg and ( aj , b j ) ← (bj , a j ); the marginal model has one class proportion. Candidate selection and acceptance criteria depend on the estimator and experiment. Tabular grouped EM selects the largest-likelihood candidate after orientation and preliminary gap screening, then checks convergence and the final gap threshold for that candidate. Marginal Dawid–Skene uses finite-parameter and gap checks without a separate convergence check. Further experiment-specific details appear in Appendix G. Two-annotator GMM minimizes the constrained objective in Definition D.1; its optimization-error term is given in Theorem D.3. 
+
+F.3 Computational cost 
+
+For R starts and Q iterations, marginal and shared-channel EM require O(RQnK ) operations and O(nK + n + K + L) storage. Group-specific fits have the same time order and require 
+
+O(nK + n + KL ) storage. Two-annotator moment aggregation costs O(n + L) before optimization. Given bin memberships, NC-ECE costs O(nK + M ); assigning equal-width bins costs O(n). 38 F.4 Feasible aggregation weights 
+
+For an estimated class proportion ̂ μ, define ̂
+
+vj = (1 −̂ μ)̂aj (1 −̂ aj ) + ̂ μ̂ bj (1 −̂ bj )̂
+
+δ2
+
+> j
+
+,̂ αIV  
+
+> j
+
+=̂ v−1 
+
+> j
+> ∑
+> k̂
+
+v−1
+
+> k
+
+. (F.6) For zero variances, use the support convention of Lemma C.6 or the stabilization below. Gaussian recalibration uses ̂ μ = ∑
+
+> g
+
+(ng/n ch )̂ μg and ̂
+
+αshr (λ) = (1 − λ)̂ αIV + λ(K−1, . . . , K −1), λ = 0 .25 . (F.7) The tabular Main rule estimates ̂ μ by the mean of equally weighted corrected labels, clipped to [10 −4, 1 − 10 −4], and floors ̂ vj at 10 −8 before inversion. Equal, Gap, and Squared-gap weights are proportional to 1, ̂ δj , and ̂ δ2 
+
+> j
+
+, respectively. Weights are fixed before test evaluation. 
+
+# G Experimental Protocols and Additional Results 
+
+G.1 Evaluation and reporting conventions 
+
+Toy estimation errors use population ECE( f ) = E|m(Z) − Z| as the reference. Gaussian Oracle ECE replaces test labels by m(Zi) in empirical bin moments. Tabular and CIFAR Oracle ECE use original test labels. These empirical references use the same predictions and bins as the noisy-label criteria. “Oracle channels” means that the true noise probabilities are supplied. For repetition errors er, bias and MAE are the means of er and |er|, respectively. RMSE is the square root of the mean of e2 
+
+> r
+
+. Figure error bars show one Monte Carlo standard error of MAE. Table 1 reports sample SDs over 200 repetitions; Table 5 reports sample SDs over 60 repetitions. Tabular and CIFAR tables use the aggregation units described below and in their captions. 
+
+G.2 Synthetic experiments 
+
+Gaussian recalibration. We use P (Y = 1) = 1 /2, X | Y = 1 ∼ N (−1, 1), X | Y = 0 ∼
+
+N (1 , 1), and Z = σ(0 .3 − X) [Futami and Fujisawa, 2024], giving m(z) = σ(2 logit( z) − 0.6). The two annotators are independent given Y and have ( ρ0,1, ρ 1,1) = (0 .05 , 0.25) and ( ρ0,2, ρ 1,2) = (0 .05 , 0.05). For total sizes 1500 , 3000 , 6000 , 12000, each of 60 repetitions uses equal independent channel-fitting, recalibration, and test thirds. Two-group constrained GMM uses the fixed population score-median boundary σ(0 .3) and four starts. Corrected fitting uses the shrunk IV weights above; Naive fitting uses average annotations, and clean-label fits use Y .Temperature fitting uses bounded scalar optimization with inverse temperature in [0 .05 , 20]. Platt fitting uses L-BFGS-B with slope in [0 , 10], intercept in [ −10 , 10], and four starts. Projected histogram fitting uses J = round( n1/3rec ) population score-quantile bins. Evaluation uses M =round( n1/3ev ) equal-width bins of each transformed score; at total size 12000, J = M = 16. The 
+
+L1(m) metric is the test mean of |m(Zi) − g(Zi)|. Log loss and Brier use sampled test labels; log-loss evaluation clips predictions to [10 −8, 1 − 10 −8]. Table 5 reports the largest total size. 
+
+Toy ECE estimation and sample reuse. The input distribution, predictor, three label functions, and annotator channels are those of Section 6. Five equal-width channel groups and ten equal-width evaluation bins are fixed before sampling. Each N ∈ { 500 , 1000 , 2000 , 4000 , 8000 } has 200 repetitions. The population ECEs for Calibrated, Shifted, and Nonlinear are 0, 0 .08962637465, and 0 .08328889713. For splitting, the first half fits channels and the second half evaluates all criteria. Reuse applies both steps to the full sample. Five-fold cross-fitting pools held-out signed 39 Table 5: Gaussian recalibration at n = 12000: mean ± SD over 60 repetitions (unscaled metrics). 
+
+Calibration errors Method Oracle ECE NC-ECE Abs. error Clean-label Platt (oracle fit) 0.006118 ± 0.003526 0.022761 ± 0.004720 0.016642 ± 0.005200 Corrected Platt 0.009687 ± 0.005702 0.022462 ± 0.004813 0.012868 ± 0.005686 Corrected histogram ̂m 0.016301 ± 0.003894 0.022147 ± 0.005481 0.006692 ± 0.004531 Clean-label temperature (oracle fit) 0.065946 ± 0.001003 0.066361 ± 0.009310 0.007205 ± 0.005366 Corrected temperature 0.066095 ± 0.001115 0.066402 ± 0.009139 0.007033 ± 0.005327 Naive Platt 0.092819 ± 0.004540 0.094160 ± 0.007815 0.004922 ± 0.003826 
+
+Before recalibration 0.113960 ± 0.000804 0.115110 ± 0.006985 0.005518 ± 0.004240 Naive temperature 0.114570 ± 0.004091 0.115727 ± 0.007980 0.005492 ± 0.004131 Curve error and predictive losses Method L1(m) Log loss Brier Clean-label Platt (oracle fit) 0.006125 ± 0.003528 0.356120 ± 0.007968 0.112331 ± 0.002768 Corrected Platt 0.009696 ± 0.005709 0.356601 ± 0.008111 0.112481 ± 0.002789 
+
+Corrected histogram ̂m 0.025171 ± 0.003186 0.369160 ± 0.014568 0.113294 ± 0.002773 Clean-label temperature (oracle fit) 0.065958 ± 0.000988 0.375123 ± 0.008151 0.119115 ± 0.002830 Corrected temperature 0.066124 ± 0.001079 0.375399 ± 0.008352 0.119182 ± 0.002870 Naive Platt 0.093059 ± 0.004546 0.397467 ± 0.006915 0.123929 ± 0.002757 Before recalibration 0.114404 ± 0.000803 0.414317 ± 0.005252 0.129034 ± 0.002156 Naive temperature 0.114997 ± 0.003862 0.414834 ± 0.006053 0.129197 ± 0.002305 
+
+bin moments with fold-size weights before taking absolute values. NC-ECE uses equal annotator weights. Joint EM fits shared channels and group-specific class proportions from response-pattern counts. Each fit uses ten starts, at most 1000 iterations, and stopping threshold 10 −9(1+ |ℓprevious |)for the change in mean log likelihood. Probabilities are clipped to [10 −6, 1 − 10 −6]. Initial aj , b j
+
+are uniform on [0 .04 , 0.30] and [0 .70 , 0.96]; initial proportions are uniform on [0 .1, 0.9], with group midpoints used for the first start. The first channel fixes global orientation. Retain the largest likelihood among converged starts with all oriented gaps at least 10 −3. Empty groups or no accepted start trigger the fixed fallback ( ̂aj ,̂ bj ) = (0 .2, 0.8) and proportions 1 /2. All 200 fits succeeded in each reported condition. Corrected labels and bin means are unprojected. Figure 2 reports Shifted and Nonlinear. 500 1k 2k 4k 8k     
+
+> Total annotated examples N
+> 0.3 1310
+> MAE to population ECE (×100)
+> Soft-vote ECE Majority-vote ECE NC-ECE (given rates) NC-ECE (Joint score-bin EM) Clean-label ECE 500 1k 2k 4k 8k
+> Total annotated examples N
+> 0.3 1310
+> MAE to population ECE (×100)
+> Soft-vote ECE Majority-vote ECE NC-ECE (given rates) NC-ECE (Joint score-bin EM) Clean-label ECE
+
+Figure 2: ECE-estimation MAE ( ×100): Shifted (left) and Nonlinear (right). 40 G.3 Semi-synthetic tabular benchmarks 
+
+ACSIncome, CreditDefault, HMDA, and MEPS use the benchmark preprocessing and six predictor families [Ding et al., 2021, Yeh, 2009, Hansen et al., 2024, Sharma et al., 2021]. Base models use original labels; the MLP checkpoint is selected by validation accuracy, and the SVM produces clipped hard predictions. Post-hoc channel estimation and recalibration use simulated annotations. We use ten seeds, K = 2 , 3, 4, and four channel regimes, taking the first K pairs ( ρ0, ρ 1) below:                 
+
+> Symmetric (.05 , . 05) ,(.10 , . 10) ,(.15 , . 15) ,(.20 , . 20) Asymmetric (.05 , . 25) ,(.25 , . 05) ,(.10 , . 20) ,(.20 , . 10) Heterogeneous (.02 , . 08) ,(.08 , . 20) ,(.20 , . 08) ,(.28 , . 22) Hard (.20 , . 30) ,(.30 , . 20) ,(.25 , . 30) ,(.30 , . 25)
+
+Base-training, channel-fitting, recalibration, validation, and test fractions are 0.36 /0.12 /0.12 /0.20 /0.20. Test uses seed 42, validation the run seed, the remaining training division seed 50, and the channel/recalibration division seed 51 plus the run seed. Each post-hoc split receives independently generated annotations. Predictors share annotation matrices within each dataset, seed, regime, and split; K = 2 , 3 uses the first columns of K = 4. The primary analysis uses Joint score-bin EM and Main plug-in IV weights. Joint EM estimates shared channels and prevalences for the nonempty bins of ten equal-width score bins on the recalibration split. Temperature, Platt, and projected histogram maps are fitted on this split; the auxiliary Joint map uses the fitted prevalences, with empty-bin values set to the overall fitted posterior mean. Naive fitting uses mean annotator responses, and Corrected fitting uses IV-weighted corrected labels. Oracle-channel comparisons cover all K, constrained GMM covers K = 2, and marginal Dawid–Skene EM covers K = 3 , 4. Marginal DS and GMM use the channel-fitting split. GMM forms two equal-count groups from score ranks with deterministic tie breaking. The tabular GMM fit also constrains the fitted prevalence in the higher-score group to exceed that in the lower-score group by at least 10 −5. Sample reuse and adaptive GMM groups differ from the independent-sample and fixed-group conditions of the corresponding theoretical guarantees. Joint EM, histogram fitting, and test ECE use ten equal-width bins; test bins are applied to each transformed score. Channel fits require finite parameters and estimated gaps greater than 10 −4, with estimator-specific success checks. Inadmissible channels stop that grid cell. Temperature and Platt fits retain finite objectives and parameters. Each dataset covers 720 = 6 × 10 × 3 × 4 predictor–seed– annotator-count–regime cells, and pooled summaries cover 2880 cells. Recalibration means and sample SDs use ten seed-level means, averaging the predictor, annotator-count, and regime grid within each seed; pooled results also average across datasets within each seed. Channel-RMSE summaries use the grid units specified in their captions. Annotations and test data are shared across conditions. Table 6: Tabular recalibration: mean ± SD over ten seeds. ECE and absolute gaps are multiplied by 100; accuracy is in percent. 
+
+Method Oracle ECE NC-ECE Absolute gap Accuracy (%) Base 8.03 ± 0.27 8.25 ± 0.27 0.50 ± 0.08 81 .75 ± 0.25 Naive temperature 14 .79 ± 0.17 14 .77 ± 0.26 0.62 ± 0.10 81 .75 ± 0.25 Corrected temperature 6.27 ± 0.29 6.32 ± 0.25 0.55 ± 0.07 81 .75 ± 0.25 Naive Platt 12 .04 ± 0.08 12 .05 ± 0.22 0.54 ± 0.08 82 .15 ± 0.05 Corrected Platt 2.51 ± 0.13 2.48 ± 0.09 0.42 ± 0.08 82 .40 ± 0.06 Naive fixed-bin 10 .05 ± 0.07 10 .07 ± 0.27 0.57 ± 0.09 82 .47 ± 0.08 Corrected fixed-bin 1.37 ± 0.13 1.33 ± 0.08 0.43 ± 0.08 82 .48 ± 0.09 
+
+Joint map 1.35 ± 0.13 1.32 ± 0.07 0.43 ± 0.08 82 .48 ± 0.08 
+
+41 Table 7: Tabular channel estimation and ECE evaluation. Channel RMSE is mean ± SD over 960 dataset–predictor–seed–noise settings for each K; NC-ECE–Oracle absolute gaps are means. All metrics are unscaled.                                                 
+
+> Channel method KChannel RMSE Mean absolute gap Oracle channels 20.0000 ±0.0000 0.0031 Oracle channels 30.0000 ±0.0000 0.0026 Oracle channels 40.0000 ±0.0000 0.0023 Constrained GMM 20.0264 ±0.0333 0.0101 Marginal Dawid–Skene EM 30.0165 ±0.0195 0.0064 Marginal Dawid–Skene EM 40.0124 ±0.0122 0.0046 Joint score-bin EM 20.0165 ±0.0182 0.0062
+> Joint score-bin EM 30.0123 ±0.0121 0.0048
+> Joint score-bin EM 40.0118 ±0.0102 0.0039
+
+G.4 CIFAR-10N stress test 
+
+CIFAR-10N supplies 50 ,000 images and three response columns [Wei et al., 2022]. Labels are mapped to animal (bird, cat, deer, dog, frog, horse) versus vehicle (airplane, automobile, ship, truck). CLIP ViT-B/32 [Radford et al., 2021] predicts animal probability by summing the six animal probabilities after softmax over ten prompts a photo of a {class} , without fine-tuning. Original CIFAR-10 labels [Krizhevsky, 2009] provide the evaluation reference. Response columns are treated as slots because workers can vary across images or batches. Disjoint pilot, evaluation-channel, and test partitions contain 10 ,000, 20 ,000, and 20 ,000 images, retaining the original ten-image annotation batches. Five pilot splits provide channel-fitting, recalibration, and validation subsets. Marginal Dawid–Skene EM estimates channels from responses alone; Joint score-bin EM is a separate comparison. Corrected labels are aggregated using IV weights. Joint EM uses five equal-width channel groups, ten starts, at most 1000 iterations, tolerance 10 −8, and converged fits with positive gaps. Within each family, Naive and Corrected methods share fitting examples and use average responses and IV-weighted corrected labels, respectively. Temperature and Platt minimize logarithmic loss with 0 .05 ≤ T ≤ 20 or −10 ≤ u, v ≤ 10. Fixed-bin fitting uses ten equal-width original-score bins and projected mean targets; empty bins receive the projected mean of all fitting targets. The auxiliary Joint map uses the five fitted prevalences on the pilot channel sample. Validation NC-ECE compares Base and the six Naive/Corrected candidates. Table 3 shows the fixed-bin comparison, and Table 8 shows all candidates. The evaluation-channel sample supplies a common correction after fitting. For each map g, ten equal-width bins of g(Z) are used on the test sample; Oracle, Soft-vote, and NC-ECE share predictions and bins, changing only the label targets. The five pilot fits share evaluation-channel and test samples; reported sample SDs measure variation across pilot fits. 
+
+# H Additional Related Work and Discussion 
+
+H.1 Related work 
+
+Binning, smoothing, and conditional-probability estimation affect calibration metrics and their estimators [Vaicenavicius et al., 2019, Roelofs et al., 2022, Popordanoska et al., 2022, 2024]. Weighted-moment formulations connect ECE with other calibration criteria [Błasiok et al., 2023, Gopalan et al., 2022, Rossellini et al., 2025, Hegazy et al., 2026]. Here label noise changes the moment’s label-side expectation; correcting it leaves binning and sampling errors as distinct terms. 42 Table 8: CIFAR-10N recalibration with marginal Dawid–Skene EM and Joint score-bin EM: mean ± SD over five pilot splits (unscaled).                                                                                                                                                 
+
+> Marginal Dawid–Skene EM Method Oracle ECE Soft-vote ECE NC-ECE Base 0.02129 ±0.00000 0.02825 ±0.00000 0.02436 ±0.00000 Naive fixed-bin 0.04351 ±0.00243 0.00450 ±0.00141 0.04695 ±0.00226 Naive temperature 0.05773 ±0.00220 0.02329 ±0.00082 0.06076 ±0.00220 Naive Platt 0.05754 ±0.00235 0.02137 ±0.00057 0.06070 ±0.00234 Corrected temperature 0.00557 ±0.00109 0.04709 ±0.00110 0.00415 ±0.00024 Corrected Platt 0.00644 ±0.00033 0.04782 ±0.00037 0.00357 ±0.00079
+> Corrected fixed-bin 0.00470 ±0.00157 0.04291 ±0.00101 0.00482 ±0.00069 Joint EM map (auxiliary) –––Joint score-bin EM Method Oracle ECE Soft-vote ECE NC-ECE Base 0.02129 ±0.00000 0.02825 ±0.00000 0.02433 ±0.00000 Naive fixed-bin 0.04351 ±0.00243 0.00450 ±0.00141 0.04693 ±0.00225 Naive temperature 0.05773 ±0.00220 0.02329 ±0.00082 0.06074 ±0.00220 Naive Platt 0.05754 ±0.00235 0.02137 ±0.00057 0.06067 ±0.00234 Corrected temperature 0.00596 ±0.00047 0.04748 ±0.00047 0.00340 ±0.00015
+> Corrected Platt 0.00645 ±0.00035 0.04790 ±0.00043 0.00349 ±0.00032 Corrected fixed-bin 0.00419 ±0.00095 0.04313 ±0.00099 0.00465 ±0.00088 Joint EM map (auxiliary) 0.00412 ±0.00160 0.04270 ±0.00108 0.00527 ±0.00199
+
+Class-conditional loss correction uses known transition probabilities to recover clean risk [Natarajan et al., 2013]. Calibration studies also address noisy-label training, noisy validation labels, and noisy predictions [Olmin and Lindsten, 2022, Bae et al., 2022, Penso et al., 2024]. Positive–unlabeled ECE estimation [Kiryo et al., 2026] and weakly supervised multicalibration [Futami and Ishida, 2026] use other supervision structures. Our repeated annotations support estimation of unknown annotator-specific channels and propagation of that estimation error to ECE and recalibration. The identification routes specialize the Hui–Walter and Dawid–Skene models [Hui and Walter, 1980, Dawid and Skene, 1979, Allman et al., 2009]; the GMM analysis quantifies their stability [Hansen, 1982]. Unlike joint predictor-and-annotator training [Tanno et al., 2019], the predictor here is fixed independently of channel estimation and recalibration. Disagreement-based methods can instead treat differing judgments as target uncertainty [Mimori et al., 2021, Riera-Marín et al., 2026]. Our model presupposes one meaningful binary outcome, so disagreement must be interpretable as imperfect measurement rather than equally valid alternative labels. 
+
+H.2 Scope 
+
+Known marginal-channel correction permits annotation dependence; identification requires the assumptions in Section 4. Adding annotators does not establish conditional independence. ECE-estimation accuracy, small recalibrated ECE, and classification accuracy are distinct. Corrected-loss guarantees concern clean risk, histogram guarantees concern calibration, and IV optimality concerns known-channel variance under its stated conditions. Human-label results stress-test the method without verifying its noise assumptions or clinical validity. Benchmark labels serve as evaluation references; shared evaluation samples limit interpretation of pilot-fit SDs. 43

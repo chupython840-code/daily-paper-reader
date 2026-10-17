@@ -1,0 +1,188 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-17T20:59:41.870291+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 3,
+    "deep_divecandidates": 0,
+    "deep_cap": 8,
+    "deep_selected": 0,
+    "quick_candidates": 4,
+    "quick_skim_target": 13,
+    "quick_selected": 4
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2610.19543v1",
+      "source": "arxiv",
+      "title": "Noisy-Label Calibration with Multiple Unreliable Labels",
+      "abstract": "In medical annotation and crowdsourcing, multiple annotators assign labels to each example, but these labels may be incorrect. Treating such noisy labels as ground truth can bias calibration evaluation. To address this problem, we propose methods for evaluating and recalibrating a fixed binary predictor under the underlying clean-label distribution, using only noisy annotations. First, given annotator-specific noise probabilities, we propose Noise Corrected ECE (NC-ECE), a binned estimator of expected calibration error (ECE) under class-conditional noise. We derive non-asymptotic bounds on the estimator's bias. Then, we propose practical algorithms for estimating unknown noise probabilities under conditional independence and label-orientation assumptions. We also develop loss-based and histogram post-hoc recalibration with clean-risk and calibration guarantees, respectively. Experiments on semi-synthetic benchmarks show that the proposed ECE estimator closely tracks its clean-label oracle counterpart and that the recalibration methods substantially improve latent-label calibration, whereas uncorrected recalibration against noisy annotations can degrade it.",
+      "authors": [
+        "Keisuke Hanada",
+        "Futoshi Futami"
+      ],
+      "primary_category": "stat.ML",
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "published": "2026-10-14T04:02:37+00:00",
+      "link": "https://arxiv.org/pdf/2610.19543v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "calibration under noisy labels from multiple unreliable annotators",
+      "llm_evidence_cn": "多重不可靠标注下的噪声标签校准",
+      "llm_evidence": "多重不可靠标注下的噪声标签校准",
+      "canonical_evidence": "多重不可靠标注下的噪声标签校准",
+      "llm_tldr_en": "The paper proposes Noise Corrected ECE and noise-probability estimation to evaluate and recalibrate binary predictors using only noisy multi-annotator labels.",
+      "llm_tldr_cn": "医学标注与众包中每个样本由多位标注者打标，标签可能有误，直接当作真值会扭曲校准评估。作者提出在类条件噪声下估计期望校准误差的NC-ECE，并推导其偏差的非渐近界，进而给出在条件独立与标签方向假设下估计未知标注噪声概率的实用算法。实验表明该方法能在仅有噪声标注时更准确地评估与重校准预测器。该工作为噪声标签下的可靠评估提供了通用工具。",
+      "llm_tldr": "医学标注与众包中每个样本由多位标注者打标，标签可能有误，直接当作真值会扭曲校准评估。作者提出在类条件噪声下估计期望校准误差的NC-ECE，并推导其偏差的非渐近界，进而给出在条件独立与标签方向假设下估计未知标注噪声概率的实用算法。实验表明该方法能在仅有噪声标注时更准确地评估与重校准预测器。该工作为噪声标签下的可靠评估提供了通用工具。",
+      "llm_tags": [
+        "query:ea"
+      ],
+      "matched_query_tag": "query:ea",
+      "matched_query_text": "noisy or unreliable emotion labels in affective computing and EEG",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.12921v1",
+      "source": "arxiv",
+      "title": "Teaching neural decoders with language",
+      "abstract": "Brain-computer interfaces decode neural activity, yet class-label supervision (CLS) leaves relationships among classes implicit. We propose Language as Supervision (LaS), which aligns neural features with natural-language class descriptions through learned projections and predicts classes using candidate text prototypes. We evaluate seven encoder architectures with independently trained models for visual, motor, and speech decoding from scalp and intracranial recordings. LaS improves speech-decoding accuracy by up to 17.15~pp over matched CLS baselines. Its representations support candidate-set reuse and label-supervised subject and session adaptation, while LaS enables conditional unseen-frequency decoding in steady-state visual evoked potential (SSVEP) responses. Correct class-description correspondence supports this generalization, and dual-sided attribution visualization shows neural and textual contributions to the same class-matching score. These findings suggest that text descriptions can serve as general-purpose references for learning and interpretation in neural decoding.",
+      "authors": [
+        "Xuan Wen",
+        "Yonghao Song",
+        "Yuhong Zhang",
+        "Guoliang Li",
+        "Tzyy-Ping Jung",
+        "Xiaorong Gao"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-10-09T03:12:42+00:00",
+      "link": "https://arxiv.org/pdf/2610.12921v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "language supervision for neural decoding with subject and session adaptation",
+      "llm_evidence_cn": "语言监督神经解码并支持被试与会话自适应",
+      "llm_evidence": "语言监督神经解码并支持被试与会话自适应",
+      "canonical_evidence": "语言监督神经解码并支持被试与会话自适应",
+      "llm_tldr_en": "Class-label supervision leaves relations among neural decoding classes implicit; this work aligns EEG features with natural-language class descriptions, improving decoding and enabling label-supervised subject and session adaptation.",
+      "llm_tldr_cn": "针对传统类别标签监督无法刻画类别间关系、且跨被试跨会话迁移困难的问题，本文提出以语言作为监督的信号解码框架，将神经特征与自然语言类别描述对齐并用文本原型分类。研究在视觉、运动与语音解码的七种编码器上验证，语音解码准确率最高提升约17个百分点，并支持候选集复用与标签监督下的被试和会话自适应。该工作展示了语言监督在脑机接口跨被试泛化与标签利用上的潜力。",
+      "llm_tldr": "针对传统类别标签监督无法刻画类别间关系、且跨被试跨会话迁移困难的问题，本文提出以语言作为监督的信号解码框架，将神经特征与自然语言类别描述对齐并用文本原型分类。研究在视觉、运动与语音解码的七种编码器上验证，语音解码准确率最高提升约17个百分点，并支持候选集复用与标签监督下的被试和会话自适应。该工作展示了语言监督在脑机接口跨被试泛化与标签利用上的潜力。",
+      "llm_tags": [
+        "query:csg:composite"
+      ],
+      "matched_query_tag": "query:csg:composite",
+      "matched_query_text": "Papers central to 跨被试泛化：跨被试/被试无关情感识别、域泛化、域适应, especially work that connects or combines: subject-independent emotion recognition; domain generalization EEG; cross-subject emotion recognition; domain generalization and domain adaptation for EEG based affective computing; cross subject and subject independent emotion recognition from EEG.",
+      "matched_requirement_id": "req-composite-csg",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.20795v1",
+      "source": "arxiv",
+      "title": "EEG-Based Prediction of Music Enjoyment Using Deep Learning with Explainable Temporal Analysis",
+      "abstract": "Understanding why listeners enjoy music is difficult because the experience is subjective and changes as a piece unfolds. Electroencephalography (EEG) offers a non-invasive way to study neural responses during listening, yet earlier work has mostly treated music emotion as a categorical label or relied on black-box models. We formulate enjoyment prediction as a regression problem on the public MUSIN-G dataset, which contains 128-channel EEG from 20 listeners together with song-level enjoyment ratings. Six deep learning models were compared under a participant-wise protocol, in which 15 listeners were used for training and validation and 5 were held out for testing. DeepConvNet, CNN-LSTM and GNN-CNN reached the lowest mean absolute error (0.97 to 0.99 on the 1 to 5 scale), while the temporal convolutional network (TCN) had the highest Pearson correlation with the ratings (r = 0.21). Gradient-based and occlusion-based explanations, averaged over all held-out windows, identify the time segments within each two-second window that most influence the TCN predictions. The study provides a reproducible cross-listener benchmark for EEG-based enjoyment regression and shows how explainability analysis complements standard metrics.",
+      "authors": [
+        "Parshav Singla",
+        "Simranjit Kaur",
+        "Maanya Walia",
+        "Niharika"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.HC",
+        "cs.SD"
+      ],
+      "published": "2026-10-14T18:39:51+00:00",
+      "link": "https://arxiv.org/pdf/2610.20795v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "EEG-based affective decoding with participant-wise cross-subject protocol",
+      "llm_evidence_cn": "基于EEG的情感解码并采用按被试划分协议",
+      "llm_evidence": "基于EEG的情感解码并采用按被试划分协议",
+      "canonical_evidence": "基于EEG的情感解码并采用按被试划分协议",
+      "llm_tldr_en": "The paper frames music enjoyment prediction from EEG as regression on MUSIN-G, compares six deep models under a participant-wise protocol, and finds DeepConvNet, CNN-LSTM and GNN-CNN achieve the lowest error.",
+      "llm_tldr_cn": "论文针对音乐享受感主观且随乐曲演变的难题，将享受度预测建模为回归任务，在MUSIN-G数据集上比较六种深度学习模型，并采用按被试划分的协议以考察跨被试表现。结果显示DeepConvNet、CNN-LSTM与GNN-CNN取得最低平均绝对误差。该工作表明连续情感体验可从EEG中回归解码，并为情感脑机接口的可解释时间分析提供参考。",
+      "llm_tldr": "论文针对音乐享受感主观且随乐曲演变的难题，将享受度预测建模为回归任务，在MUSIN-G数据集上比较六种深度学习模型，并采用按被试划分的协议以考察跨被试表现。结果显示DeepConvNet、CNN-LSTM与GNN-CNN取得最低平均绝对误差。该工作表明连续情感体验可从EEG中回归解码，并为情感脑机接口的可解释时间分析提供参考。",
+      "llm_tags": [
+        "query:ab"
+      ],
+      "matched_query_tag": "query:ab",
+      "matched_query_text": "EEG emotion recognition",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.20954v1",
+      "source": "arxiv",
+      "title": "Cross-subject decoding of imagined speech from scalp EEG: a leakage-controlled evaluation on three public corpora",
+      "abstract": "Objective. A decoder of imagined speech that works for a new user without calibration would make a non-invasive speech interface practical. We tested whether imagined-speech content recorded with scalp electroencephalography (EEG) transfers across people, and examined why accuracy within a single person remains low. Approach. We analyzed three public corpora, ds003626, KaraOne and Track 3 of the 2020 International Brain-Computer Interface Competition, under a protocol that enforces split integrity by assertion and reports exact binomial thresholds, group tests and bootstrap confidence intervals. We trained decoders on each participant and tested them on every other, compared representational geometry across participants without a classifier, applied subject-level alignment, and tested five explanations for the within-subject ceiling. Main results. Across 482 ordered pairs of participants, no pair survived correction for multiple comparisons; mean pair-transfer accuracy lay within 0.006 of chance on every corpus, while every within-subject reference lay above it. Imagery against pre-stimulus rest generalized at about 0.61 after artifact and elapsed-time controls, but its decoder labelled the interval preceding imagery as imagery as often as imagery itself, so the contrast reflects a post-stimulus state, not imagery. Within subject, only the competition corpus decoded above threshold for every participant (0.3147; chance 0.200); syllable count explained little of this, but its frequency profile failed an artifact audit. Significance. In these corpora, imagined-speech content did not transfer between people through any representation we examined. Trial count per class was the only variable that ordered the corpora, which favors larger single-condition datasets over further model development.",
+      "authors": [
+        "Blessing Isoyiza Adeika",
+        "Onyema Osuagwu"
+      ],
+      "primary_category": "eess.SP",
+      "categories": [
+        "eess.SP",
+        "cs.LG",
+        "q-bio.NC"
+      ],
+      "published": "2026-10-14T21:25:50+00:00",
+      "link": "https://arxiv.org/pdf/2610.20954v1",
+      "tags": [
+        "keyword:ab",
+        "keyword:csg",
+        "keyword:ea",
+        "query:ab",
+        "query:csg",
+        "query:ea"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "cross-subject EEG decoding with leakage-controlled evaluation",
+      "llm_evidence_cn": "跨被试EEG解码与泄漏控制评估",
+      "llm_evidence": "跨被试EEG解码与泄漏控制评估",
+      "canonical_evidence": "跨被试EEG解码与泄漏控制评估",
+      "llm_tldr_en": "The authors test whether imagined-speech decoders trained on one person transfer to others across three public EEG corpora, using leakage-controlled splits and bootstrap confidence intervals.",
+      "llm_tldr_cn": "无需校准即可用于新用户的想象言语解码器是非侵入式语音接口的关键，但其跨被试可迁移性尚不明确。作者在ds003626、KaraOne和2020 BCI竞赛Track 3三个公开EEG语料上，采用强制划分完整性的泄漏控制协议，逐人训练并跨人测试，辅以精确二项检验与自助置信区间。结果显示跨被试迁移有限，并分析了被试间表征几何差异。该工作为跨被试EEG解码提供了严谨的评估范式。",
+      "llm_tldr": "无需校准即可用于新用户的想象言语解码器是非侵入式语音接口的关键，但其跨被试可迁移性尚不明确。作者在ds003626、KaraOne和2020 BCI竞赛Track 3三个公开EEG语料上，采用强制划分完整性的泄漏控制协议，逐人训练并跨人测试，辅以精确二项检验与自助置信区间。结果显示跨被试迁移有限，并分析了被试间表征几何差异。该工作为跨被试EEG解码提供了严谨的评估范式。",
+      "llm_tags": [
+        "query:csg"
+      ],
+      "matched_query_tag": "query:csg",
+      "matched_query_text": "domain generalization EEG",
+      "matched_requirement_id": "req-12",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

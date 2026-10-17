@@ -1,0 +1,73 @@
+{
+  "date": "20261017",
+  "date_label": "",
+  "generated_at": "2026-10-17 20:59:59 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.19543v1",
+      "route": "202610/17/2610.19543v1-noisy-label-calibration-with-multiple-unreliable-labels",
+      "title": "Noisy-Label Calibration with Multiple Unreliable Labels",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ea"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "多重不可靠标注下的噪声标签校准",
+      "first_seen_at": "2026-10-17 20:59:59 UTC",
+      "updated_at": "2026-10-17 20:59:59 UTC"
+    },
+    {
+      "paper_id": "2610.12921v1",
+      "route": "202610/17/2610.12921v1-teaching-neural-decoders-with-language",
+      "title": "Teaching neural decoders with language",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "csg"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "语言监督神经解码并支持被试与会话自适应",
+      "first_seen_at": "2026-10-17 20:59:59 UTC",
+      "updated_at": "2026-10-17 20:59:59 UTC"
+    },
+    {
+      "paper_id": "2610.20795v1",
+      "route": "202610/17/2610.20795v1-eeg-based-prediction-of-music-enjoyment-using-deep-learning-with-explainable-temporal-analysis",
+      "title": "EEG-Based Prediction of Music Enjoyment Using Deep Learning with Explainable Temporal Analysis",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "ab"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "基于EEG的情感解码并采用按被试划分协议",
+      "first_seen_at": "2026-10-17 20:59:59 UTC",
+      "updated_at": "2026-10-17 20:59:59 UTC"
+    },
+    {
+      "paper_id": "2610.20954v1",
+      "route": "202610/17/2610.20954v1-cross-subject-decoding-of-imagined-speech-from-scalp-eeg-a-leakage-controlled-evaluation-on-three-public-corpora",
+      "title": "Cross-subject decoding of imagined speech from scalp EEG: a leakage-controlled evaluation on three public corpora",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "csg"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "跨被试EEG解码与泄漏控制评估",
+      "first_seen_at": "2026-10-17 20:59:59 UTC",
+      "updated_at": "2026-10-17 20:59:59 UTC"
+    }
+  ]
+}

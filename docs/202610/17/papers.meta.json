@@ -1,0 +1,69 @@
+{
+  "label": "2026-10-17",
+  "date": "2026-10-17",
+  "generated_at": "2026-10-17T21:00:01",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202610/17/2610.19543v1-noisy-label-calibration-with-multiple-unreliable-labels",
+      "section": "quick",
+      "title_en": "Noisy-Label Calibration with Multiple Unreliable Labels",
+      "authors": "Keisuke Hanada, Futoshi Futami",
+      "date": "2026-10-14",
+      "pdf": "https://arxiv.org/pdf/2610.19543v1",
+      "score": "7.0",
+      "evidence": "多重不可靠标注下的噪声标签校准",
+      "tldr": "在医疗标注与众包中，每个样本常由多位标注者给出可能错误的标签，直接把这些噪声标签当作真值会扭曲校准评估。论文针对固定二分类预测器，提出在干净标签分布下仅用噪声标注进行评估与重校准的方法。核心包括在类条件噪声下估计ECE的分箱估计器NC-ECE，并给出非渐近偏差界，以及估计未知标注者噪声概率的实用算法。实验表明NC-ECE接近干净标签oracle，重校准显著改善潜在标签校准，而直接对噪声标注重校准可能反而变差。",
+      "tags": "query:ea",
+      "abstract_en": "In medical annotation and crowdsourcing, multiple annotators assign labels to each example, but these labels may be incorrect. Treating such noisy labels as ground truth can bias calibration evaluation. To address this problem, we propose methods for evaluating and recalibrating a fixed binary predictor under the underlying clean-label distribution, using only noisy annotations. First, given annotator-specific noise probabilities, we propose Noise Corrected ECE (NC-ECE), a binned estimator of expected calibration error (ECE) under class-conditional noise. We derive non-asymptotic bounds on the estimator's bias. Then, we propose practical algorithms for estimating unknown noise probabilities under conditional independence and label-orientation assumptions. We also develop loss-based and histogram post-hoc recalibration with clean-risk and calibration guarantees, respectively. Experiments on semi-synthetic benchmarks show that the proposed ECE estimator closely tracks its clean-label oracle counterpart and that the recalibration methods substantially improve latent-label calibration, whereas uncorrected recalibration against noisy annotations can degrade it.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/17/2610.12921v1-teaching-neural-decoders-with-language",
+      "section": "quick",
+      "title_en": "Teaching neural decoders with language",
+      "authors": "Xuan Wen, Yonghao Song, Yuhong Zhang, Guoliang Li, Tzyy-Ping Jung, Xiaorong Gao",
+      "date": "2026-10-09",
+      "pdf": "https://arxiv.org/pdf/2610.12921v1",
+      "score": "6.0",
+      "evidence": "语言监督神经解码并支持被试与会话自适应",
+      "tldr": "脑机接口依赖类标签监督，类别间关系隐含，跨候选集与跨频率泛化仍受限。LaS把神经特征与自然语言类别描述对齐，借助学习投影和候选文本原型预测类别。研究评估七种编码器，覆盖视觉、运动与语音解码；语音准确率较匹配的CLS基线最高提升17.15个百分点。该框架还支持候选集复用、受试者/会话适配及SSVEP未见频率解码，说明文本描述可作为通用参考。",
+      "tags": "query:csg",
+      "abstract_en": "Brain-computer interfaces decode neural activity, yet class-label supervision (CLS) leaves relationships among classes implicit. We propose Language as Supervision (LaS), which aligns neural features with natural-language class descriptions through learned projections and predicts classes using candidate text prototypes. We evaluate seven encoder architectures with independently trained models for visual, motor, and speech decoding from scalp and intracranial recordings. LaS improves speech-decoding accuracy by up to 17.15~pp over matched CLS baselines. Its representations support candidate-set reuse and label-supervised subject and session adaptation, while LaS enables conditional unseen-frequency decoding in steady-state visual evoked potential (SSVEP) responses. Correct class-description correspondence supports this generalization, and dual-sided attribution visualization shows neural and textual contributions to the same class-matching score. These findings suggest that text descriptions can serve as general-purpose references for learning and interpretation in neural decoding.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/17/2610.20795v1-eeg-based-prediction-of-music-enjoyment-using-deep-learning-with-explainable-temporal-analysis",
+      "section": "quick",
+      "title_en": "EEG-Based Prediction of Music Enjoyment Using Deep Learning with Explainable Temporal Analysis",
+      "authors": "Parshav Singla, Simranjit Kaur, Maanya Walia, Niharika",
+      "date": "2026-10-14",
+      "pdf": "https://arxiv.org/pdf/2610.20795v1",
+      "score": "6.0",
+      "evidence": "基于EEG的情感解码并采用按被试划分协议",
+      "tldr": "音乐愉悦感主观且随乐曲展开而变化，EEG有望揭示听赏中的神经反应，但既有研究多把音乐情绪当作分类标签且模型黑箱。该文在MUSIN-G数据集上将愉悦度预测建模为回归任务，采用被试划分协议比较六种深度学习模型，并用梯度与遮挡解释分析TCN的时序贡献。DeepConvNet、CNN-LSTM和GNN-CNN取得约0.97–0.99的最低MAE，TCN与评分的Pearson相关最高（r=0.21）。研究提供了可复现的跨听者EEG愉悦度回归基准，并展示可解释性分析对标准指标的补充价值。",
+      "tags": "query:ab",
+      "abstract_en": "Understanding why listeners enjoy music is difficult because the experience is subjective and changes as a piece unfolds. Electroencephalography (EEG) offers a non-invasive way to study neural responses during listening, yet earlier work has mostly treated music emotion as a categorical label or relied on black-box models. We formulate enjoyment prediction as a regression problem on the public MUSIN-G dataset, which contains 128-channel EEG from 20 listeners together with song-level enjoyment ratings. Six deep learning models were compared under a participant-wise protocol, in which 15 listeners were used for training and validation and 5 were held out for testing. DeepConvNet, CNN-LSTM and GNN-CNN reached the lowest mean absolute error (0.97 to 0.99 on the 1 to 5 scale), while the temporal convolutional network (TCN) had the highest Pearson correlation with the ratings (r = 0.21). Gradient-based and occlusion-based explanations, averaged over all held-out windows, identify the time segments within each two-second window that most influence the TCN predictions. The study provides a reproducible cross-listener benchmark for EEG-based enjoyment regression and shows how explainability analysis complements standard metrics.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/17/2610.20954v1-cross-subject-decoding-of-imagined-speech-from-scalp-eeg-a-leakage-controlled-evaluation-on-three-public-corpora",
+      "section": "quick",
+      "title_en": "Cross-subject decoding of imagined speech from scalp EEG: a leakage-controlled evaluation on three public corpora",
+      "authors": "Blessing Isoyiza Adeika, Onyema Osuagwu",
+      "date": "2026-10-14",
+      "pdf": "https://arxiv.org/pdf/2610.20954v1",
+      "score": "6.0",
+      "evidence": "跨被试EEG解码与泄漏控制评估",
+      "tldr": "无校准跨被试想象语音解码是非侵入式语音接口的关键，但跨人迁移性尚缺严格检验。作者在 ds003626、KaraOne 和 2020 BCI 竞赛 Track 3 三个公开 EEG 语料上，采用防泄漏划分、精确二项阈值、组检验与 bootstrap 置信区间评估迁移和表征几何。482 个有序被试对均未通过多重比较校正，平均迁移准确率距随机不超过 0.006，而被试内参考均高于随机。结果表明想象语音内容未通过所考察表征跨人迁移，扩充单条件试次数据比继续改进模型更优先。",
+      "tags": "query:csg",
+      "abstract_en": "Objective. A decoder of imagined speech that works for a new user without calibration would make a non-invasive speech interface practical. We tested whether imagined-speech content recorded with scalp electroencephalography (EEG) transfers across people, and examined why accuracy within a single person remains low. Approach. We analyzed three public corpora, ds003626, KaraOne and Track 3 of the 2020 International Brain-Computer Interface Competition, under a protocol that enforces split integrity by assertion and reports exact binomial thresholds, group tests and bootstrap confidence intervals. We trained decoders on each participant and tested them on every other, compared representational geometry across participants without a classifier, applied subject-level alignment, and tested five explanations for the within-subject ceiling. Main results. Across 482 ordered pairs of participants, no pair survived correction for multiple comparisons; mean pair-transfer accuracy lay within 0.006 of chance on every corpus, while every within-subject reference lay above it. Imagery against pre-stimulus rest generalized at about 0.61 after artifact and elapsed-time controls, but its decoder labelled the interval preceding imagery as imagery as often as imagery itself, so the contrast reflects a post-stimulus state, not imagery. Within subject, only the competition corpus decoded above threshold for every participant (0.3147; chance 0.200); syllable count explained little of this, but its frequency profile failed an artifact audit. Significance. In these corpora, imagined-speech content did not transfer between people through any representation we examined. Trial count per class was the only variable that ordered the corpora, which favors larger single-condition datasets over further model development.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
